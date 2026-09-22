@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>一週三練課表</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#EDF0F3;
+  --card:#FFFFFF;
+  --ink:#14202B;
+  --muted:#5F6E7C;
+  --line:#D6DDE3;
+  --accent:#1F5AF0;
+  --accent-ink:#FFFFFF;
+  --done:#1F8A5B;
+  --super:#FFF1CC;
+  --super-ink:#7A5200;
+  --tap:#F1F4F7;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#10161C; --card:#1A222B; --ink:#EEF2F5; --muted:#9AA7B3; --line:#2C3741;
+    --accent:#5B8BFF; --accent-ink:#0B1220; --done:#3FBF84; --super:#3A2E10; --super-ink:#F2C766; --tap:#232D37;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#10161C; --card:#1A222B; --ink:#EEF2F5; --muted:#9AA7B3; --line:#2C3741;
+  --accent:#5B8BFF; --accent-ink:#0B1220; --done:#3FBF84; --super:#3A2E10; --super-ink:#F2C766; --tap:#232D37;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;
+  font-variant-numeric:tabular-nums;
+}
+.wrap{max-width:520px;margin:0 auto;padding:0 16px 96px}
+
+header{padding:20px 0 12px}
+header h1{margin:0;font-size:30px;font-weight:900;letter-spacing:-.01em;line-height:1.15}
+header p{margin:6px 0 0;color:var(--muted);font-size:14px}
+
+.tabs{
+  position:sticky;top:env(safe-area-inset-top,0px);z-index:5;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:6px;
+  padding:8px 0 10px;background:var(--bg);
+}
+.tab{
+  border:1px solid var(--line);background:var(--card);color:var(--ink);
+  border-radius:12px;padding:10px 6px;text-align:left;cursor:pointer;
+  font:inherit;line-height:1.2;
+}
+.tab .d{display:block;font-size:12px;color:var(--muted)}
+.tab .n{display:block;font-size:15px;font-weight:700;margin-top:2px}
+.tab .p{display:block;height:4px;border-radius:2px;background:var(--line);margin-top:8px;overflow:hidden}
+.tab .p i{display:block;height:100%;width:0;background:var(--done);transition:width .2s}
+.tab[aria-selected="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.tab:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.day{display:none}
+.day.on{display:block}
+.meta{display:flex;justify-content:space-between;align-items:baseline;margin:10px 2px 8px;font-size:13px;color:var(--muted)}
+.meta b{color:var(--ink);font-weight:700}
+
+.ex{
+  background:var(--card);border:1px solid var(--line);border-radius:14px;
+  padding:12px 14px;margin-bottom:10px;
+}
+.ex.super{border-color:transparent;background:var(--super);padding:10px 12px}
+.ex.super .row{background:var(--card);border-radius:10px;padding:10px 12px}
+.ex.super .row + .row{margin-top:8px}
+.ex.super .tag{font-size:12px;font-weight:700;color:var(--super-ink);margin:0 2px 8px}
+.row{display:block}
+.top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.name{font-weight:700;font-size:17px}
+.rm{color:var(--muted);font-size:14px;white-space:nowrap}
+.rm b{color:var(--ink)}
+.note{font-size:13px;color:var(--muted);margin-top:2px}
+.sets{display:flex;gap:8px;margin-top:10px}
+.set{
+  flex:1;height:44px;border-radius:10px;border:1px solid var(--line);
+  background:var(--tap);color:var(--muted);font:inherit;font-size:15px;font-weight:700;cursor:pointer;
+  transition:background .12s,color .12s;
+}
+.set[aria-pressed="true"]{background:var(--done);border-color:var(--done);color:#fff}
+.set:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.rest{
+  font-size:12px;color:var(--muted);margin-top:8px;display:flex;justify-content:space-between
+}
+.rest button{
+  border:0;background:none;color:var(--accent);font:inherit;font-size:12px;font-weight:700;padding:0;cursor:pointer
+}
+
+.foot{margin:18px 2px 0;font-size:13px;color:var(--muted)}
+.foot p{margin:6px 0}
+.reset{
+  margin-top:12px;width:100%;height:44px;border-radius:12px;border:1px solid var(--line);
+  background:var(--card);color:var(--ink);font:inherit;font-weight:700;cursor:pointer
+}
+
+.timer{
+  position:fixed;left:0;right:0;bottom:0;z-index:10;
+  padding:10px 16px calc(12px + env(safe-area-inset-bottom,0px));
+  background:var(--accent);color:var(--accent-ink);
+  display:none;align-items:center;justify-content:space-between;gap:12px;
+  transform:translateY(100%);transition:transform .2s;
+}
+.timer.on{display:flex;transform:none}
+.timer .t{font-size:30px;font-weight:900;letter-spacing:-.02em;line-height:1}
+.timer .l{font-size:13px;opacity:.85}
+.timer button{
+  height:40px;padding:0 14px;border-radius:10px;border:0;font:inherit;font-weight:700;cursor:pointer;
+  background:rgba(255,255,255,.22);color:var(--accent-ink)
+}
+.timer .bar{position:absolute;left:0;top:0;height:3px;background:rgba(255,255,255,.7);width:100%;transform-origin:left;transition:transform 1s linear}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>一週三練</h1>
+    <p>每天 7 個動作、21 組，約 55–60 分鐘。隔天練（一三五或二四六）。</p>
+  </header>
+
+  <div class="tabs" role="tablist" id="tabs"></div>
+  <div id="days"></div>
+
+  <div class="foot">
+    <p>組間休息：複合動作 90–120 秒，單關節與超級組 60 秒。點一組會自動倒數。</p>
+    <p>時間不夠時先砍超級組裡的單關節動作，複合動作照做。</p>
+    <button class="reset" id="reset">清除今天的打勾</button>
+  </div>
+</div>
+
+<div class="timer" id="timer" aria-live="polite">
+  <div class="bar" id="bar"></div>
+  <div><div class="t" id="tt">1:30</div><div class="l" id="tl">組間休息</div></div>
+  <div><button id="t30">+30 秒</button> <button id="tskip">結束</button></div>
+</div>
+
+<script>
+const DAYS=[
+ {name:'推為主＋腿前',ex:[
+  {n:'哈克或史密斯深蹲',rm:'8–10',rest:120},
+  {n:'平胸推',rm:'8–10',rest:120},
+  {n:'滑輪下拉',rm:'10–12',rest:90,note:'可隔週換窄握下拉'},
+  {n:'肩推',rm:'8–12',rest:90},
+  {n:'腿前伸',rm:'12–15',rest:60},
+  {sup:[{n:'側平舉',rm:'12–15'},{n:'Cable 三頭下壓',rm:'12–15'}],rest:60},
+  {n:'下腹',rm:'12–15',rest:60},
+ ]},
+ {name:'拉為主＋腿後',ex:[
+  {n:'臀推機',rm:'8–12',rest:120},
+  {n:'窄握划船',rm:'8–10',rest:120},
+  {n:'上胸推',rm:'10–15',rest:90},
+  {n:'腿後勾',rm:'10–15',rest:60},
+  {n:'寬握划船',rm:'12–15',rest:60,note:'手肘夾角 45 度'},
+  {sup:[{n:'二頭彎舉',rm:'12–15'},{n:'反向飛鳥',rm:'12–15'}],rest:60},
+  {n:'下腹',rm:'10–15',rest:60},
+ ]},
+ {name:'胸背＋腿補強',ex:[
+  {n:'腿推機',rm:'10–15',rest:120},
+  {n:'大剪刀或 Dip',rm:'8–12',rest:90,note:'隔週交替'},
+  {n:'高位划船',rm:'10–12',rest:90},
+  {n:'分腿蹲',rm:'10–15',rest:90},
+  {sup:[{n:'夾胸',rm:'12–15'},{n:'直臂下壓',rm:'12–15'}],rest:60},
+  {sup:[{n:'髖內收',rm:'12–15'},{n:'髖外展',rm:'12–15'}],rest:60},
+  {n:'器械胸推',rm:'10–12',rest:90},
+ ]},
+];
+
+const KEY='w3-checks-v1';
+let state={};
+try{state=JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch(e){state={}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+function isOn(id){return !!state[id]}
+
+const tabs=document.getElementById('tabs'),daysEl=document.getElementById('days');
+let cur=0;
+try{cur=parseInt(localStorage.getItem('w3-day')||'0',10)||0}catch(e){}
+
+function fmt(s){return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+
+DAYS.forEach((d,di)=>{
+  const tb=document.createElement('button');
+  tb.className='tab';tb.setAttribute('role','tab');tb.id='tab'+di;
+  tb.innerHTML=`<span class="d">第 ${di+1} 天</span><span class="n">${d.name}</span><span class="p"><i id="p${di}"></i></span>`;
+  tb.onclick=()=>show(di);
+  tabs.appendChild(tb);
+
+  const sec=document.createElement('section');sec.className='day';sec.id='day'+di;
+  sec.setAttribute('role','tabpanel');
+  const nm=d.ex.reduce((a,e)=>a+(e.sup?e.sup.length:1),0);
+  sec.innerHTML=`<div class="meta"><span>${nm} 個動作 · ${nm*3} 組</span><span id="c${di}"></span></div>`;
+  d.ex.forEach((e,ei)=>{
+    const card=document.createElement('div');
+    const items=e.sup||[e];
+    card.className='ex'+(e.sup?' super':'');
+    if(e.sup){const t=document.createElement('div');t.className='tag';t.textContent='超級組：兩個動作交替做，中間不休息';card.appendChild(t)}
+    items.forEach((it,ii)=>{
+      const row=document.createElement('div');row.className='row';
+      row.innerHTML=`<div class="top"><span class="name">${it.n}</span><span class="rm"><b>${it.rm}</b> RM · 3 組</span></div>`
+        +(it.note||e.note?`<div class="note">${it.note||e.note}</div>`:'')
+        +`<div class="sets"></div>`;
+      const sets=row.querySelector('.sets');
+      for(let s=1;s<=3;s++){
+        const id=`${di}-${ei}-${ii}-${s}`;
+        const b=document.createElement('button');b.className='set';b.textContent='第 '+s+' 組';
+        b.setAttribute('aria-pressed',isOn(id));
+        b.onclick=()=>{
+          const on=!isOn(id);state[id]=on;if(!on)delete state[id];save();
+          b.setAttribute('aria-pressed',on);progress(di);
+          if(on)startTimer(e.rest);
+        };
+        sets.appendChild(b);
+      }
+      card.appendChild(row);
+    });
+    const r=document.createElement('div');r.className='rest';
+    r.innerHTML=`<span>休息 ${fmt(e.rest)}</span><button type="button">手動計時</button>`;
+    r.querySelector('button').onclick=()=>startTimer(e.rest);
+    card.appendChild(r);
+    sec.appendChild(card);
+  });
+  daysEl.appendChild(sec);
+  progress(di);
+});
+
+function progress(di){
+  const total=DAYS[di].ex.reduce((a,e)=>a+((e.sup?e.sup.length:1)*3),0);
+  let done=0;for(const k in state)if(k.startsWith(di+'-'))done++;
+  document.getElementById('p'+di).style.width=(done/total*100)+'%';
+  document.getElementById('c'+di).innerHTML=`已完成 <b>${done}</b> / ${total} 組`;
+}
+function show(di){
+  cur=di;
+  document.querySelectorAll('.tab').forEach((t,i)=>t.setAttribute('aria-selected',i===di));
+  document.querySelectorAll('.day').forEach((s,i)=>s.classList.toggle('on',i===di));
+  try{localStorage.setItem('w3-day',di)}catch(e){}
+}
+show(Math.min(cur,2));
+
+document.getElementById('reset').onclick=()=>{
+  for(const k in state)if(k.startsWith(cur+'-'))delete state[k];
+  save();
+  document.querySelectorAll('#day'+cur+' .set').forEach(b=>b.setAttribute('aria-pressed','false'));
+  progress(cur);
+};
+
+// rest timer
+const timer=document.getElementById('timer'),tt=document.getElementById('tt'),bar=document.getElementById('bar');
+let left=0,total=0,iv=null;
+function render(){tt.textContent=fmt(left);bar.style.transform='scaleX('+(total?left/total:0)+')'}
+function startTimer(sec){
+  clearInterval(iv);left=sec;total=sec;timer.classList.add('on');render();
+  iv=setInterval(()=>{left--;if(left<=0){stopTimer();if(navigator.vibrate)try{navigator.vibrate([200,100,200])}catch(e){}}else render()},1000);
+}
+function stopTimer(){clearInterval(iv);iv=null;timer.classList.remove('on')}
+document.getElementById('t30').onclick=()=>{left+=30;total=Math.max(total,left);render()};
+document.getElementById('tskip').onclick=stopTimer;
+</script>
+</body>
+</html>
