@@ -175,7 +175,7 @@ html{color-scheme:light}
     <div class="brand"><h1>一週三練</h1><button type="button" class="hbtn" id="hbtn">歷史紀錄</button></div>
     <div class="prog" role="radiogroup" aria-label="課表" id="seg">
       <button type="button" role="radio" data-p="full">全身</button>
-      <button type="button" role="radio" data-p="ppl">PPL（推拉腿）</button>
+      <button type="button" role="radio" data-p="ppl">推拉腿（PPL）</button>
     </div>
     <p class="sub" id="sub"></p>
     <div class="auth" id="auth" hidden></div>
@@ -187,7 +187,7 @@ html{color-scheme:light}
 
     <div class="foot">
       <p id="tip"></p>
-      <p>RM（最大反覆次數）：8–10 RM 指這個重量最多只做得到 8–10 下。組間休息：複合動作 90–120 秒，單關節與超級組 60 秒，點一組會自動倒數。</p>
+      <p>RM 是「最大反覆次數」：8–10 RM 指這個重量最多只做得到 8–10 下。組間休息：複合動作 90–120 秒，單關節與超級組 60 秒，點一組會自動倒數。</p>
       <p>器材被佔走時，按「換動作」挑一個練同樣肌群的替代動作，紀錄會存替代後的名稱。</p>
       <button class="finish" id="finish">完成訓練，存入紀錄</button>
       <div class="msg" id="fmsg"></div>
@@ -225,7 +225,7 @@ const PROGRAMS={
     {n:'滑輪下拉',rm:'10–12',rest:90,note:'可隔週換窄握下拉'},
     {n:'肩推',rm:'8–12',rest:90},
     {n:'腿前伸',rm:'12–15',rest:60},
-    {sup:[{n:'側平舉',rm:'12–15'},{n:'Cable（滑輪）三頭下壓',rm:'12–15'}],rest:60},
+    {sup:[{n:'側平舉',rm:'12–15'},{n:'滑輪三頭下壓',rm:'12–15'}],rest:60},
     {n:'下腹',rm:'12–15',rest:60},
    ]},
    {name:'拉為主＋腿後',ex:[
@@ -244,21 +244,21 @@ const PROGRAMS={
     {n:'分腿蹲',rm:'10–15',rest:90},
     {sup:[{n:'夾胸',rm:'12–15'},{n:'直臂下壓',rm:'12–15'}],rest:60},
     {sup:[{n:'髖內收',rm:'12–15'},{n:'髖外展',rm:'12–15'}],rest:60},
-    {n:'下胸推或 Dip（雙槓撐體）',rm:'10–12',rest:90,note:'隔週交替，Dip 做 12–15'},
+    {n:'下胸推或雙槓撐體',rm:'10–12',rest:90,note:'隔週交替，雙槓撐體做 12–15'},
    ]},
   ]},
  ppl:{
-  sub:'PPL（推拉腿）：推、拉、腿各一天，每個部位一週一次、單日量集中。推 21 組、拉與腿各 24 組。隔天練（一三五或二四六）。',
+  sub:'推拉腿（PPL）：推、拉、腿各一天，每個部位一週一次、單日量集中。推 21 組、拉與腿各 24 組。隔天練（一三五或二四六）。',
   tip:'拉日和腿日 24 組較緊，超級組休 60 秒要抓準。時間不夠先砍超級組裡的單關節動作。',
   key:'w3-ppl-checks-v1',
   days:[
    {name:'推：胸、肩、三頭',ex:[
     {n:'平胸推',rm:'8–10',rest:120,note:'隔週換器械胸推 10–12'},
     {n:'上胸推',rm:'10–15',rest:90},
-    {n:'下胸推或 Dip（雙槓撐體）',rm:'10–12',rest:90,note:'隔週交替，Dip 做 12–15'},
+    {n:'下胸推或雙槓撐體',rm:'10–12',rest:90,note:'隔週交替，雙槓撐體做 12–15'},
     {n:'肩推',rm:'8–12',rest:90},
     {sup:[{n:'夾胸',rm:'12–15'},{n:'側平舉',rm:'12–15'}],rest:60},
-    {n:'Cable（滑輪）三頭下壓',rm:'12–15',rest:60},
+    {n:'滑輪三頭下壓',rm:'12–15',rest:60},
    ]},
    {name:'拉：背、二頭、肩後',ex:[
     {n:'大剪刀下拉',rm:'8–12',rest:120,note:'隔週換窄握下拉 8–12'},
@@ -298,7 +298,7 @@ const ALTS={
   {n:'史密斯上斜臥推（Smith Machine Incline Press）',note:'軌道固定，適合穩定推重',src:'https://www.strengthlog.com/smith-machine-incline-bench-press/'},
   {n:'器械上斜胸推（Incline Chest Press Machine）',note:'部分胸推機椅背可調成上斜',src:'https://www.strengthlog.com/machine-chest-press/'},
  ]},
- '下胸推或 Dip（雙槓撐體）':{m:'下胸、肱三頭肌、前三角肌',alts:[
+ '下胸推或雙槓撐體':{m:'下胸、肱三頭肌、前三角肌',alts:[
   {n:'下斜啞鈴臥推（Decline Dumbbell Press）',note:'動作最接近，肩關節壓力較小',src:'https://barbend.com/decline-bench-press/'},
   {n:'器械下斜胸推（Lever Decline Chest Press）',note:'Hammer Strength 等插銷式器械常見',src:'https://exrx.net/WeightExercises/PectoralSternal/LVDeclineChestPressPL'},
   {n:'輔助雙槓機（Assisted Dip Machine）',rm:'12–15',note:'力量不夠時用配重減輕體重，身體前傾偏胸',src:'https://exrx.net/WeightExercises/PectoralSternal/AsChestDip'},
@@ -318,7 +318,7 @@ const ALTS={
   {n:'側平舉機（Machine Lateral Raise）',note:'',src:'https://www.strengthlog.com/best-machine-exercises/'},
   {n:'啞鈴側平舉（Dumbbell Lateral Raise）',note:'',src:'https://physicfit.com/dumbbell-lateral-raise/'},
  ]},
- 'Cable（滑輪）三頭下壓':{m:'肱三頭肌',alts:[
+ '滑輪三頭下壓':{m:'肱三頭肌',alts:[
   {n:'過頭三頭伸展（Overhead Triceps Extension）',note:'繩索或啞鈴，偏長頭',src:'https://barbend.com/triceps-pushdown/'},
   {n:'仰臥三頭伸展（Skull Crusher）',rm:'10–12',note:'可用較重負荷',src:'https://barbend.com/triceps-pushdown/'},
   {n:'三頭伸展機（Machine Triceps Extension）',note:'',src:'https://www.strengthlog.com/best-machine-exercises/'},
@@ -336,11 +336,11 @@ const ALTS={
  '窄握划船':{m:'闊背肌、斜方肌、後三角肌、肱二頭肌（次要）',alts:[
   {n:'胸靠式器械划船（Seated Machine Row）',note:'下背幾乎不受力',src:'https://www.strengthlog.com/seated-machine-row/'},
   {n:'單臂啞鈴划船（One-Arm Dumbbell Row）',rm:'10',note:'活動度大，可修正左右差',src:'https://www.strengthlog.com/cable-close-grip-seated-row/'},
-  {n:'T 桿划船（T-Bar Row）',note:'',src:'https://www.strengthlog.com/cable-close-grip-seated-row/'},
+  {n:'T 槓划船（T-Bar Row）',note:'',src:'https://www.strengthlog.com/cable-close-grip-seated-row/'},
  ]},
  '高位划船':{m:'上背（菱形肌、斜方肌、後三角肌）、闊背肌、肱二頭肌',alts:[
   {n:'站姿高位繩索划船（Standing High Cable Row）',rm:'8–15',note:'拉的角度最接近高位划船機',src:'https://fitnessvolt.com/high-row-machine-alternatives/'},
-  {n:'T 桿划船（T-Bar Row）',rm:'8–15',note:'',src:'https://fitnessvolt.com/high-row-machine-alternatives/'},
+  {n:'T 槓划船（T-Bar Row）',rm:'8–15',note:'',src:'https://fitnessvolt.com/high-row-machine-alternatives/'},
   {n:'胸靠式划船（Chest-Supported Row）',rm:'8–12',note:'去除下肢借力',src:'https://www.strengthlog.com/upper-back-exercises/'},
  ]},
  '寬握划船':{m:'後三角肌、菱形肌、斜方肌中部',alts:[
@@ -374,7 +374,7 @@ const ALTS={
   {n:'前腳墊高分腿蹲（Front-Foot Elevated Split Squat）',rm:'10–12',note:'每腳',src:'https://barbend.com/leg-extension-alternatives/'},
  ]},
  '腿後勾':{m:'腿後肌群（膕旁肌）',alts:[
-  {n:'另一台腿後勾機（坐姿或臥姿 Leg Curl）',note:'坐姿與臥姿可互換',src:'https://www.strengthlog.com/best-machine-exercises/'},
+  {n:'另一台腿後勾機（坐姿或臥姿）',note:'坐姿與臥姿可互換',src:'https://www.strengthlog.com/best-machine-exercises/'},
   {n:'繩索腿後勾（Cable Leg Curl）',note:'腳踝綁帶接低位滑輪',src:'https://exrx.net/WeightExercises/Hamstrings/CBStandingLegCurl'},
   {n:'抗力球腿後勾（Stability Ball Hamstring Curl）',rm:'12',note:'',src:'https://www.healthline.com/nutrition/leg-curl-alternative'},
  ]},
@@ -409,7 +409,9 @@ const ALTS={
 let prog='full';
 try{prog=localStorage.getItem('w3-prog')||'full'}catch(e){}
 if(!PROGRAMS[prog])prog='full';
-const PNAME={full:'全身',ppl:'PPL'};
+const PNAME={full:'全身',ppl:'推拉腿'};
+const NAME_ALIAS={'下胸推或 Dip（雙槓撐體）':'下胸推或雙槓撐體','Cable（滑輪）三頭下壓':'滑輪三頭下壓'};
+function canon(n){return NAME_ALIAS[n]||n}
 
 const HKEY='w3-history-v1';
 let history=[];
@@ -437,7 +439,7 @@ function fdate(iso){
 }
 function lastOf(name){
   for(let i=history.length-1;i>=0;i--){
-    const it=(history[i].items||[]).find(x=>x.n===name);
+    const it=(history[i].items||[]).find(x=>canon(x.n)===canon(name));
     if(it&&(it.w!=null||it.sets))return {w:it.w,sets:it.sets,t:history[i].t};
   }
   return null;
