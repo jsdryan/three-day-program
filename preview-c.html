@@ -43,10 +43,11 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .auth .who{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .auth .who b{color:var(--ink);font-weight:600}
 .auth button{height:34px;padding:0 12px;border-radius:999px;border:0;background:var(--card2);color:var(--ink);font-weight:600;font-size:13px;white-space:nowrap}
-.auth button[data-p]{background:var(--ink);color:#0E0F14}
 .auth button.lnk{background:none;padding:0;color:var(--muted);text-decoration:underline;text-underline-offset:3px}
-.auth .mail{display:flex;gap:6px;width:100%}
-.auth .mail input{flex:1;min-width:0;height:36px;border:1px solid var(--line);border-radius:999px;background:var(--bg);color:var(--ink);font:inherit;font-size:16px;padding:0 12px}
+.auth .authtip{width:100%;margin:0 0 4px;font-size:13px;color:var(--muted)}
+.gbtn{width:100%;height:50px;border-radius:12px;border:1px solid #DADCE0;background:#fff;color:#1F1F1F;font-size:16px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:12px;box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.gbtn.apple{background:#000;color:#fff;border-color:#000}
+.gbtn + .gbtn{margin-top:8px}
 .auth .dot{width:8px;height:8px;border-radius:50%;background:var(--line);flex:none}
 .auth .dot.ok{background:var(--done)}.auth .dot.busy{background:var(--warn)}.auth .dot.err{background:var(--danger)}
 
@@ -162,17 +163,10 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
  --accent:#E4572E;--accent-ink:#fff;--accent-soft:rgba(228,87,46,.12);--done:#2E8B57;--danger:#C0392B;--warn:#B8741A;--r:12px;--r-s:10px}
 html{color-scheme:light}
 .brand h1{font-weight:900;letter-spacing:-.02em}
-.ex,.super,.hrec,.auth{border:1px solid var(--line)}
-.super{border-color:rgba(184,116,26,.45)}
-.tab{background:var(--card)}
-.wrow input{background:#fff}
-.set{background:#fff;border-radius:10px}
-.set[aria-pressed="true"]{color:#fff}
-.prog button{border-radius:10px}
-.hbtn,.hbar button,.hbar label,.swapbtn,.alts .close{background:var(--card2);border-radius:10px}
-.finish{border-radius:12px;box-shadow:none}
-.timer{border-radius:14px;box-shadow:0 12px 32px rgba(34,29,23,.25)}
-.alts{background:#fff}
+.ex,.super,.hrec,.auth{border:1px solid var(--line)}.super{border-color:rgba(184,116,26,.45)}
+.tab{background:var(--card)}.wrow input{background:#fff}.set{background:#fff;border-radius:10px}.set[aria-pressed="true"]{color:#fff}
+.prog button{border-radius:10px}.hbtn,.hbar button,.hbar label,.swapbtn,.alts .close{background:var(--card2);border-radius:10px}
+.finish{border-radius:12px;box-shadow:none}.timer{border-radius:14px;box-shadow:0 12px 32px rgba(34,29,23,.25)}.alts{background:#fff}
 </style>
 </head>
 <body>
@@ -681,21 +675,17 @@ function renderAuth(){
   if(!sb){authEl.hidden=true;return}
   authEl.hidden=false;
   if(!user){
-    const provs=(window.SB_CONFIG&&window.SB_CONFIG.providers)||[];
-    authEl.innerHTML=`<span class="dot"></span><span class="who">未登入，紀錄只存在這支手機</span>`
-      +`<form class="mail" id="mailform"><input type="email" inputmode="email" autocomplete="email" placeholder="你的 Email" required><button type="submit">寄登入連結</button></form>`
-      +provs.map(p=>`<button type="button" data-p="${p}">${{google:'Google 登入',apple:'Apple 登入'}[p]||p}</button>`).join('');
+    const G='<svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.3l7.9 6.1C12.4 13.7 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.7 6c4.5-4.2 6.9-10.3 6.9-17.7z"/><path fill="#FBBC05" d="M10.5 28.6A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.1.8-4.6l-7.9-6.1A24 24 0 0 0 0 24c0 3.9.9 7.5 2.6 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.7-6c-2.1 1.4-4.9 2.3-8.2 2.3-6.3 0-11.6-4.2-13.5-10l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>';
+    const provs=(window.SB_CONFIG&&window.SB_CONFIG.providers)||['google'];
+    authEl.innerHTML=`<p class="authtip">登入後，打勾、重量和歷史紀錄會自動同步到你所有裝置。</p>`
+      +provs.map(p=>p==='google'
+        ?`<button type="button" class="gbtn" data-p="google">${G}<span>使用 Google 帳戶登入</span></button>`
+        :`<button type="button" class="gbtn apple" data-p="apple"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.4 12.6c0-2.6 2.1-3.8 2.2-3.9-1.2-1.8-3.1-2-3.7-2-1.6-.2-3.1.9-3.9.9-.8 0-2-.9-3.4-.9-1.7 0-3.3 1-4.2 2.6-1.8 3.1-.5 7.8 1.3 10.3.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.4-.8s2 .8 3.4.8 2.3-1.3 3.1-2.5c1-1.4 1.4-2.8 1.4-2.9-.1 0-2.8-1.1-2.8-4.2zM13.9 5c.7-.9 1.2-2 1-3.2-1 0-2.3.7-3 1.6-.7.8-1.2 1.9-1.1 3.1 1.2.1 2.3-.6 3.1-1.5z"/></svg><span>使用 Apple 帳戶登入</span></button>`
+      ).join('');
     authEl.querySelectorAll('button[data-p]').forEach(b=>b.onclick=()=>signIn(b.dataset.p));
-    document.getElementById('mailform').onsubmit=async ev=>{
-      ev.preventDefault();
-      const inp=ev.target.querySelector('input'),who=authEl.querySelector('.who');
-      who.textContent='寄送中…';
-      const {error}=await sb.auth.signInWithOtp({email:inp.value.trim(),options:{emailRedirectTo:location.origin+location.pathname}});
-      who.textContent=error?'寄不出去：'+error.message:'登入連結已寄到 '+inp.value.trim()+'，用這支手機開信點連結就完成。';
-    };
   }else{
     const label={off:'',busy:'同步中',ok:'已同步',err:'同步失敗，稍後再試'}[syncState]||'';
-    authEl.innerHTML=`<span class="dot ${syncState}"></span><span class="who"><b>${user.email||'已登入'}</b>${label?'，'+label:''}</span><button type="button" class="lnk" id="signout">登出</button>`;
+    authEl.innerHTML=`<span class="dot ${syncState}"></span><span class="who"><b>${user.email||'已登入'}</b>${label?' · '+label:''}</span><button type="button" class="lnk" id="signout">登出</button>`;
     document.getElementById('signout').onclick=signOut;
   }
 }
@@ -703,7 +693,7 @@ function setSync(s){syncState=s;renderAuth()}
 async function signIn(provider){
   const redirectTo=location.origin+location.pathname;
   const {error}=await sb.auth.signInWithOAuth({provider,options:{redirectTo}});
-  if(error){authEl.querySelector('.who').textContent='登入失敗：'+error.message}
+  if(error){const t=authEl.querySelector('.authtip');if(t)t.textContent='登入失敗：'+error.message}
 }
 async function signOut(){await sb.auth.signOut();user=null;renderAuth()}
 
