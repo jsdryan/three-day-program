@@ -625,7 +625,7 @@ function renderHistory(){
     const del=el.querySelector('.hdel');let armed=false;
     del.onclick=()=>{
       if(!armed){armed=true;del.textContent='再按一次確認刪除';return}
-      history=history.filter(x=>x.id!==r.id);saveHistory();renderHistory();deleteSessionRemote(r.id);
+      history=history.filter(x=>x.id!==r.id);saveHistory();renderHistory();deleteSessionRemote(r.id);build();
     };
     list.appendChild(el);
   });
