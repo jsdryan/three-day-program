@@ -1,10 +1,7 @@
-// Supabase 連線設定。留空 = 只存在本機、不同步。
-// 到 Supabase 專案 → Settings → API 複製：
-//   Project URL  → url
-//   anon public  → key（這把是公開金鑰，放前端沒問題，資料由 RLS 保護）
+// Supabase 連線設定。這兩個值是設計給前端用的公開值，資料靠 RLS 保護。
 window.SB_CONFIG = {
-  url: "",
-  key: "",
-  // 之後在 Supabase 開了 Google / Apple 再加進來，例如 ["google","apple"]
-  providers: []
+  url: "https://wxmgriibfvteeqsfjyhe.supabase.co",
+  key: "sb_publishable_tpCUAAz35Qqk8JyUK4Ovnw_VkLfgm4P",
+  // 已在 Supabase 開啟的第三方登入。Apple 需加入 Apple Developer Program 後才能加上 "apple"
+  providers: ["google"]
 };
