@@ -47,6 +47,19 @@ header{padding:20px 0 12px}
 header h1{margin:0;font-size:30px;font-weight:900;letter-spacing:-.01em;line-height:1.15}
 header p{margin:6px 0 0;color:var(--muted);font-size:14px}
 
+.seg{
+  display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;
+  background:var(--line);border-radius:14px;margin-bottom:4px;
+}
+.seg button{
+  border:0;border-radius:11px;background:transparent;color:var(--muted);
+  padding:8px 6px;cursor:pointer;font:inherit;line-height:1.2;text-align:center;
+}
+.seg button b{display:block;font-size:15px;font-weight:800;color:inherit}
+.seg button span{display:block;font-size:11px;margin-top:2px}
+.seg button[aria-checked="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.seg button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
 .tabs{
   position:sticky;top:env(safe-area-inset-top,0px);z-index:5;
   display:grid;grid-template-columns:repeat(3,1fr);gap:6px;
@@ -128,15 +141,20 @@ header p{margin:6px 0 0;color:var(--muted);font-size:14px}
 <div class="wrap">
   <header>
     <h1>一週三練</h1>
-    <p>每天 7 個動作、21 組，約 55–60 分鐘。隔天練（一三五或二四六）。</p>
+    <p id="sub"></p>
   </header>
+
+  <div class="seg" role="radiogroup" aria-label="課表" id="seg">
+    <button type="button" role="radio" data-p="full"><b>全身</b><span>每天胸背腿都碰</span></button>
+    <button type="button" role="radio" data-p="ppl"><b>PPL</b><span>推、拉、腿各一天</span></button>
+  </div>
 
   <div class="tabs" role="tablist" id="tabs"></div>
   <div id="days"></div>
 
   <div class="foot">
     <p>組間休息：複合動作 90–120 秒，單關節與超級組 60 秒。點一組會自動倒數。</p>
-    <p>時間不夠時先砍超級組裡的單關節動作，複合動作照做。</p>
+    <p id="tip"></p>
     <button class="reset" id="reset">清除今天的打勾</button>
   </div>
 </div>
@@ -148,92 +166,150 @@ header p{margin:6px 0 0;color:var(--muted);font-size:14px}
 </div>
 
 <script>
-const DAYS=[
- {name:'推為主＋腿前',ex:[
-  {n:'哈克或史密斯深蹲',rm:'8–10',rest:120},
-  {n:'平胸推',rm:'8–10',rest:120},
-  {n:'滑輪下拉',rm:'10–12',rest:90,note:'可隔週換窄握下拉'},
-  {n:'肩推',rm:'8–12',rest:90},
-  {n:'腿前伸',rm:'12–15',rest:60},
-  {sup:[{n:'側平舉',rm:'12–15'},{n:'Cable 三頭下壓',rm:'12–15'}],rest:60},
-  {n:'下腹',rm:'12–15',rest:60},
- ]},
- {name:'拉為主＋腿後',ex:[
-  {n:'臀推機',rm:'8–12',rest:120},
-  {n:'窄握划船',rm:'8–10',rest:120},
-  {n:'上胸推',rm:'10–15',rest:90},
-  {n:'腿後勾',rm:'10–15',rest:60},
-  {n:'寬握划船',rm:'12–15',rest:60,note:'手肘夾角 45 度'},
-  {sup:[{n:'二頭彎舉',rm:'12–15'},{n:'反向飛鳥',rm:'12–15'}],rest:60},
-  {n:'下腹',rm:'10–15',rest:60},
- ]},
- {name:'胸背＋腿補強',ex:[
-  {n:'腿推機',rm:'10–15',rest:120},
-  {n:'大剪刀或 Dip',rm:'8–12',rest:90,note:'隔週交替'},
-  {n:'高位划船',rm:'10–12',rest:90},
-  {n:'分腿蹲',rm:'10–15',rest:90},
-  {sup:[{n:'夾胸',rm:'12–15'},{n:'直臂下壓',rm:'12–15'}],rest:60},
-  {sup:[{n:'髖內收',rm:'12–15'},{n:'髖外展',rm:'12–15'}],rest:60},
-  {n:'器械胸推',rm:'10–12',rest:90},
- ]},
-];
+const PROGRAMS={
+ full:{
+  sub:'全身式：每天 7 個動作、21 組，約 55–60 分鐘。隔天練（一三五或二四六）。',
+  tip:'時間不夠時先砍超級組裡的單關節動作，複合動作照做。',
+  key:'w3-checks-v1',
+  days:[
+   {name:'推為主＋腿前',ex:[
+    {n:'哈克或史密斯深蹲',rm:'8–10',rest:120},
+    {n:'平胸推',rm:'8–10',rest:120},
+    {n:'滑輪下拉',rm:'10–12',rest:90,note:'可隔週換窄握下拉'},
+    {n:'肩推',rm:'8–12',rest:90},
+    {n:'腿前伸',rm:'12–15',rest:60},
+    {sup:[{n:'側平舉',rm:'12–15'},{n:'Cable 三頭下壓',rm:'12–15'}],rest:60},
+    {n:'下腹',rm:'12–15',rest:60},
+   ]},
+   {name:'拉為主＋腿後',ex:[
+    {n:'臀推機',rm:'8–12',rest:120},
+    {n:'窄握划船',rm:'8–10',rest:120},
+    {n:'上胸推',rm:'10–15',rest:90},
+    {n:'腿後勾',rm:'10–15',rest:60},
+    {n:'寬握划船',rm:'12–15',rest:60,note:'手肘夾角 45 度'},
+    {sup:[{n:'二頭彎舉',rm:'12–15'},{n:'反向飛鳥',rm:'12–15'}],rest:60},
+    {n:'下腹',rm:'10–15',rest:60},
+   ]},
+   {name:'胸背＋腿補強',ex:[
+    {n:'腿推機',rm:'10–15',rest:120},
+    {n:'大剪刀或 Dip',rm:'8–12',rest:90,note:'隔週交替'},
+    {n:'高位划船',rm:'10–12',rest:90},
+    {n:'分腿蹲',rm:'10–15',rest:90},
+    {sup:[{n:'夾胸',rm:'12–15'},{n:'直臂下壓',rm:'12–15'}],rest:60},
+    {sup:[{n:'髖內收',rm:'12–15'},{n:'髖外展',rm:'12–15'}],rest:60},
+    {n:'器械胸推',rm:'10–12',rest:90},
+   ]},
+  ]},
+ ppl:{
+  sub:'PPL：推、拉、腿各一天，每個部位一週一次、單日量集中。隔天練（一三五或二四六）。',
+  tip:'腿日 24 組最緊，超級組休 60 秒要抓準。時間不夠先砍超級組裡的單關節動作。',
+  key:'w3-ppl-checks-v1',
+  days:[
+   {name:'推：胸、肩、三頭',ex:[
+    {n:'平胸推',rm:'8–10',rest:120,note:'隔週換器械胸推 10–12'},
+    {n:'上胸推',rm:'10–15',rest:90},
+    {n:'大剪刀或 Dip',rm:'8–12',rest:90,note:'隔週交替'},
+    {n:'肩推',rm:'8–12',rest:90},
+    {sup:[{n:'夾胸',rm:'12–15'},{n:'側平舉',rm:'12–15'}],rest:60},
+    {n:'Cable 三頭下壓',rm:'12–15',rest:60},
+   ]},
+   {name:'拉：背、二頭、肩後',ex:[
+    {n:'滑輪下拉',rm:'10–12',rest:120,note:'隔週換窄握下拉 8–12'},
+    {n:'窄握划船',rm:'8–10',rest:120},
+    {n:'高位划船',rm:'10–12',rest:90},
+    {n:'寬握划船',rm:'12–15',rest:60,note:'手肘夾角 45 度'},
+    {sup:[{n:'直臂下壓',rm:'12–15'},{n:'反向飛鳥',rm:'12–15'}],rest:60},
+    {n:'二頭彎舉',rm:'12–15',rest:60},
+   ]},
+   {name:'腿：前後、臀、核心',ex:[
+    {n:'哈克或史密斯深蹲',rm:'10–12',rest:120,note:'隔週換腿推機 10–15'},
+    {n:'臀推機',rm:'8–12',rest:120},
+    {n:'分腿蹲',rm:'10–15',rest:90},
+    {sup:[{n:'腿前伸',rm:'12–15'},{n:'腿後勾',rm:'10–15'}],rest:60},
+    {sup:[{n:'髖內收',rm:'12–15'},{n:'髖外展',rm:'12–15'}],rest:60},
+    {n:'下腹',rm:'12–15',rest:60},
+   ]},
+  ]},
+};
 
-const KEY='w3-checks-v1';
-let state={};
-try{state=JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch(e){state={}}
+let prog='full';
+try{prog=localStorage.getItem('w3-prog')||'full'}catch(e){}
+if(!PROGRAMS[prog])prog='full';
+
+let DAYS=[],KEY='',state={},cur=0;
+function load(){
+  DAYS=PROGRAMS[prog].days;KEY=PROGRAMS[prog].key;
+  try{state=JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch(e){state={}}
+  try{cur=parseInt(localStorage.getItem('w3-day-'+prog)||'0',10)||0}catch(e){cur=0}
+}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
 function isOn(id){return !!state[id]}
-
-const tabs=document.getElementById('tabs'),daysEl=document.getElementById('days');
-let cur=0;
-try{cur=parseInt(localStorage.getItem('w3-day')||'0',10)||0}catch(e){}
-
 function fmt(s){return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
 
-DAYS.forEach((d,di)=>{
-  const tb=document.createElement('button');
-  tb.className='tab';tb.setAttribute('role','tab');tb.id='tab'+di;
-  tb.innerHTML=`<span class="d">第 ${di+1} 天</span><span class="n">${d.name}</span><span class="p"><i id="p${di}"></i></span>`;
-  tb.onclick=()=>show(di);
-  tabs.appendChild(tb);
+const seg=document.getElementById('seg'),tabs=document.getElementById('tabs'),daysEl=document.getElementById('days');
 
-  const sec=document.createElement('section');sec.className='day';sec.id='day'+di;
-  sec.setAttribute('role','tabpanel');
-  const nm=d.ex.reduce((a,e)=>a+(e.sup?e.sup.length:1),0);
-  sec.innerHTML=`<div class="meta"><span>${nm} 個動作 · ${nm*3} 組</span><span id="c${di}"></span></div>`;
-  d.ex.forEach((e,ei)=>{
-    const card=document.createElement('div');
-    const items=e.sup||[e];
-    card.className='ex'+(e.sup?' super':'');
-    if(e.sup){const t=document.createElement('div');t.className='tag';t.textContent='超級組：兩個動作交替做，中間不休息';card.appendChild(t)}
-    items.forEach((it,ii)=>{
-      const row=document.createElement('div');row.className='row';
-      row.innerHTML=`<div class="top"><span class="name">${it.n}</span><span class="rm"><b>${it.rm}</b> RM · 3 組</span></div>`
-        +(it.note||e.note?`<div class="note">${it.note||e.note}</div>`:'')
-        +`<div class="sets"></div>`;
-      const sets=row.querySelector('.sets');
-      for(let s=1;s<=3;s++){
-        const id=`${di}-${ei}-${ii}-${s}`;
-        const b=document.createElement('button');b.className='set';b.textContent='第 '+s+' 組';
-        b.setAttribute('aria-pressed',isOn(id));
-        b.onclick=()=>{
-          const on=!isOn(id);state[id]=on;if(!on)delete state[id];save();
-          b.setAttribute('aria-pressed',on);progress(di);
-          if(on)startTimer(e.rest);
-        };
-        sets.appendChild(b);
-      }
-      card.appendChild(row);
-    });
-    const r=document.createElement('div');r.className='rest';
-    r.innerHTML=`<span>休息 ${fmt(e.rest)}</span><button type="button">手動計時</button>`;
-    r.querySelector('button').onclick=()=>startTimer(e.rest);
-    card.appendChild(r);
-    sec.appendChild(card);
-  });
-  daysEl.appendChild(sec);
-  progress(di);
+seg.querySelectorAll('button').forEach(b=>{
+  b.onclick=()=>{
+    if(b.dataset.p===prog)return;
+    prog=b.dataset.p;
+    try{localStorage.setItem('w3-prog',prog)}catch(e){}
+    stopTimer();build();
+  };
 });
+
+function build(){
+  load();
+  seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-checked',b.dataset.p===prog));
+  document.getElementById('sub').textContent=PROGRAMS[prog].sub;
+  document.getElementById('tip').textContent=PROGRAMS[prog].tip;
+  tabs.innerHTML='';daysEl.innerHTML='';
+
+  DAYS.forEach((d,di)=>{
+    const tb=document.createElement('button');
+    tb.className='tab';tb.setAttribute('role','tab');tb.id='tab'+di;
+    tb.innerHTML=`<span class="d">第 ${di+1} 天</span><span class="n">${d.name}</span><span class="p"><i id="p${di}"></i></span>`;
+    tb.onclick=()=>show(di);
+    tabs.appendChild(tb);
+
+    const sec=document.createElement('section');sec.className='day';sec.id='day'+di;
+    sec.setAttribute('role','tabpanel');
+    const nm=d.ex.reduce((a,e)=>a+(e.sup?e.sup.length:1),0);
+    sec.innerHTML=`<div class="meta"><span>${nm} 個動作 · ${nm*3} 組</span><span id="c${di}"></span></div>`;
+    d.ex.forEach((e,ei)=>{
+      const card=document.createElement('div');
+      const items=e.sup||[e];
+      card.className='ex'+(e.sup?' super':'');
+      if(e.sup){const t=document.createElement('div');t.className='tag';t.textContent='超級組：兩個動作交替做，中間不休息';card.appendChild(t)}
+      items.forEach((it,ii)=>{
+        const row=document.createElement('div');row.className='row';
+        row.innerHTML=`<div class="top"><span class="name">${it.n}</span><span class="rm"><b>${it.rm}</b> RM · 3 組</span></div>`
+          +(it.note||e.note?`<div class="note">${it.note||e.note}</div>`:'')
+          +`<div class="sets"></div>`;
+        const sets=row.querySelector('.sets');
+        for(let s=1;s<=3;s++){
+          const id=`${di}-${ei}-${ii}-${s}`;
+          const b=document.createElement('button');b.className='set';b.textContent='第 '+s+' 組';
+          b.setAttribute('aria-pressed',isOn(id));
+          b.onclick=()=>{
+            const on=!isOn(id);state[id]=on;if(!on)delete state[id];save();
+            b.setAttribute('aria-pressed',on);progress(di);
+            if(on)startTimer(e.rest);
+          };
+          sets.appendChild(b);
+        }
+        card.appendChild(row);
+      });
+      const r=document.createElement('div');r.className='rest';
+      r.innerHTML=`<span>休息 ${fmt(e.rest)}</span><button type="button">手動計時</button>`;
+      r.querySelector('button').onclick=()=>startTimer(e.rest);
+      card.appendChild(r);
+      sec.appendChild(card);
+    });
+    daysEl.appendChild(sec);
+    progress(di);
+  });
+  show(Math.min(cur,DAYS.length-1));
+}
 
 function progress(di){
   const total=DAYS[di].ex.reduce((a,e)=>a+((e.sup?e.sup.length:1)*3),0);
@@ -245,9 +321,8 @@ function show(di){
   cur=di;
   document.querySelectorAll('.tab').forEach((t,i)=>t.setAttribute('aria-selected',i===di));
   document.querySelectorAll('.day').forEach((s,i)=>s.classList.toggle('on',i===di));
-  try{localStorage.setItem('w3-day',di)}catch(e){}
+  try{localStorage.setItem('w3-day-'+prog,di)}catch(e){}
 }
-show(Math.min(cur,2));
 
 document.getElementById('reset').onclick=()=>{
   for(const k in state)if(k.startsWith(cur+'-'))delete state[k];
@@ -267,6 +342,8 @@ function startTimer(sec){
 function stopTimer(){clearInterval(iv);iv=null;timer.classList.remove('on')}
 document.getElementById('t30').onclick=()=>{left+=30;total=Math.max(total,left);render()};
 document.getElementById('tskip').onclick=stopTimer;
+
+build();
 </script>
 </body>
 </html>
