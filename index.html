@@ -769,10 +769,17 @@ async function pullAll(){
   await sb.from('prefs').upsert({user_id:user.id,data:allPrefs(),updated_at:new Date().toISOString()});
   setSync('ok');
 }
+let authErr='';
+(function(){
+  const q=new URLSearchParams(location.search),h=new URLSearchParams(location.hash.replace(/^#/,''));
+  const d=q.get('error_description')||h.get('error_description')||q.get('error')||h.get('error');
+  if(d)authErr=/expired/i.test(d)?'登入逾時了，請再按一次登入，並在幾分鐘內完成。':'登入失敗：'+d;
+})();
 async function initAuth(){
   if(!sb){renderAuth();return}
   const {data:{session}}=await sb.auth.getSession();
   user=session?session.user:null;renderAuth();
+  if(!user&&authErr){const t=authEl.querySelector('.authtip');if(t){t.textContent=authErr;t.style.color='var(--danger)'}}
   if(user)pullAll();
   sb.auth.onAuthStateChange((ev,s)=>{
     const u=s?s.user:null;
