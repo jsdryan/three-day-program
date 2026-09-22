@@ -56,6 +56,9 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
 .auth .who b{color:var(--ink)}
 .auth button{height:36px;padding:0 12px;border-radius:8px;border:1.5px solid var(--ink);background:var(--card);font-weight:700;font-size:13px;white-space:nowrap}
 .auth button.lnk{border:0;background:none;padding:0;color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+.auth .mail{display:flex;gap:6px;width:100%}
+.auth .mail input{flex:1;min-width:0;height:40px;border:1.5px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);font:inherit;font-size:16px;padding:0 10px}
+.auth .mail button{height:40px}
 .auth .dot{width:8px;height:8px;border-radius:50%;background:var(--line);flex:none}
 .auth .dot.ok{background:#16A34A}.auth .dot.busy{background:var(--yellow)}.auth .dot.err{background:var(--danger)}
 
@@ -677,9 +680,18 @@ function renderAuth(){
   if(!sb){authEl.hidden=true;return}
   authEl.hidden=false;
   if(!user){
+    const provs=(window.SB_CONFIG&&window.SB_CONFIG.providers)||[];
     authEl.innerHTML=`<span class="dot"></span><span class="who">未登入，紀錄只存在這支手機</span>`
-      +`<button type="button" data-p="google">Google 登入</button><button type="button" data-p="apple">Apple 登入</button>`;
-    authEl.querySelectorAll('button').forEach(b=>b.onclick=()=>signIn(b.dataset.p));
+      +`<form class="mail" id="mailform"><input type="email" inputmode="email" autocomplete="email" placeholder="你的 Email" required><button type="submit">寄登入連結</button></form>`
+      +provs.map(p=>`<button type="button" data-p="${p}">${{google:'Google 登入',apple:'Apple 登入'}[p]||p}</button>`).join('');
+    authEl.querySelectorAll('button[data-p]').forEach(b=>b.onclick=()=>signIn(b.dataset.p));
+    document.getElementById('mailform').onsubmit=async ev=>{
+      ev.preventDefault();
+      const inp=ev.target.querySelector('input'),who=authEl.querySelector('.who');
+      who.textContent='寄送中…';
+      const {error}=await sb.auth.signInWithOtp({email:inp.value.trim(),options:{emailRedirectTo:location.origin+location.pathname}});
+      who.textContent=error?'寄不出去：'+error.message:'登入連結已寄到 '+inp.value.trim()+'，用這支手機開信點連結就完成。';
+    };
   }else{
     const label={off:'',busy:'同步中',ok:'已同步',err:'同步失敗，稍後再試'}[syncState]||'';
     authEl.innerHTML=`<span class="dot ${syncState}"></span><span class="who"><b>${user.email||'已登入'}</b>${label?'，'+label:''}</span><button type="button" class="lnk" id="signout">登出</button>`;

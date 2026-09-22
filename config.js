@@ -4,5 +4,7 @@
 //   anon public  → key（這把是公開金鑰，放前端沒問題，資料由 RLS 保護）
 window.SB_CONFIG = {
   url: "",
-  key: ""
+  key: "",
+  // 之後在 Supabase 開了 Google / Apple 再加進來，例如 ["google","apple"]
+  providers: []
 };
