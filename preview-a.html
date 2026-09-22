@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0E0F14">
-<title>一週三練課表</title>
+<title>一週三練課表（預覽 A）</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -156,6 +156,20 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .timer button.stop{background:#fff;color:var(--accent)}
 .timer .bar{position:absolute;left:0;bottom:0;height:3px;background:rgba(255,255,255,.85);width:100%;transform-origin:left;transition:transform 1s linear}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style id="variant">
+:root{--bg:#F3F4F6;--card:#FFFFFF;--card2:#F1F2F5;--ink:#111827;--ink2:#374151;--muted:#6B7280;--line:#E5E7EB;
+ --accent:#2563EB;--accent-ink:#fff;--accent-soft:rgba(37,99,235,.10);--done:#16A34A;--danger:#DC2626;--warn:#D97706;--r:18px;--r-s:12px}
+html{color-scheme:light}
+.ex,.super,.hrec,.auth{box-shadow:0 1px 2px rgba(17,24,39,.05),0 6px 16px rgba(17,24,39,.05)}
+.tab{background:#fff}
+.wrow input{background:#fff}
+.set{background:#fff}
+.set[aria-pressed="true"]{color:#fff}
+.hbtn,.hbar button,.hbar label,.swapbtn,.alts .close{background:#EEF0F4}
+.finish{box-shadow:0 8px 20px rgba(37,99,235,.28)}
+.timer{box-shadow:0 12px 32px rgba(37,99,235,.35)}
+.alts{background:#F9FAFB}
 </style>
 </head>
 <body>
