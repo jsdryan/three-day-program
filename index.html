@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0E0F14">
+<meta name="theme-color" content="#F6F1E8">
 <title>一週三練課表</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -157,6 +157,16 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .timer button.stop{background:#fff;color:var(--accent)}
 .timer .bar{position:absolute;left:0;bottom:0;height:3px;background:rgba(255,255,255,.85);width:100%;transform-origin:left;transition:transform 1s linear}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+<style id="variant">
+:root{--bg:#F6F1E8;--card:#FFFCF7;--card2:#F0E8DA;--ink:#221D17;--ink2:#4A423A;--muted:#8A8075;--line:#E4DACB;
+ --accent:#E4572E;--accent-ink:#fff;--accent-soft:rgba(228,87,46,.12);--done:#2E8B57;--danger:#C0392B;--warn:#B8741A;--r:12px;--r-s:10px}
+html{color-scheme:light}
+.brand h1{font-weight:900;letter-spacing:-.02em}
+.ex,.super,.hrec,.auth{border:1px solid var(--line)}.super{border-color:rgba(184,116,26,.45)}
+.tab{background:var(--card)}.wrow input{background:#fff}.set{background:#fff;border-radius:10px}.set[aria-pressed="true"]{color:#fff}
+.prog button{border-radius:10px}.hbtn,.hbar button,.hbar label,.swapbtn,.alts .close{background:var(--card2);border-radius:10px}
+.finish{border-radius:12px;box-shadow:none}.timer{border-radius:14px;box-shadow:0 12px 32px rgba(34,29,23,.25)}.alts{background:#fff}
 </style>
 </head>
 <body>
