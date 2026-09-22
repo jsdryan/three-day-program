@@ -3,186 +3,187 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#EDEEF0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141619" media="(prefers-color-scheme: dark)">
 <title>一週三練課表</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
 :root{
-  box-sizing:border-box;
-  padding-top:env(safe-area-inset-top,0px);
-  padding-bottom:env(safe-area-inset-bottom,0px);
-  --bg:#EDF0F3;
-  --card:#FFFFFF;
-  --ink:#14202B;
-  --muted:#5F6E7C;
-  --line:#D6DDE3;
-  --accent:#1F5AF0;
-  --accent-ink:#FFFFFF;
-  --done:#1F8A5B;
-  --super:#FFF1CC;
-  --super-ink:#7A5200;
-  --tap:#F1F4F7;
+  --bg:#EDEEF0; --card:#FFFFFF; --ink:#12161B; --ink2:#3A424B; --muted:#6B7480; --line:#D3D7DC; --line2:#E6E9EC;
+  --yellow:#FFCB05; --yellow-ink:#12161B; --done:#12161B; --done-ink:#FFFFFF; --danger:#C2410C;
+  --tap:#F4F5F7;
 }
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
-    --bg:#10161C; --card:#1A222B; --ink:#EEF2F5; --muted:#9AA7B3; --line:#2C3741;
-    --accent:#5B8BFF; --accent-ink:#0B1220; --done:#3FBF84; --super:#3A2E10; --super-ink:#F2C766; --tap:#232D37;
+    --bg:#141619; --card:#1C2025; --ink:#F2F4F6; --ink2:#C9CFD6; --muted:#8B94A0; --line:#30363D; --line2:#262B31;
+    --yellow:#FFCB05; --yellow-ink:#12161B; --done:#F2F4F6; --done-ink:#12161B; --danger:#F97316; --tap:#22272D;
   }
 }
 :root[data-theme="dark"]{
-  --bg:#10161C; --card:#1A222B; --ink:#EEF2F5; --muted:#9AA7B3; --line:#2C3741;
-  --accent:#5B8BFF; --accent-ink:#0B1220; --done:#3FBF84; --super:#3A2E10; --super-ink:#F2C766; --tap:#232D37;
+  --bg:#141619; --card:#1C2025; --ink:#F2F4F6; --ink2:#C9CFD6; --muted:#8B94A0; --line:#30363D; --line2:#262B31;
+  --yellow:#FFCB05; --yellow-ink:#12161B; --done:#F2F4F6; --done-ink:#12161B; --danger:#F97316; --tap:#22272D;
 }
-html{scroll-padding-top:env(safe-area-inset-top,0px);}
 *{box-sizing:border-box}
+html{scroll-padding-top:120px}
 body{
   margin:0;background:var(--bg);color:var(--ink);
   font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
   font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;
-  font-variant-numeric:tabular-nums;
+  padding-top:env(safe-area-inset-top,0px);
 }
-.wrap{max-width:520px;margin:0 auto;padding:0 16px 96px}
+.num{font-family:"Barlow Condensed","Noto Sans TC",sans-serif;font-weight:700;letter-spacing:.01em;font-variant-numeric:tabular-nums}
+button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+.wrap{max-width:520px;margin:0 auto;padding:0 16px 120px}
 
-header{padding:20px 0 12px}
-header h1{margin:0;font-size:30px;font-weight:900;letter-spacing:-.01em;line-height:1.15}
-header p{margin:6px 0 0;color:var(--muted);font-size:14px}
+/* header */
+.top{padding:18px 0 0}
+.brand{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.brand h1{margin:0;font-size:34px;font-weight:900;line-height:1;letter-spacing:-.02em}
+.hbtn{height:36px;padding:0 12px;border-radius:8px;border:1.5px solid var(--ink);background:transparent;font-weight:700;white-space:nowrap}
+.prog{display:flex;gap:22px;margin-top:14px;border-bottom:1.5px solid var(--line)}
+.prog button{border:0;background:none;padding:6px 0 10px;color:var(--muted);font-weight:700;font-size:16px;position:relative}
+.prog button[aria-checked="true"]{color:var(--ink)}
+.prog button[aria-checked="true"]::after{content:"";position:absolute;left:0;right:0;bottom:-1.5px;height:3px;background:var(--yellow)}
+.sub{margin:10px 0 0;font-size:14px;color:var(--muted)}
 
-.seg{
-  display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;
-  background:var(--line);border-radius:14px;margin-bottom:4px;
-}
-.seg button{
-  border:0;border-radius:11px;background:transparent;color:var(--muted);
-  padding:8px 6px;cursor:pointer;font:inherit;line-height:1.2;text-align:center;
-}
-.seg button b{display:block;font-size:15px;font-weight:800;color:inherit}
-.seg button span{display:block;font-size:11px;margin-top:2px}
-.seg button[aria-checked="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12)}
-.seg button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-
+/* day tabs */
 .tabs{
   position:sticky;top:env(safe-area-inset-top,0px);z-index:5;
-  display:grid;grid-template-columns:repeat(3,1fr);gap:6px;
-  padding:8px 0 10px;background:var(--bg);
+  display:grid;grid-template-columns:repeat(3,1fr);
+  margin:14px -16px 0;padding:0 16px;background:var(--bg);
+  border-bottom:1.5px solid var(--line);
 }
-.tab{
-  border:1px solid var(--line);background:var(--card);color:var(--ink);
-  border-radius:12px;padding:10px 6px;text-align:left;cursor:pointer;
-  font:inherit;line-height:1.2;
-}
-.tab .d{display:block;font-size:12px;color:var(--muted)}
-.tab .n{display:block;font-size:15px;font-weight:700;margin-top:2px}
-.tab .p{display:block;height:4px;border-radius:2px;background:var(--line);margin-top:8px;overflow:hidden}
-.tab .p i{display:block;height:100%;width:0;background:var(--done);transition:width .2s}
-.tab[aria-selected="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
-.tab:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tab{border:0;background:none;padding:10px 4px 10px;text-align:left;position:relative;color:var(--muted);display:flex;gap:8px;align-items:flex-start;min-width:0}
+.tab .n{font-size:30px;line-height:1}
+.tab .t{display:block;font-size:13px;line-height:1.25;padding-top:3px;min-width:0}
+.tab .t b{display:block;color:inherit;font-weight:700}
+.tab .t small{display:block;font-size:12px;color:var(--muted)}
+.tab[aria-selected="true"]{color:var(--ink)}
+.tab[aria-selected="true"]::after{content:"";position:absolute;left:0;right:8px;bottom:-1.5px;height:3px;background:var(--yellow)}
 
-.day{display:none}
-.day.on{display:block}
-.meta{display:flex;justify-content:space-between;align-items:baseline;margin:10px 2px 8px;font-size:13px;color:var(--muted)}
-.meta b{color:var(--ink);font-weight:700}
+/* exercise list */
+.day{display:none}.day.on{display:block}
+.meta{display:flex;justify-content:space-between;align-items:baseline;padding:14px 2px 6px;font-size:14px;color:var(--muted)}
+.meta .num{font-size:22px;color:var(--ink)}
+.ex{padding:14px 0 16px;border-bottom:1.5px solid var(--line2)}
+.ex:last-child{border-bottom:0}
+.exh{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.name{font-size:18px;font-weight:700;line-height:1.3}
+.mus{display:block;font-size:13px;color:var(--muted);margin-top:1px}
+.rm{text-align:right;white-space:nowrap;line-height:1}
+.rm .num{font-size:26px}
+.rm small{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+.note{font-size:13px;color:var(--ink2);margin-top:6px}
+.swapped{font-size:13px;color:var(--ink2);margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.swapped button{border:0;background:none;padding:0;color:var(--ink);font-weight:700;text-decoration:underline;text-underline-offset:3px}
 
-.ex{
-  background:var(--card);border:1px solid var(--line);border-radius:14px;
-  padding:12px 14px;margin-bottom:10px;
-}
-.ex.super{border-color:transparent;background:var(--super);padding:10px 12px}
-.ex.super .row{background:var(--card);border-radius:10px;padding:10px 12px}
-.ex.super .row + .row{margin-top:8px}
-.ex.super .tag{font-size:12px;font-weight:700;color:var(--super-ink);margin:0 2px 8px}
-.row{display:block}
-.top{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
-.name{font-weight:700;font-size:17px}
-.rm{color:var(--muted);font-size:14px;white-space:nowrap}
-.rm b{color:var(--ink)}
-.note{font-size:13px;color:var(--muted);margin-top:2px}
-.sets{display:flex;gap:8px;margin-top:10px}
-.set{
-  flex:1;height:44px;border-radius:10px;border:1px solid var(--line);
-  background:var(--tap);color:var(--muted);font:inherit;font-size:15px;font-weight:700;cursor:pointer;
-  transition:background .12s,color .12s;
-}
-.set[aria-pressed="true"]{background:var(--done);border-color:var(--done);color:#fff}
-.set:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrow{display:flex;align-items:center;gap:10px;margin-top:10px;font-size:13px;color:var(--muted)}
+.wrow label{display:flex;align-items:center;gap:6px;color:var(--ink);white-space:nowrap}
+.wrow input{width:78px;height:40px;border:1.5px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink);
+  font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:22px;padding:0 8px;text-align:right;-moz-appearance:textfield}
+.wrow input::-webkit-outer-spin-button,.wrow input::-webkit-inner-spin-button{-webkit-appearance:none}
+.wrow .last{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.swapbtn{height:32px;padding:0 10px;border-radius:8px;border:1.5px solid var(--line);background:var(--card);font-size:13px;font-weight:700;white-space:nowrap}
+.swapbtn[aria-expanded="true"]{border-color:var(--ink)}
 
-.rest{
-  font-size:12px;color:var(--muted);margin-top:8px;display:flex;justify-content:space-between
-}
-.rest button{
-  border:0;background:none;color:var(--accent);font:inherit;font-size:12px;font-weight:700;padding:0;cursor:pointer
-}
+.sets{display:grid;grid-template-columns:repeat(3,1fr);margin-top:10px;border:1.5px solid var(--ink);border-radius:10px;overflow:hidden;background:var(--card)}
+.set{height:50px;border:0;background:transparent;color:var(--ink);display:flex;align-items:baseline;justify-content:center;gap:2px;transition:background .1s}
+.set + .set{border-left:1.5px solid var(--ink)}
+.set .num{font-size:24px}
+.set small{font-size:12px;color:var(--muted)}
+.set[aria-pressed="true"]{background:var(--done);color:var(--done-ink)}
+.set[aria-pressed="true"] small{color:inherit;opacity:.7}
+.rest{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:13px;color:var(--muted)}
+.rest button{border:0;background:none;padding:0;color:var(--ink);font-weight:700;text-decoration:underline;text-underline-offset:3px}
 
-.hd{display:flex;align-items:center;justify-content:space-between;gap:10px}
-.hbtn{height:36px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--accent);font:inherit;font-weight:700;cursor:pointer;white-space:nowrap}
-.wrow{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;font-size:13px;color:var(--muted)}
-.wrow label{display:flex;align-items:center;gap:6px;color:var(--ink);font-weight:700;white-space:nowrap}
-.wrow input{width:76px;height:36px;border:1px solid var(--line);border-radius:8px;background:var(--tap);color:var(--ink);font:inherit;font-size:16px;padding:0 8px;text-align:right}
-.wrow input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
-.wrow .last{text-align:right}
-.finish{margin-top:14px;width:100%;height:48px;border-radius:12px;border:0;background:var(--accent);color:var(--accent-ink);font:inherit;font-size:16px;font-weight:800;cursor:pointer}
-.msg{font-size:13px;color:var(--done);margin:8px 2px 0;min-height:1.2em}
-.hist{padding-top:8px}
-.hbar{display:flex;gap:8px}
-.hbar button,.hbar label{flex:1;height:42px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center}
-.hrec{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:10px;overflow:hidden}
-.hhead{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;border:0;background:none;color:var(--ink);font:inherit;font-size:14px;text-align:left;cursor:pointer;line-height:1.35}
-.hhead b{font-size:16px}
-.hc{color:var(--muted);white-space:nowrap}
-.hbody{padding:0 14px 12px;border-top:1px solid var(--line)}
-.hrow{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}
-.hrow span:last-child{color:var(--muted);white-space:nowrap}
-.hdel{margin-top:10px;height:36px;padding:0 12px;border-radius:8px;border:1px solid var(--line);background:none;color:#C0392B;font:inherit;font-weight:700;cursor:pointer}
-.empty{color:var(--muted);font-size:13px;margin:12px 2px}
+/* superset group */
+.super{position:relative;padding-left:14px;margin:4px 0}
+.super::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:4px;border-radius:2px;background:var(--yellow)}
+.super .tag{font-size:13px;color:var(--ink2);padding:12px 0 0;font-weight:700}
+.super .ex{border-bottom-color:var(--line2)}
+.super .ex:last-child{border-bottom:0}
 
-.foot{margin:18px 2px 0;font-size:13px;color:var(--muted)}
+/* alternatives */
+.alts{margin-top:12px;padding:12px;border:1.5px solid var(--ink);border-radius:12px;background:var(--card)}
+.alts h4{margin:0 0 2px;font-size:14px}
+.alts p{margin:0 0 8px;font-size:13px;color:var(--muted)}
+.alt{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;padding:10px 0;border:0;border-top:1.5px solid var(--line2);background:none}
+.altw{border-top:1.5px solid var(--line2);position:relative}
+.altw:first-of-type{border-top:0}
+.altw .alt{border-top:0;padding-right:64px}
+.altw .src{position:absolute;right:0;top:12px;font-size:12px;color:var(--muted);text-decoration:underline;text-underline-offset:3px}
+.alt b{display:block;font-size:16px}
+.alt span{display:block;font-size:13px;color:var(--muted)}
+.alt .num{font-size:22px;white-space:nowrap}
+.alt .num small{font-size:11px;color:var(--muted);font-family:"Noto Sans TC",sans-serif;font-weight:400}
+.alt[aria-pressed="true"] b::before{content:"✓ ";color:var(--ink)}
+.alts .close{margin-top:6px;width:100%;height:36px;border-radius:8px;border:1.5px solid var(--line);background:none;font-weight:700;font-size:13px}
+
+/* footer actions */
+.foot{margin-top:20px;font-size:13px;color:var(--muted)}
 .foot p{margin:6px 0}
-.reset{
-  margin-top:12px;width:100%;height:44px;border-radius:12px;border:1px solid var(--line);
-  background:var(--card);color:var(--ink);font:inherit;font-weight:700;cursor:pointer
-}
+.finish{margin-top:10px;width:100%;height:54px;border-radius:12px;border:0;background:var(--yellow);color:var(--yellow-ink);font-size:17px;font-weight:900}
+.msg{font-size:13px;color:var(--ink);margin:8px 2px 0;min-height:1.2em}
+.reset{margin-top:8px;width:100%;height:44px;border-radius:12px;border:1.5px solid var(--line);background:none;color:var(--ink2);font-weight:700}
 
+/* history */
+.hist{padding-top:14px}
+.hbar{display:flex;gap:8px}
+.hbar button,.hbar label{flex:1;height:44px;border-radius:10px;border:1.5px solid var(--ink);background:none;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.hrec{border-bottom:1.5px solid var(--line2)}
+.hhead{width:100%;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 0;border:0;background:none;text-align:left;line-height:1.3}
+.hhead .d{font-size:26px;line-height:1}
+.hhead .w{font-size:14px;color:var(--ink2);margin-top:2px}
+.hhead .hc{font-size:22px;white-space:nowrap}
+.hhead .hc small{font-size:12px;color:var(--muted);font-family:"Noto Sans TC",sans-serif;font-weight:400}
+.hbody{padding:0 0 14px}
+.hrow{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1.5px solid var(--line2);font-size:15px}
+.hrow span:last-child{color:var(--muted);white-space:nowrap}
+.hdel{margin-top:10px;height:36px;padding:0 12px;border-radius:8px;border:1.5px solid var(--line);background:none;color:var(--danger);font-weight:700;font-size:13px}
+.empty{color:var(--muted);font-size:13px;margin:14px 2px}
+
+/* rest timer */
 .timer{
   position:fixed;left:0;right:0;bottom:0;z-index:10;
-  padding:10px 16px calc(12px + env(safe-area-inset-bottom,0px));
-  background:var(--accent);color:var(--accent-ink);
+  padding:12px 16px calc(14px + env(safe-area-inset-bottom,0px));
+  background:#12161B;color:#FFCB05;
   display:none;align-items:center;justify-content:space-between;gap:12px;
-  transform:translateY(100%);transition:transform .2s;
 }
-.timer.on{display:flex;transform:none}
-.timer .t{font-size:30px;font-weight:900;letter-spacing:-.02em;line-height:1}
-.timer .l{font-size:13px;opacity:.85}
-.timer button{
-  height:40px;padding:0 14px;border-radius:10px;border:0;font:inherit;font-weight:700;cursor:pointer;
-  background:rgba(255,255,255,.22);color:var(--accent-ink)
-}
-.timer .bar{position:absolute;left:0;top:0;height:3px;background:rgba(255,255,255,.7);width:100%;transform-origin:left;transition:transform 1s linear}
+.timer.on{display:flex}
+.timer .t{font-size:52px;line-height:.9}
+.timer .l{font-size:13px;color:#C9CFD6;margin-top:4px}
+.timer button{height:44px;padding:0 16px;border-radius:10px;border:1.5px solid #FFCB05;background:transparent;color:#FFCB05;font-weight:700}
+.timer button.stop{background:#FFCB05;color:#12161B}
+.timer .bar{position:absolute;left:0;top:0;height:4px;background:#FFCB05;width:100%;transform-origin:left;transition:transform 1s linear}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <div class="hd"><h1>一週三練</h1><button type="button" class="hbtn" id="hbtn">歷史紀錄</button></div>
-    <p id="sub"></p>
+  <header class="top">
+    <div class="brand"><h1>一週三練</h1><button type="button" class="hbtn" id="hbtn">歷史紀錄</button></div>
+    <div class="prog" role="radiogroup" aria-label="課表" id="seg">
+      <button type="button" role="radio" data-p="full">全身</button>
+      <button type="button" role="radio" data-p="ppl">PPL（推拉腿）</button>
+    </div>
+    <p class="sub" id="sub"></p>
   </header>
 
   <div id="train">
-  <div class="seg" role="radiogroup" aria-label="課表" id="seg">
-    <button type="button" role="radio" data-p="full"><b>全身</b><span>每天胸背腿都碰</span></button>
-    <button type="button" role="radio" data-p="ppl"><b>PPL（推拉腿）</b><span>推、拉、腿各一天</span></button>
-  </div>
+    <nav class="tabs" role="tablist" id="tabs"></nav>
+    <div id="days"></div>
 
-  <div class="tabs" role="tablist" id="tabs"></div>
-  <div id="days"></div>
-
-  <div class="foot">
-    <p>RM（最大反覆次數）：8–10 RM 指這個重量最多只做得到 8–10 下。</p>
-    <p>組間休息：複合動作 90–120 秒，單關節與超級組 60 秒。點一組會自動倒數。</p>
-    <p id="tip"></p>
-    <button class="finish" id="finish">完成訓練，存入紀錄</button>
-    <div class="msg" id="fmsg"></div>
-    <button class="reset" id="reset">清除今天的打勾（不存檔）</button>
-  </div>
+    <div class="foot">
+      <p id="tip"></p>
+      <p>RM（最大反覆次數）：8–10 RM 指這個重量最多只做得到 8–10 下。組間休息：複合動作 90–120 秒，單關節與超級組 60 秒，點一組會自動倒數。</p>
+      <p>器材被佔走時，按「換動作」挑一個練同樣肌群的替代動作，紀錄會存替代後的名稱。</p>
+      <button class="finish" id="finish">完成訓練，存入紀錄</button>
+      <div class="msg" id="fmsg"></div>
+      <button class="reset" id="reset">清除今天的打勾（不存檔）</button>
+    </div>
   </div>
 
   <section id="hist" class="hist" hidden>
@@ -192,14 +193,14 @@ header p{margin:6px 0 0;color:var(--muted);font-size:14px}
     </div>
     <div class="msg" id="hmsg"></div>
     <div id="hlist"></div>
-    <p class="empty">紀錄存在這支手機的瀏覽器裡。換手機或清除瀏覽資料前，先按「匯出備份」把檔案存起來，再到新手機「匯入備份」。</p>
+    <p class="empty">紀錄存在這支手機的瀏覽器裡，沒有上傳到任何地方。換手機或清除瀏覽資料前，先按「匯出備份」把檔案存起來，再到新手機「匯入備份」。</p>
   </section>
 </div>
 
 <div class="timer" id="timer" aria-live="polite">
   <div class="bar" id="bar"></div>
-  <div><div class="t" id="tt">1:30</div><div class="l" id="tl">組間休息</div></div>
-  <div><button id="t30">+30 秒</button> <button id="tskip">結束</button></div>
+  <div><div class="t num" id="tt">1:30</div><div class="l">組間休息</div></div>
+  <div><button type="button" id="t30">+30 秒</button> <button type="button" class="stop" id="tskip">結束</button></div>
 </div>
 
 <script>
@@ -270,6 +271,132 @@ const PROGRAMS={
   ]},
 };
 
+
+// 替代動作：同肌群、同動作模式。每筆附資料來源。
+const ALTS={
+ '哈克或史密斯深蹲':{m:'股四頭肌、臀大肌、內收肌群',alts:[
+  {n:'腿推機（Leg Press）',note:'腳放低一點偏股四頭，活動度比哈克蹲小',src:'https://barbend.com/hack-squat-machine/'},
+  {n:'槓鈴深蹲（Barbell Back Squat）',note:'需自行穩定，核心參與較多',src:'https://www.strengthlog.com/hack-squat-machine/'},
+  {n:'前蹲（Front Squat）',note:'軀幹直立，角度最接近哈克蹲',src:'https://www.strengthlog.com/hack-squat-machine/'},
+ ]},
+ '平胸推':{m:'胸大肌（中胸）、前三角肌、肱三頭肌',alts:[
+  {n:'啞鈴臥推（Dumbbell Bench Press）',note:'兩側獨立，可修正左右不平衡',src:'https://www.strengthlog.com/bench-press-alternatives/'},
+  {n:'史密斯臥推（Smith Machine Bench Press）',note:'軌道固定，一個人也能安全推重',src:'https://www.strengthlog.com/bench-press-alternatives/'},
+  {n:'繩索胸推（Cable Chest Press）',rm:'10–12',note:'全程張力不中斷',src:'https://www.strengthlog.com/bench-press-alternatives/'},
+ ]},
+ '上胸推':{m:'上胸（胸大肌鎖骨部）、前三角肌、肱三頭肌',alts:[
+  {n:'上斜啞鈴臥推（Incline Dumbbell Press）',note:'椅背約 30–45 度',src:'https://www.strengthlog.com/dumbbell-incline-press/'},
+  {n:'史密斯上斜臥推（Smith Machine Incline Press）',note:'軌道固定，適合穩定推重',src:'https://www.strengthlog.com/smith-machine-incline-bench-press/'},
+  {n:'器械上斜胸推（Incline Chest Press Machine）',note:'部分胸推機椅背可調成上斜',src:'https://www.strengthlog.com/machine-chest-press/'},
+ ]},
+ '下胸推或 Dip（雙槓撐體）':{m:'下胸、肱三頭肌、前三角肌',alts:[
+  {n:'下斜啞鈴臥推（Decline Dumbbell Press）',note:'動作最接近，肩關節壓力較小',src:'https://barbend.com/decline-bench-press/'},
+  {n:'器械下斜胸推（Lever Decline Chest Press）',note:'Hammer Strength 等插銷式器械常見',src:'https://exrx.net/WeightExercises/PectoralSternal/LVDeclineChestPressPL'},
+  {n:'輔助雙槓機（Assisted Dip Machine）',rm:'12–15',note:'力量不夠時用配重減輕體重，身體前傾偏胸',src:'https://exrx.net/WeightExercises/PectoralSternal/AsChestDip'},
+ ]},
+ '夾胸':{m:'胸大肌（內側收縮）、前三角肌',alts:[
+  {n:'繩索夾胸（Cable Crossover）',note:'和蝴蝶機互為替代，可調高低角度',src:'https://barbend.com/cable-crossover/'},
+  {n:'蝴蝶機夾胸（Pec Deck）',note:'',src:'https://barbend.com/cable-crossover/'},
+  {n:'啞鈴飛鳥（Dumbbell Fly）',rm:'8–12',note:'手肘微彎，不要下放過深',src:'https://barbend.com/cable-crossover/'},
+ ]},
+ '肩推':{m:'前三角肌、三角肌中束、肱三頭肌',alts:[
+  {n:'坐姿啞鈴肩推（Seated Dumbbell Shoulder Press）',note:'活動度比槓鈴大',src:'https://www.strengthlog.com/overhead-press/'},
+  {n:'器械肩推（Machine Shoulder Press）',note:'軌道固定，專注三角肌',src:'https://www.strengthlog.com/overhead-press/'},
+  {n:'史密斯肩推（Smith Machine Shoulder Press）',note:'',src:'https://www.strengthlog.com/overhead-press/'},
+ ]},
+ '側平舉':{m:'三角肌中束',alts:[
+  {n:'繩索側平舉（Cable Lateral Raise）',note:'低位滑輪，底部也有張力',src:'https://barbend.com/lateral-raise-variations/'},
+  {n:'側平舉機（Machine Lateral Raise）',note:'',src:'https://www.strengthlog.com/best-machine-exercises/'},
+  {n:'啞鈴側平舉（Dumbbell Lateral Raise）',note:'',src:'https://physicfit.com/dumbbell-lateral-raise/'},
+ ]},
+ 'Cable（滑輪）三頭下壓':{m:'肱三頭肌',alts:[
+  {n:'過頭三頭伸展（Overhead Triceps Extension）',note:'繩索或啞鈴，偏長頭',src:'https://barbend.com/triceps-pushdown/'},
+  {n:'仰臥三頭伸展（Skull Crusher）',rm:'10–12',note:'可用較重負荷',src:'https://barbend.com/triceps-pushdown/'},
+  {n:'三頭伸展機（Machine Triceps Extension）',note:'',src:'https://www.strengthlog.com/best-machine-exercises/'},
+ ]},
+ '滑輪下拉':{m:'闊背肌、大圓肌、後三角肌、肱二頭肌（次要）',alts:[
+  {n:'引體向上（Pull-Up）',rm:'8–12',note:'',src:'https://barbend.com/lat-pulldown/'},
+  {n:'輔助引體向上機（Assisted Pull-Up Machine）',rm:'8–12',note:'',src:'https://barbend.com/lat-pulldown/'},
+  {n:'單臂滑輪下拉（Single-Arm Lat Pulldown）',note:'D 型把手',src:'https://barbend.com/lat-pulldown/'},
+ ]},
+ '大剪刀下拉':{m:'闊背肌、中背（菱形肌）、肱二頭肌',alts:[
+  {n:'反握滑輪下拉（Underhand Lat Pulldown）',note:'大剪刀本身就是反握弧線軌跡',src:'https://barbend.com/lat-pulldown-variations/'},
+  {n:'反握引體向上（Chin-Up）',note:'',src:'https://www.strengthlog.com/chin-up/'},
+  {n:'單臂滑輪下拉（Single-Arm Lat Pulldown）',note:'模擬單邊獨立發力',src:'https://barbend.com/lat-pulldown/'},
+ ]},
+ '窄握划船':{m:'闊背肌、斜方肌、後三角肌、肱二頭肌（次要）',alts:[
+  {n:'胸靠式器械划船（Seated Machine Row）',note:'下背幾乎不受力',src:'https://www.strengthlog.com/seated-machine-row/'},
+  {n:'單臂啞鈴划船（One-Arm Dumbbell Row）',rm:'10',note:'活動度大，可修正左右差',src:'https://www.strengthlog.com/cable-close-grip-seated-row/'},
+  {n:'T 桿划船（T-Bar Row）',note:'',src:'https://www.strengthlog.com/cable-close-grip-seated-row/'},
+ ]},
+ '高位划船':{m:'上背（菱形肌、斜方肌、後三角肌）、闊背肌、肱二頭肌',alts:[
+  {n:'站姿高位繩索划船（Standing High Cable Row）',rm:'8–15',note:'拉的角度最接近高位划船機',src:'https://fitnessvolt.com/high-row-machine-alternatives/'},
+  {n:'T 桿划船（T-Bar Row）',rm:'8–15',note:'',src:'https://fitnessvolt.com/high-row-machine-alternatives/'},
+  {n:'胸靠式划船（Chest-Supported Row）',rm:'8–12',note:'去除下肢借力',src:'https://www.strengthlog.com/upper-back-exercises/'},
+ ]},
+ '寬握划船':{m:'後三角肌、菱形肌、斜方肌中部',alts:[
+  {n:'繩索後三角划船（Cable Rear Delt Row）',note:'手肘與肩同高、往外開',src:'https://www.strengthlog.com/cable-rear-delt-row/'},
+  {n:'啞鈴後三角划船（Dumbbell Rear Delt Row）',note:'手肘垂直軀幹，不要夾向身體',src:'https://exrx.net/WeightExercises/DeltoidPosterior/DBRearDeltRow'},
+  {n:'面拉（Face Pull）',rm:'15',note:'',src:'https://www.strengthlog.com/upper-back-exercises/'},
+ ]},
+ '直臂下壓':{m:'闊背肌、大圓肌（肱三頭長頭輔助）',alts:[
+  {n:'啞鈴拉舉（Dumbbell Pullover）',rm:'10–15',note:'用手肘往下帶，以背發力',src:'https://www.strengthlog.com/dumbbell-pullover/'},
+  {n:'繩索拉舉（Cable Pullover）',note:'手肘固定微彎',src:'https://exrx.net/WeightExercises/LatissimusDorsi/CBSeatedStraightArmPullover'},
+  {n:'單臂直臂下壓（Single-Arm Straight-Arm Pulldown）',note:'',src:'https://barbend.com/lat-pulldown/'},
+ ]},
+ '二頭彎舉':{m:'肱二頭肌、肱肌、肱橈肌',alts:[
+  {n:'啞鈴或槓鈴彎舉（Dumbbell / Barbell Curl）',note:'',src:'https://www.strengthlog.com/best-machine-exercises/'},
+  {n:'繩索彎舉（Cable Curl）',note:'全程張力',src:'https://barbend.com/cable-biceps-curl/'},
+  {n:'牧師椅彎舉（Preacher Curl）',note:'器械或 EZ 槓，上臂固定',src:'https://barbend.com/preacher-curl/'},
+ ]},
+ '反向飛鳥':{m:'後三角肌、菱形肌、斜方肌中部',alts:[
+  {n:'繩索反向飛鳥（Cable Rear Delt Fly）',note:'和反向蝴蝶機功能相同',src:'https://barbend.com/reverse-pec-deck/'},
+  {n:'啞鈴俯身反向飛鳥（Dumbbell Rear Delt Fly）',rm:'10–15',note:'可趴在上斜椅上做',src:'https://barbend.com/reverse-flye/'},
+  {n:'面拉（Face Pull）',note:'',src:'https://barbend.com/reverse-pec-deck/'},
+ ]},
+ '腿推機':{m:'股四頭肌、臀大肌（腿後、內收肌輔助）',alts:[
+  {n:'哈克深蹲（Hack Squat）',note:'',src:'https://learn.athleanx.com/articles/legs-for-men/leg-press-alternatives'},
+  {n:'高腳杯深蹲（Goblet Squat）',note:'',src:'https://learn.athleanx.com/articles/legs-for-men/leg-press-alternatives'},
+  {n:'槓鈴深蹲（Barbell Back Squat）',rm:'8–12',note:'',src:'https://www.strengthlog.com/best-machine-exercises/'},
+ ]},
+ '腿前伸':{m:'股四頭肌（含股直肌）',alts:[
+  {n:'西西深蹲（Sissy Squat）',rm:'8–10',note:'先從 3–5 下開始，髖固定只彎膝',src:'https://barbend.com/leg-extension-alternatives/'},
+  {n:'反向北歐（Reverse Nordic）',note:'離心為主的股四頭伸展',src:'https://www.strengthlog.com/reverse-nordic/'},
+  {n:'前腳墊高分腿蹲（Front-Foot Elevated Split Squat）',rm:'10–12',note:'每腳',src:'https://barbend.com/leg-extension-alternatives/'},
+ ]},
+ '腿後勾':{m:'腿後肌群（膕旁肌）',alts:[
+  {n:'另一台腿後勾機（坐姿或臥姿 Leg Curl）',note:'坐姿與臥姿可互換',src:'https://www.strengthlog.com/best-machine-exercises/'},
+  {n:'繩索腿後勾（Cable Leg Curl）',note:'腳踝綁帶接低位滑輪',src:'https://exrx.net/WeightExercises/Hamstrings/CBStandingLegCurl'},
+  {n:'抗力球腿後勾（Stability Ball Hamstring Curl）',rm:'12',note:'',src:'https://www.healthline.com/nutrition/leg-curl-alternative'},
+ ]},
+ '髖內收':{m:'內收肌群（內收長肌、短肌、大肌、股薄肌）',alts:[
+  {n:'繩索髖內收（Cable Hip Adduction）',note:'腳踝綁帶，扶穩機台',src:'https://exrx.net/WeightExercises/HipAdductors/CBHipAdduction'},
+  {n:'側臥髖內收（Side-Lying Adduction）',note:'徒手',src:'https://www.healthline.com/health/adductor-exercises'},
+  {n:'哥本哈根內收（Copenhagen Adduction）',rm:'8–12',note:'每腳',src:'https://www.healthline.com/health/adductor-exercises'},
+ ]},
+ '髖外展':{m:'臀中肌、臀小肌、闊筋膜張肌',alts:[
+  {n:'繩索髖外展（Cable Hip Abduction）',note:'腳踝綁帶',src:'https://exrx.net/WeightExercises/HipAbductor/CBHipAbduction'},
+  {n:'側臥抬腿（Side-Lying Leg Lift）',rm:'15–20',note:'',src:'https://www.healthline.com/health/fitness-exercise/hip-abductor-exercises'},
+  {n:'彈力帶側走（Banded Side Walk）',rm:'10–12 步',note:'每個方向',src:'https://www.healthline.com/health/fitness-exercise/hip-abductor-exercises'},
+ ]},
+ '臀推機':{m:'臀大肌、腿後肌群',alts:[
+  {n:'槓鈴臀推（Barbell Hip Thrust）',note:'',src:'https://www.strengthlog.com/hip-thrust-variations/'},
+  {n:'史密斯臀推（Smith Machine Hip Thrust）',note:'軌道固定較穩',src:'https://www.strengthlog.com/hip-thrust-variations/'},
+  {n:'臀橋（Glute Bridge）',rm:'15–20',note:'可負重，活動度較小',src:'https://barbend.com/barbell-hip-thrust-alternatives/'},
+ ]},
+ '分腿蹲':{m:'股四頭肌、臀大肌、內收肌',alts:[
+  {n:'反向弓步（Reverse Lunge）',rm:'10–15',note:'每腳',src:'https://barbend.com/split-squat-variations/'},
+  {n:'史密斯分腿蹲（Smith Machine Split Squat）',rm:'8–15',note:'每腳',src:'https://barbend.com/split-squat-variations/'},
+  {n:'登階（Step-Up）',rm:'10–12',note:'每腳',src:'https://barbend.com/leg-extension-alternatives/'},
+ ]},
+ '下腹':{m:'腹直肌（下段）、髖屈肌（輔助）',alts:[
+  {n:'反向捲腹（Reverse Crunch）',note:'骨盆捲起離地才有下腹收縮',src:'https://www.healthline.com/health/reverse-crunches'},
+  {n:'羅馬椅抬腿（Captain’s Chair Leg Raise）',note:'',src:'https://exrx.net/WeightExercises/HipFlexors/LVVerticalLegRaise'},
+  {n:'仰臥抬腿（Lying Leg Raise）',note:'',src:'https://barbend.com/hanging-knee-raises-alternatives/'},
+ ]},
+};
+
+
 let prog='full';
 try{prog=localStorage.getItem('w3-prog')||'full'}catch(e){}
 if(!PROGRAMS[prog])prog='full';
@@ -281,15 +408,17 @@ try{history=JSON.parse(localStorage.getItem(HKEY)||'[]')||[]}catch(e){history=[]
 if(!Array.isArray(history))history=[];
 function saveHistory(){try{localStorage.setItem(HKEY,JSON.stringify(history))}catch(e){}}
 
-let DAYS=[],KEY='',state={},weights={},cur=0;
+let DAYS=[],KEY='',state={},weights={},swaps={},cur=0;
 function load(){
   DAYS=PROGRAMS[prog].days;KEY=PROGRAMS[prog].key;
   try{state=JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch(e){state={}}
   try{weights=JSON.parse(localStorage.getItem(KEY+'-w')||'{}')||{}}catch(e){weights={}}
+  try{swaps=JSON.parse(localStorage.getItem(KEY+'-swap')||'{}')||{}}catch(e){swaps={}}
   try{cur=parseInt(localStorage.getItem('w3-day-'+prog)||'0',10)||0}catch(e){cur=0}
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
 function saveW(){try{localStorage.setItem(KEY+'-w',JSON.stringify(weights))}catch(e){}}
+function saveS(){try{localStorage.setItem(KEY+'-swap',JSON.stringify(swaps))}catch(e){}}
 function isOn(id){return !!state[id]}
 function fmt(s){return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
 function fdate(iso){
@@ -304,6 +433,12 @@ function lastOf(name){
   }
   return null;
 }
+// 目前這一格實際要做的動作（原動作或替代動作）
+function effective(it,wk){
+  const a=ALTS[it.n];const s=swaps[wk];
+  if(a&&s!=null&&a.alts[s])return {n:a.alts[s].n,rm:a.alts[s].rm||it.rm,note:a.alts[s].note||'',orig:it.n,mus:a.m};
+  return {n:it.n,rm:it.rm,note:'',orig:null,mus:a?a.m:''};
+}
 
 const seg=document.getElementById('seg'),tabs=document.getElementById('tabs'),daysEl=document.getElementById('days');
 const trainEl=document.getElementById('train'),histEl=document.getElementById('hist'),hbtn=document.getElementById('hbtn');
@@ -313,7 +448,8 @@ let view='train';
 hbtn.onclick=()=>{view=view==='train'?'hist':'train';renderView()};
 function renderView(){
   trainEl.hidden=view!=='train';histEl.hidden=view!=='hist';
-  hbtn.textContent=view==='train'?'歷史紀錄'+(history.length?'（'+history.length+'）':''):'回課表';
+  seg.hidden=view!=='train';document.getElementById('sub').hidden=view!=='train';
+  hbtn.textContent=view==='train'?'歷史紀錄'+(history.length?' '+history.length:''):'回課表';
   if(view==='hist')renderHistory();
   window.scrollTo(0,0);
 }
@@ -337,49 +473,27 @@ function build(){
   DAYS.forEach((d,di)=>{
     const tb=document.createElement('button');
     tb.className='tab';tb.setAttribute('role','tab');tb.id='tab'+di;
-    tb.innerHTML=`<span class="d">第 ${di+1} 天</span><span class="n">${d.name}</span><span class="p"><i id="p${di}"></i></span>`;
+    tb.innerHTML=`<span class="n num">${di+1}</span><span class="t"><b>${d.name}</b><small id="p${di}"></small></span>`;
     tb.onclick=()=>show(di);
     tabs.appendChild(tb);
 
     const sec=document.createElement('section');sec.className='day';sec.id='day'+di;
     sec.setAttribute('role','tabpanel');
     const nm=d.ex.reduce((a,e)=>a+(e.sup?e.sup.length:1),0);
-    sec.innerHTML=`<div class="meta"><span>${nm} 個動作 · ${nm*3} 組</span><span id="c${di}"></span></div>`;
+    sec.innerHTML=`<div class="meta"><span>${nm} 個動作，${nm*3} 組</span><span id="c${di}"></span></div>`;
     d.ex.forEach((e,ei)=>{
-      const card=document.createElement('div');
       const items=e.sup||[e];
-      card.className='ex'+(e.sup?' super':'');
-      if(e.sup){const t=document.createElement('div');t.className='tag';t.textContent='超級組：兩個動作交替做，中間不休息';card.appendChild(t)}
+      let holder=sec;
+      if(e.sup){
+        holder=document.createElement('div');holder.className='super';
+        holder.innerHTML='<div class="tag">超級組：兩個交替做，中間不休息</div>';
+        sec.appendChild(holder);
+      }
       items.forEach((it,ii)=>{
         const wk=`${di}-${ei}-${ii}`;
-        const last=lastOf(it.n);
-        const lastTxt=last?('上次 '+(last.w!=null?last.w+' kg × ':'')+last.sets+' 組 · '+fdate(last.t)):'還沒有紀錄';
-        const row=document.createElement('div');row.className='row';
-        row.innerHTML=`<div class="top"><span class="name">${it.n}</span><span class="rm"><b>${it.rm}</b> RM · 3 組</span></div>`
-          +(it.note||e.note?`<div class="note">${it.note||e.note}</div>`:'')
-          +`<div class="wrow"><label><input type="number" inputmode="decimal" step="0.5" min="0" placeholder="${last&&last.w!=null?last.w:'重量'}" value="${weights[wk]!=null?weights[wk]:''}" aria-label="${it.n} 重量"> kg</label><span class="last">${lastTxt}</span></div>`
-          +`<div class="sets"></div>`;
-        const inp=row.querySelector('input');
-        inp.oninput=()=>{const v=parseFloat(inp.value);if(isNaN(v))delete weights[wk];else weights[wk]=v;saveW()};
-        const sets=row.querySelector('.sets');
-        for(let s=1;s<=3;s++){
-          const id=`${wk}-${s}`;
-          const b=document.createElement('button');b.className='set';b.textContent='第 '+s+' 組';
-          b.setAttribute('aria-pressed',isOn(id));
-          b.onclick=()=>{
-            const on=!isOn(id);state[id]=on;if(!on)delete state[id];save();
-            b.setAttribute('aria-pressed',on);progress(di);
-            if(on)startTimer(e.rest);
-          };
-          sets.appendChild(b);
-        }
-        card.appendChild(row);
+        holder.appendChild(renderEx(it,e,wk,di));
       });
-      const r=document.createElement('div');r.className='rest';
-      r.innerHTML=`<span>休息 ${fmt(e.rest)}</span><button type="button">手動計時</button>`;
-      r.querySelector('button').onclick=()=>startTimer(e.rest);
-      card.appendChild(r);
-      sec.appendChild(card);
+      if(!e.sup){/* rest line is inside renderEx */}
     });
     daysEl.appendChild(sec);
     progress(di);
@@ -387,11 +501,71 @@ function build(){
   show(Math.min(cur,DAYS.length-1));
 }
 
+function renderEx(it,e,wk,di){
+  const ef=effective(it,wk);
+  const last=lastOf(ef.n);
+  const lastTxt=last?('上次 '+(last.w!=null?last.w+' kg × ':'')+last.sets+' 組，'+fdate(last.t)):'還沒有紀錄';
+  const note=ef.note||it.note||e.note||'';
+  const art=document.createElement('article');art.className='ex';
+  art.innerHTML=
+    `<div class="exh"><div><span class="name">${ef.n}</span>${ef.mus?`<span class="mus">${ef.mus}</span>`:''}</div>`+
+    `<div class="rm"><span class="num">${ef.rm}</span><small>RM × 3 組</small></div></div>`+
+    (note?`<div class="note">${note}</div>`:'')+
+    (ef.orig?`<div class="swapped">代替「${ef.orig}」<button type="button" class="unswap">換回原動作</button></div>`:'')+
+    `<div class="wrow"><label><input type="number" inputmode="decimal" step="0.5" min="0" placeholder="${last&&last.w!=null?last.w:'—'}" value="${weights[wk]!=null?weights[wk]:''}" aria-label="${ef.n} 重量"><span>kg</span></label>`+
+    `<span class="last">${lastTxt}</span>`+
+    (ALTS[it.n]?`<button type="button" class="swapbtn" aria-expanded="false">換動作</button>`:'')+`</div>`+
+    `<div class="sets"></div>`+
+    `<div class="rest"><span>休息 ${fmt(e.rest)}</span><button type="button">手動計時</button></div>`;
+  const inp=art.querySelector('input');
+  inp.oninput=()=>{const v=parseFloat(inp.value);if(isNaN(v))delete weights[wk];else weights[wk]=v;saveW()};
+  const sets=art.querySelector('.sets');
+  for(let s=1;s<=3;s++){
+    const id=`${wk}-${s}`;
+    const b=document.createElement('button');b.type='button';b.className='set';
+    b.innerHTML=`<span class="num">${s}</span><small>組</small>`;
+    b.setAttribute('aria-pressed',isOn(id));
+    b.onclick=()=>{
+      const on=!isOn(id);state[id]=on;if(!on)delete state[id];save();
+      b.setAttribute('aria-pressed',on);progress(di);
+      if(on)startTimer(e.rest);
+    };
+    sets.appendChild(b);
+  }
+  art.querySelector('.rest button').onclick=()=>startTimer(e.rest);
+  const un=art.querySelector('.unswap');
+  if(un)un.onclick=()=>{delete swaps[wk];saveS();art.replaceWith(renderEx(it,e,wk,di))};
+  const sb=art.querySelector('.swapbtn');
+  if(sb)sb.onclick=()=>{
+    const open=art.querySelector('.alts');
+    if(open){open.remove();sb.setAttribute('aria-expanded','false');return}
+    sb.setAttribute('aria-expanded','true');
+    const a=ALTS[it.n];
+    const box=document.createElement('div');box.className='alts';
+    box.innerHTML=`<h4>器材被佔？換一個練同樣肌群的</h4><p>${a.m}</p>`;
+    a.alts.forEach((alt,idx)=>{
+      const b=document.createElement('button');b.type='button';b.className='alt';
+      b.setAttribute('aria-pressed',swaps[wk]===idx);
+      b.innerHTML=`<div><b>${alt.n}</b>${alt.note?`<span>${alt.note}</span>`:''}</div><span class="num">${alt.rm||it.rm}<small> RM</small></span>`;
+      b.onclick=()=>{swaps[wk]=idx;saveS();art.replaceWith(renderEx(it,e,wk,di))};
+      const wrapEl=document.createElement('div');wrapEl.className='altw';
+      wrapEl.appendChild(b);
+      if(alt.src){const l=document.createElement('a');l.className='src';l.href=alt.src;l.target='_blank';l.rel='noopener';l.textContent='資料來源';wrapEl.appendChild(l)}
+      box.appendChild(wrapEl);
+    });
+    const c=document.createElement('button');c.type='button';c.className='close';c.textContent='收起';
+    c.onclick=()=>{box.remove();sb.setAttribute('aria-expanded','false')};
+    box.appendChild(c);
+    art.appendChild(box);
+  };
+  return art;
+}
+
 function progress(di){
   const total=DAYS[di].ex.reduce((a,e)=>a+((e.sup?e.sup.length:1)*3),0);
   let done=0;for(const k in state)if(k.startsWith(di+'-'))done++;
-  document.getElementById('p'+di).style.width=(done/total*100)+'%';
-  document.getElementById('c'+di).innerHTML=`已完成 <b>${done}</b> / ${total} 組`;
+  document.getElementById('p'+di).textContent=done?done+' / '+total+' 組':'';
+  document.getElementById('c'+di).innerHTML=`<span class="num">${done}</span> / ${total} 組完成`;
 }
 function show(di){
   cur=di;
@@ -403,17 +577,18 @@ function show(di){
 document.getElementById('finish').onclick=()=>{
   const d=DAYS[cur];const items=[];let done=0,total=0;
   d.ex.forEach((e,ei)=>{(e.sup||[e]).forEach((it,ii)=>{
-    let n=0;for(let s=1;s<=3;s++)if(isOn(`${cur}-${ei}-${ii}-${s}`))n++;
-    total+=3;done+=n;const w=weights[`${cur}-${ei}-${ii}`];
-    if(n>0)items.push({n:it.n,rm:it.rm,sets:n,w:w!=null?w:null});
+    const wk=`${cur}-${ei}-${ii}`;const ef=effective(it,wk);
+    let n=0;for(let s=1;s<=3;s++)if(isOn(`${wk}-${s}`))n++;
+    total+=3;done+=n;const w=weights[wk];
+    if(n>0)items.push({n:ef.n,orig:ef.orig,rm:ef.rm,sets:n,w:w!=null?w:null});
   })});
   if(done===0){fmsg.textContent='今天還沒打勾，先做完再存。';return}
   history.push({id:Date.now(),t:new Date().toISOString(),prog,day:cur,name:d.name,done,total,items});
   saveHistory();
   for(const k in state)if(k.startsWith(cur+'-'))delete state[k];save();
   stopTimer();build();
-  fmsg.textContent='已存入：'+fdate(new Date().toISOString())+' '+d.name+'，'+done+'/'+total+' 組。打勾已清空，重量保留。';
-  hbtn.textContent='歷史紀錄（'+history.length+'）';
+  fmsg.textContent='已存入 '+fdate(new Date().toISOString())+' '+d.name+'，'+done+'/'+total+' 組。打勾已清空，重量和替代動作都保留。';
+  hbtn.textContent='歷史紀錄 '+history.length;
 };
 
 document.getElementById('reset').onclick=()=>{
@@ -425,11 +600,11 @@ document.getElementById('reset').onclick=()=>{
 
 function renderHistory(){
   const list=document.getElementById('hlist');list.innerHTML='';
-  if(!history.length){list.innerHTML='<p class="empty">還沒有紀錄。練完在課表頁按「完成訓練，存入紀錄」。</p>';return}
+  if(!history.length){list.innerHTML='<p class="empty">還沒有紀錄。練完在課表頁按「完成訓練，存入紀錄」，這裡就會出現。</p>';return}
   history.slice().sort((a,b)=>b.t<a.t?-1:1).forEach(r=>{
     const el=document.createElement('div');el.className='hrec';
-    const rows=(r.items||[]).map(it=>`<div class="hrow"><span>${it.n}</span><span>${it.w!=null?it.w+' kg × ':''}${it.sets} 組</span></div>`).join('');
-    el.innerHTML=`<button class="hhead" type="button"><span><b>${fdate(r.t)}</b><br>${PNAME[r.prog]||r.prog} · 第 ${r.day+1} 天 ${r.name}</span><span class="hc">${r.done}/${r.total} 組</span></button>`
+    const rows=(r.items||[]).map(it=>`<div class="hrow"><span>${it.n}${it.orig?`<small style="color:var(--muted)">（代替${it.orig}）</small>`:''}</span><span>${it.w!=null?it.w+' kg × ':''}${it.sets} 組</span></div>`).join('');
+    el.innerHTML=`<button class="hhead" type="button"><div><div class="d num">${fdate(r.t)}</div><div class="w">${PNAME[r.prog]||r.prog}，第 ${r.day+1} 天 ${r.name}</div></div><span class="hc num">${r.done}<small> / ${r.total} 組</small></span></button>`
       +`<div class="hbody" hidden>${rows}<button class="hdel" type="button">刪除這筆</button></div>`;
     const body=el.querySelector('.hbody');
     el.querySelector('.hhead').onclick=()=>{body.hidden=!body.hidden};
@@ -437,7 +612,6 @@ function renderHistory(){
     del.onclick=()=>{
       if(!armed){armed=true;del.textContent='再按一次確認刪除';return}
       history=history.filter(x=>x.id!==r.id);saveHistory();renderHistory();
-      hbtn.textContent='回課表';
     };
     list.appendChild(el);
   });
