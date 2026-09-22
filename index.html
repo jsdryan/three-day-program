@@ -112,6 +112,28 @@ header p{margin:6px 0 0;color:var(--muted);font-size:14px}
   border:0;background:none;color:var(--accent);font:inherit;font-size:12px;font-weight:700;padding:0;cursor:pointer
 }
 
+.hd{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.hbtn{height:36px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--accent);font:inherit;font-weight:700;cursor:pointer;white-space:nowrap}
+.wrow{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;font-size:13px;color:var(--muted)}
+.wrow label{display:flex;align-items:center;gap:6px;color:var(--ink);font-weight:700;white-space:nowrap}
+.wrow input{width:76px;height:36px;border:1px solid var(--line);border-radius:8px;background:var(--tap);color:var(--ink);font:inherit;font-size:16px;padding:0 8px;text-align:right}
+.wrow input:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+.wrow .last{text-align:right}
+.finish{margin-top:14px;width:100%;height:48px;border-radius:12px;border:0;background:var(--accent);color:var(--accent-ink);font:inherit;font-size:16px;font-weight:800;cursor:pointer}
+.msg{font-size:13px;color:var(--done);margin:8px 2px 0;min-height:1.2em}
+.hist{padding-top:8px}
+.hbar{display:flex;gap:8px}
+.hbar button,.hbar label{flex:1;height:42px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.hrec{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:10px;overflow:hidden}
+.hhead{width:100%;display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;border:0;background:none;color:var(--ink);font:inherit;font-size:14px;text-align:left;cursor:pointer;line-height:1.35}
+.hhead b{font-size:16px}
+.hc{color:var(--muted);white-space:nowrap}
+.hbody{padding:0 14px 12px;border-top:1px solid var(--line)}
+.hrow{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:15px}
+.hrow span:last-child{color:var(--muted);white-space:nowrap}
+.hdel{margin-top:10px;height:36px;padding:0 12px;border-radius:8px;border:1px solid var(--line);background:none;color:#C0392B;font:inherit;font-weight:700;cursor:pointer}
+.empty{color:var(--muted);font-size:13px;margin:12px 2px}
+
 .foot{margin:18px 2px 0;font-size:13px;color:var(--muted)}
 .foot p{margin:6px 0}
 .reset{
@@ -140,10 +162,11 @@ header p{margin:6px 0 0;color:var(--muted);font-size:14px}
 <body>
 <div class="wrap">
   <header>
-    <h1>一週三練</h1>
+    <div class="hd"><h1>一週三練</h1><button type="button" class="hbtn" id="hbtn">歷史紀錄</button></div>
     <p id="sub"></p>
   </header>
 
+  <div id="train">
   <div class="seg" role="radiogroup" aria-label="課表" id="seg">
     <button type="button" role="radio" data-p="full"><b>全身</b><span>每天胸背腿都碰</span></button>
     <button type="button" role="radio" data-p="ppl"><b>PPL（推拉腿）</b><span>推、拉、腿各一天</span></button>
@@ -156,8 +179,21 @@ header p{margin:6px 0 0;color:var(--muted);font-size:14px}
     <p>RM（最大反覆次數）：8–10 RM 指這個重量最多只做得到 8–10 下。</p>
     <p>組間休息：複合動作 90–120 秒，單關節與超級組 60 秒。點一組會自動倒數。</p>
     <p id="tip"></p>
-    <button class="reset" id="reset">清除今天的打勾</button>
+    <button class="finish" id="finish">完成訓練，存入紀錄</button>
+    <div class="msg" id="fmsg"></div>
+    <button class="reset" id="reset">清除今天的打勾（不存檔）</button>
   </div>
+  </div>
+
+  <section id="hist" class="hist" hidden>
+    <div class="hbar">
+      <button type="button" id="hexport">匯出備份</button>
+      <label>匯入備份<input type="file" id="himport" accept="application/json,.json" hidden></label>
+    </div>
+    <div class="msg" id="hmsg"></div>
+    <div id="hlist"></div>
+    <p class="empty">紀錄存在這支手機的瀏覽器裡。換手機或清除瀏覽資料前，先按「匯出備份」把檔案存起來，再到新手機「匯入備份」。</p>
+  </section>
 </div>
 
 <div class="timer" id="timer" aria-live="polite">
@@ -237,25 +273,57 @@ const PROGRAMS={
 let prog='full';
 try{prog=localStorage.getItem('w3-prog')||'full'}catch(e){}
 if(!PROGRAMS[prog])prog='full';
+const PNAME={full:'全身',ppl:'PPL'};
 
-let DAYS=[],KEY='',state={},cur=0;
+const HKEY='w3-history-v1';
+let history=[];
+try{history=JSON.parse(localStorage.getItem(HKEY)||'[]')||[]}catch(e){history=[]}
+if(!Array.isArray(history))history=[];
+function saveHistory(){try{localStorage.setItem(HKEY,JSON.stringify(history))}catch(e){}}
+
+let DAYS=[],KEY='',state={},weights={},cur=0;
 function load(){
   DAYS=PROGRAMS[prog].days;KEY=PROGRAMS[prog].key;
   try{state=JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch(e){state={}}
+  try{weights=JSON.parse(localStorage.getItem(KEY+'-w')||'{}')||{}}catch(e){weights={}}
   try{cur=parseInt(localStorage.getItem('w3-day-'+prog)||'0',10)||0}catch(e){cur=0}
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
+function saveW(){try{localStorage.setItem(KEY+'-w',JSON.stringify(weights))}catch(e){}}
 function isOn(id){return !!state[id]}
 function fmt(s){return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+function fdate(iso){
+  const d=new Date(iso);const y=d.getFullYear();
+  const t=(d.getMonth()+1)+'/'+d.getDate()+'（'+'日一二三四五六'[d.getDay()]+'）';
+  return y!==new Date().getFullYear()?y+'/'+t:t;
+}
+function lastOf(name){
+  for(let i=history.length-1;i>=0;i--){
+    const it=(history[i].items||[]).find(x=>x.n===name);
+    if(it&&(it.w!=null||it.sets))return {w:it.w,sets:it.sets,t:history[i].t};
+  }
+  return null;
+}
 
 const seg=document.getElementById('seg'),tabs=document.getElementById('tabs'),daysEl=document.getElementById('days');
+const trainEl=document.getElementById('train'),histEl=document.getElementById('hist'),hbtn=document.getElementById('hbtn');
+const fmsg=document.getElementById('fmsg'),hmsg=document.getElementById('hmsg');
+
+let view='train';
+hbtn.onclick=()=>{view=view==='train'?'hist':'train';renderView()};
+function renderView(){
+  trainEl.hidden=view!=='train';histEl.hidden=view!=='hist';
+  hbtn.textContent=view==='train'?'歷史紀錄'+(history.length?'（'+history.length+'）':''):'回課表';
+  if(view==='hist')renderHistory();
+  window.scrollTo(0,0);
+}
 
 seg.querySelectorAll('button').forEach(b=>{
   b.onclick=()=>{
     if(b.dataset.p===prog)return;
     prog=b.dataset.p;
     try{localStorage.setItem('w3-prog',prog)}catch(e){}
-    stopTimer();build();
+    stopTimer();fmsg.textContent='';build();
   };
 });
 
@@ -283,13 +351,19 @@ function build(){
       card.className='ex'+(e.sup?' super':'');
       if(e.sup){const t=document.createElement('div');t.className='tag';t.textContent='超級組：兩個動作交替做，中間不休息';card.appendChild(t)}
       items.forEach((it,ii)=>{
+        const wk=`${di}-${ei}-${ii}`;
+        const last=lastOf(it.n);
+        const lastTxt=last?('上次 '+(last.w!=null?last.w+' kg × ':'')+last.sets+' 組 · '+fdate(last.t)):'還沒有紀錄';
         const row=document.createElement('div');row.className='row';
         row.innerHTML=`<div class="top"><span class="name">${it.n}</span><span class="rm"><b>${it.rm}</b> RM · 3 組</span></div>`
           +(it.note||e.note?`<div class="note">${it.note||e.note}</div>`:'')
+          +`<div class="wrow"><label><input type="number" inputmode="decimal" step="0.5" min="0" placeholder="${last&&last.w!=null?last.w:'重量'}" value="${weights[wk]!=null?weights[wk]:''}" aria-label="${it.n} 重量"> kg</label><span class="last">${lastTxt}</span></div>`
           +`<div class="sets"></div>`;
+        const inp=row.querySelector('input');
+        inp.oninput=()=>{const v=parseFloat(inp.value);if(isNaN(v))delete weights[wk];else weights[wk]=v;saveW()};
         const sets=row.querySelector('.sets');
         for(let s=1;s<=3;s++){
-          const id=`${di}-${ei}-${ii}-${s}`;
+          const id=`${wk}-${s}`;
           const b=document.createElement('button');b.className='set';b.textContent='第 '+s+' 組';
           b.setAttribute('aria-pressed',isOn(id));
           b.onclick=()=>{
@@ -326,11 +400,69 @@ function show(di){
   try{localStorage.setItem('w3-day-'+prog,di)}catch(e){}
 }
 
+document.getElementById('finish').onclick=()=>{
+  const d=DAYS[cur];const items=[];let done=0,total=0;
+  d.ex.forEach((e,ei)=>{(e.sup||[e]).forEach((it,ii)=>{
+    let n=0;for(let s=1;s<=3;s++)if(isOn(`${cur}-${ei}-${ii}-${s}`))n++;
+    total+=3;done+=n;const w=weights[`${cur}-${ei}-${ii}`];
+    if(n>0)items.push({n:it.n,rm:it.rm,sets:n,w:w!=null?w:null});
+  })});
+  if(done===0){fmsg.textContent='今天還沒打勾，先做完再存。';return}
+  history.push({id:Date.now(),t:new Date().toISOString(),prog,day:cur,name:d.name,done,total,items});
+  saveHistory();
+  for(const k in state)if(k.startsWith(cur+'-'))delete state[k];save();
+  stopTimer();build();
+  fmsg.textContent='已存入：'+fdate(new Date().toISOString())+' '+d.name+'，'+done+'/'+total+' 組。打勾已清空，重量保留。';
+  hbtn.textContent='歷史紀錄（'+history.length+'）';
+};
+
 document.getElementById('reset').onclick=()=>{
   for(const k in state)if(k.startsWith(cur+'-'))delete state[k];
   save();
   document.querySelectorAll('#day'+cur+' .set').forEach(b=>b.setAttribute('aria-pressed','false'));
-  progress(cur);
+  progress(cur);fmsg.textContent='';
+};
+
+function renderHistory(){
+  const list=document.getElementById('hlist');list.innerHTML='';
+  if(!history.length){list.innerHTML='<p class="empty">還沒有紀錄。練完在課表頁按「完成訓練，存入紀錄」。</p>';return}
+  history.slice().sort((a,b)=>b.t<a.t?-1:1).forEach(r=>{
+    const el=document.createElement('div');el.className='hrec';
+    const rows=(r.items||[]).map(it=>`<div class="hrow"><span>${it.n}</span><span>${it.w!=null?it.w+' kg × ':''}${it.sets} 組</span></div>`).join('');
+    el.innerHTML=`<button class="hhead" type="button"><span><b>${fdate(r.t)}</b><br>${PNAME[r.prog]||r.prog} · 第 ${r.day+1} 天 ${r.name}</span><span class="hc">${r.done}/${r.total} 組</span></button>`
+      +`<div class="hbody" hidden>${rows}<button class="hdel" type="button">刪除這筆</button></div>`;
+    const body=el.querySelector('.hbody');
+    el.querySelector('.hhead').onclick=()=>{body.hidden=!body.hidden};
+    const del=el.querySelector('.hdel');let armed=false;
+    del.onclick=()=>{
+      if(!armed){armed=true;del.textContent='再按一次確認刪除';return}
+      history=history.filter(x=>x.id!==r.id);saveHistory();renderHistory();
+      hbtn.textContent='回課表';
+    };
+    list.appendChild(el);
+  });
+}
+document.getElementById('hexport').onclick=()=>{
+  const blob=new Blob([JSON.stringify({app:'w3',v:1,history},null,1)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='訓練紀錄-'+new Date().toISOString().slice(0,10)+'.json';
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  hmsg.textContent='已匯出 '+history.length+' 筆。';
+};
+document.getElementById('himport').onchange=ev=>{
+  const f=ev.target.files[0];if(!f)return;
+  const rd=new FileReader();
+  rd.onload=()=>{
+    try{
+      const j=JSON.parse(rd.result);const arr=Array.isArray(j)?j:(j.history||[]);
+      const ids=new Set(history.map(x=>x.id));let n=0;
+      arr.forEach(r=>{if(r&&r.id&&r.t&&Array.isArray(r.items)&&!ids.has(r.id)){history.push(r);n++}});
+      saveHistory();renderHistory();hmsg.textContent='匯入 '+n+' 筆新紀錄，重複的略過。';
+    }catch(e){hmsg.textContent='檔案讀不出來，請確認是這個頁面匯出的備份檔。'}
+    ev.target.value='';
+  };
+  rd.readAsText(f);
 };
 
 // rest timer
@@ -345,7 +477,7 @@ function stopTimer(){clearInterval(iv);iv=null;timer.classList.remove('on')}
 document.getElementById('t30').onclick=()=>{left+=30;total=Math.max(total,left);render()};
 document.getElementById('tskip').onclick=stopTimer;
 
-build();
+build();renderView();
 </script>
 </body>
 </html>
