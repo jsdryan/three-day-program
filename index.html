@@ -192,7 +192,7 @@ html{color-scheme:light}
     <div class="foot">
       <p id="tip"></p>
       <p>RM 是「最大反覆次數」：8–10 RM 指這個重量最多只做得到 8–10 下。組間休息：複合動作 90–120 秒，單關節與超級組 60 秒，點一組會自動倒數。</p>
-      <p>器材被佔走時，按「換動作」挑一個練同樣肌群的替代動作，紀錄會存替代後的名稱。</p>
+      <p>器材被佔走時，按「器材被佔？」挑一個練同樣肌群的替代動作，紀錄會存替代後的名稱。</p>
       <button class="finish" id="finish">完成訓練，存入紀錄</button>
       <div class="msg" id="fmsg"></div>
       <button class="reset" id="reset">清除今天的打勾（不存檔）</button>
@@ -529,7 +529,7 @@ function renderEx(it,e,wk,di){
     (ef.orig?`<div class="swapped">代替「${ef.orig}」<button type="button" class="unswap">換回原動作</button></div>`:'')+
     `<div class="wrow"><label><input type="number" inputmode="decimal" step="0.5" min="0" placeholder="${last&&last.w!=null?last.w:'—'}" value="${weights[wk]!=null?weights[wk]:''}" aria-label="${ef.n} 重量"><span>kg</span></label>`+
     `<span class="last">${lastTxt}</span>`+
-    (ALTS[it.n]?`<button type="button" class="swapbtn" aria-expanded="false">換動作</button>`:'')+`</div>`+
+    (ALTS[it.n]?`<button type="button" class="swapbtn" aria-expanded="false">器材被佔？</button>`:'')+`</div>`+
     `<div class="sets"></div>`+
     `<div class="rest"><span>休息 ${fmt(e.rest)}</span><button type="button">手動計時</button></div>`;
   const inp=art.querySelector('input');
@@ -557,7 +557,6 @@ function renderEx(it,e,wk,di){
     sb.setAttribute('aria-expanded','true');
     const a=ALTS[it.n];
     const box=document.createElement('div');box.className='alts';
-    box.innerHTML=`<h4>器材被佔？換一個練同樣肌群的</h4><p>${a.m}</p>`;
     a.alts.forEach((alt,idx)=>{
       const b=document.createElement('button');b.type='button';b.className='alt';
       b.setAttribute('aria-pressed',swaps[wk]===idx);
