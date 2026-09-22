@@ -9,6 +9,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
 <style>
 :root{
   --bg:#EDEEF0; --card:#FFFFFF; --ink:#12161B; --ink2:#3A424B; --muted:#6B7480; --line:#D3D7DC; --line2:#E6E9EC;
@@ -48,6 +50,14 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
 .prog button[aria-checked="true"]{color:var(--ink)}
 .prog button[aria-checked="true"]::after{content:"";position:absolute;left:0;right:0;bottom:-1.5px;height:3px;background:var(--yellow)}
 .sub{margin:10px 0 0;font-size:14px;color:var(--muted)}
+
+.auth{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;font-size:13px;color:var(--muted)}
+.auth .who{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.auth .who b{color:var(--ink)}
+.auth button{height:36px;padding:0 12px;border-radius:8px;border:1.5px solid var(--ink);background:var(--card);font-weight:700;font-size:13px;white-space:nowrap}
+.auth button.lnk{border:0;background:none;padding:0;color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+.auth .dot{width:8px;height:8px;border-radius:50%;background:var(--line);flex:none}
+.auth .dot.ok{background:#16A34A}.auth .dot.busy{background:var(--yellow)}.auth .dot.err{background:var(--danger)}
 
 /* day tabs */
 .tabs{
@@ -170,6 +180,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
       <button type="button" role="radio" data-p="ppl">PPL（推拉腿）</button>
     </div>
     <p class="sub" id="sub"></p>
+    <div class="auth" id="auth" hidden></div>
   </header>
 
   <div id="train">
@@ -193,7 +204,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--yellow);outline
     </div>
     <div class="msg" id="hmsg"></div>
     <div id="hlist"></div>
-    <p class="empty">紀錄存在這支手機的瀏覽器裡，沒有上傳到任何地方。換手機或清除瀏覽資料前，先按「匯出備份」把檔案存起來，再到新手機「匯入備份」。</p>
+    <p class="empty">沒登入時，紀錄只存在這支手機的瀏覽器裡；用 Google 或 Apple 登入後會同步到雲端，換手機登入同一個帳號就會看到。「匯出備份」仍可當離線備份。</p>
   </section>
 </div>
 
@@ -417,8 +428,8 @@ function load(){
   try{cur=parseInt(localStorage.getItem('w3-day-'+prog)||'0',10)||0}catch(e){cur=0}
 }
 function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
-function saveW(){try{localStorage.setItem(KEY+'-w',JSON.stringify(weights))}catch(e){}}
-function saveS(){try{localStorage.setItem(KEY+'-swap',JSON.stringify(swaps))}catch(e){}}
+function saveW(){try{localStorage.setItem(KEY+'-w',JSON.stringify(weights))}catch(e){};pushPrefs()}
+function saveS(){try{localStorage.setItem(KEY+'-swap',JSON.stringify(swaps))}catch(e){};pushPrefs()}
 function isOn(id){return !!state[id]}
 function fmt(s){return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
 function fdate(iso){
@@ -459,7 +470,7 @@ seg.querySelectorAll('button').forEach(b=>{
     if(b.dataset.p===prog)return;
     prog=b.dataset.p;
     try{localStorage.setItem('w3-prog',prog)}catch(e){}
-    stopTimer();fmsg.textContent='';build();
+    stopTimer();fmsg.textContent='';build();pushPrefs();
   };
 });
 
@@ -583,8 +594,8 @@ document.getElementById('finish').onclick=()=>{
     if(n>0)items.push({n:ef.n,orig:ef.orig,rm:ef.rm,sets:n,w:w!=null?w:null});
   })});
   if(done===0){fmsg.textContent='今天還沒打勾，先做完再存。';return}
-  history.push({id:Date.now(),t:new Date().toISOString(),prog,day:cur,name:d.name,done,total,items});
-  saveHistory();
+  const rec={id:Date.now(),t:new Date().toISOString(),prog,day:cur,name:d.name,done,total,items};
+  history.push(rec);saveHistory();pushSession(rec);
   for(const k in state)if(k.startsWith(cur+'-'))delete state[k];save();
   stopTimer();build();
   fmsg.textContent='已存入 '+fdate(new Date().toISOString())+' '+d.name+'，'+done+'/'+total+' 組。打勾已清空，重量和替代動作都保留。';
@@ -611,7 +622,7 @@ function renderHistory(){
     const del=el.querySelector('.hdel');let armed=false;
     del.onclick=()=>{
       if(!armed){armed=true;del.textContent='再按一次確認刪除';return}
-      history=history.filter(x=>x.id!==r.id);saveHistory();renderHistory();
+      history=history.filter(x=>x.id!==r.id);saveHistory();renderHistory();deleteSessionRemote(r.id);
     };
     list.appendChild(el);
   });
@@ -631,8 +642,9 @@ document.getElementById('himport').onchange=ev=>{
     try{
       const j=JSON.parse(rd.result);const arr=Array.isArray(j)?j:(j.history||[]);
       const ids=new Set(history.map(x=>x.id));let n=0;
-      arr.forEach(r=>{if(r&&r.id&&r.t&&Array.isArray(r.items)&&!ids.has(r.id)){history.push(r);n++}});
-      saveHistory();renderHistory();hmsg.textContent='匯入 '+n+' 筆新紀錄，重複的略過。';
+      const added=[];
+      arr.forEach(r=>{if(r&&r.id&&r.t&&Array.isArray(r.items)&&!ids.has(r.id)){history.push(r);added.push(r);n++}});
+      saveHistory();renderHistory();added.forEach(pushSession);hmsg.textContent='匯入 '+n+' 筆新紀錄，重複的略過。';
     }catch(e){hmsg.textContent='檔案讀不出來，請確認是這個頁面匯出的備份檔。'}
     ev.target.value='';
   };
@@ -651,7 +663,121 @@ function stopTimer(){clearInterval(iv);iv=null;timer.classList.remove('on')}
 document.getElementById('t30').onclick=()=>{left+=30;total=Math.max(total,left);render()};
 document.getElementById('tskip').onclick=stopTimer;
 
-build();renderView();
+
+// ---------- 雲端同步（Supabase） ----------
+const authEl=document.getElementById('auth');
+let sb=null,user=null,syncState='off';
+(function(){
+  const c=window.SB_CONFIG||{};
+  if(c.url&&c.key&&window.supabase){
+    sb=window.supabase.createClient(c.url,c.key,{auth:{flowType:'pkce',detectSessionInUrl:true,persistSession:true}});
+  }
+})();
+function renderAuth(){
+  if(!sb){authEl.hidden=true;return}
+  authEl.hidden=false;
+  if(!user){
+    authEl.innerHTML=`<span class="dot"></span><span class="who">未登入，紀錄只存在這支手機</span>`
+      +`<button type="button" data-p="google">Google 登入</button><button type="button" data-p="apple">Apple 登入</button>`;
+    authEl.querySelectorAll('button').forEach(b=>b.onclick=()=>signIn(b.dataset.p));
+  }else{
+    const label={off:'',busy:'同步中',ok:'已同步',err:'同步失敗，稍後再試'}[syncState]||'';
+    authEl.innerHTML=`<span class="dot ${syncState}"></span><span class="who"><b>${user.email||'已登入'}</b>${label?'，'+label:''}</span><button type="button" class="lnk" id="signout">登出</button>`;
+    document.getElementById('signout').onclick=signOut;
+  }
+}
+function setSync(s){syncState=s;renderAuth()}
+async function signIn(provider){
+  const redirectTo=location.origin+location.pathname;
+  const {error}=await sb.auth.signInWithOAuth({provider,options:{redirectTo}});
+  if(error){authEl.querySelector('.who').textContent='登入失敗：'+error.message}
+}
+async function signOut(){await sb.auth.signOut();user=null;renderAuth()}
+
+// 兩套課表的重量與替代動作，打包成一份 prefs
+function allPrefs(){
+  const o={prog};
+  for(const p in PROGRAMS){
+    const k=PROGRAMS[p].key;let w={},sw={};
+    try{w=JSON.parse(localStorage.getItem(k+'-w')||'{}')||{}}catch(e){}
+    try{sw=JSON.parse(localStorage.getItem(k+'-swap')||'{}')||{}}catch(e){}
+    o[p]={w,swap:sw};
+  }
+  return o;
+}
+function applyPrefs(remote){
+  if(!remote)return;
+  for(const p in PROGRAMS){
+    const k=PROGRAMS[p].key;const r=remote[p]||{};
+    let w={},sw={};
+    try{w=JSON.parse(localStorage.getItem(k+'-w')||'{}')||{}}catch(e){}
+    try{sw=JSON.parse(localStorage.getItem(k+'-swap')||'{}')||{}}catch(e){}
+    // 遠端為底，本機蓋上去（本機通常比較新）
+    try{localStorage.setItem(k+'-w',JSON.stringify(Object.assign({},r.w||{},w)))}catch(e){}
+    try{localStorage.setItem(k+'-swap',JSON.stringify(Object.assign({},r.swap||{},sw)))}catch(e){}
+  }
+}
+let prefsTimer=null;
+function pushPrefs(){
+  if(!sb||!user)return;
+  clearTimeout(prefsTimer);
+  prefsTimer=setTimeout(async()=>{
+    setSync('busy');
+    const {error}=await sb.from('prefs').upsert({user_id:user.id,data:allPrefs(),updated_at:new Date().toISOString()});
+    setSync(error?'err':'ok');
+  },800);
+}
+async function pushSession(rec){
+  if(!sb||!user)return;
+  setSync('busy');
+  const {error}=await sb.from('sessions').upsert({id:rec.id,user_id:user.id,t:rec.t,data:rec});
+  setSync(error?'err':'ok');
+}
+async function deleteSessionRemote(id){
+  if(!sb||!user)return;
+  setSync('busy');
+  const {error}=await sb.from('sessions').delete().eq('user_id',user.id).eq('id',id);
+  setSync(error?'err':'ok');
+}
+async function pullAll(){
+  if(!sb||!user)return;
+  setSync('busy');
+  const [{data:rows,error:e1},{data:pref,error:e2}]=await Promise.all([
+    sb.from('sessions').select('id,data').eq('user_id',user.id),
+    sb.from('prefs').select('data').eq('user_id',user.id).maybeSingle(),
+  ]);
+  if(e1||e2){setSync('err');return}
+  // 歷史：以 id 聯集，兩邊都保留
+  const localIds=new Set(history.map(x=>x.id));
+  const remoteIds=new Set();
+  (rows||[]).forEach(r=>{remoteIds.add(Number(r.id));if(!localIds.has(Number(r.id))&&r.data)history.push(r.data)});
+  saveHistory();
+  const missing=history.filter(x=>!remoteIds.has(x.id));
+  if(missing.length){
+    await sb.from('sessions').upsert(missing.map(rec=>({id:rec.id,user_id:user.id,t:rec.t,data:rec})));
+  }
+  applyPrefs(pref&&pref.data);
+  build();if(view==='hist')renderHistory();
+  await sb.from('prefs').upsert({user_id:user.id,data:allPrefs(),updated_at:new Date().toISOString()});
+  setSync('ok');
+}
+async function initAuth(){
+  if(!sb){renderAuth();return}
+  const {data:{session}}=await sb.auth.getSession();
+  user=session?session.user:null;renderAuth();
+  if(user)pullAll();
+  sb.auth.onAuthStateChange((ev,s)=>{
+    const u=s?s.user:null;
+    const changed=(u&&u.id)!==(user&&user.id);
+    user=u;renderAuth();
+    if(changed&&u)pullAll();
+  });
+  // 清掉網址上的 OAuth 參數
+  if(location.search||location.hash)history_replace();
+}
+function history_replace(){try{window.history.replaceState({},'',location.pathname)}catch(e){}}
+
+build();renderView();initAuth();
 </script>
 </body>
 </html>
