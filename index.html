@@ -146,13 +146,14 @@ header p{margin:6px 0 0;color:var(--muted);font-size:14px}
 
   <div class="seg" role="radiogroup" aria-label="課表" id="seg">
     <button type="button" role="radio" data-p="full"><b>全身</b><span>每天胸背腿都碰</span></button>
-    <button type="button" role="radio" data-p="ppl"><b>PPL</b><span>推、拉、腿各一天</span></button>
+    <button type="button" role="radio" data-p="ppl"><b>PPL（推拉腿）</b><span>推、拉、腿各一天</span></button>
   </div>
 
   <div class="tabs" role="tablist" id="tabs"></div>
   <div id="days"></div>
 
   <div class="foot">
+    <p>RM（最大反覆次數）：8–10 RM 指這個重量最多只做得到 8–10 下。</p>
     <p>組間休息：複合動作 90–120 秒，單關節與超級組 60 秒。點一組會自動倒數。</p>
     <p id="tip"></p>
     <button class="reset" id="reset">清除今天的打勾</button>
@@ -178,7 +179,7 @@ const PROGRAMS={
     {n:'滑輪下拉',rm:'10–12',rest:90,note:'可隔週換窄握下拉'},
     {n:'肩推',rm:'8–12',rest:90},
     {n:'腿前伸',rm:'12–15',rest:60},
-    {sup:[{n:'側平舉',rm:'12–15'},{n:'Cable 三頭下壓',rm:'12–15'}],rest:60},
+    {sup:[{n:'側平舉',rm:'12–15'},{n:'Cable（滑輪）三頭下壓',rm:'12–15'}],rest:60},
     {n:'下腹',rm:'12–15',rest:60},
    ]},
    {name:'拉為主＋腿後',ex:[
@@ -197,21 +198,21 @@ const PROGRAMS={
     {n:'分腿蹲',rm:'10–15',rest:90},
     {sup:[{n:'夾胸',rm:'12–15'},{n:'直臂下壓',rm:'12–15'}],rest:60},
     {sup:[{n:'髖內收',rm:'12–15'},{n:'髖外展',rm:'12–15'}],rest:60},
-    {n:'下胸推或 Dip',rm:'10–12',rest:90,note:'隔週交替，Dip 做 12–15'},
+    {n:'下胸推或 Dip（雙槓撐體）',rm:'10–12',rest:90,note:'隔週交替，Dip 做 12–15'},
    ]},
   ]},
  ppl:{
-  sub:'PPL：推、拉、腿各一天，每個部位一週一次、單日量集中。推 21 組、拉與腿各 24 組。隔天練（一三五或二四六）。',
+  sub:'PPL（推拉腿）：推、拉、腿各一天，每個部位一週一次、單日量集中。推 21 組、拉與腿各 24 組。隔天練（一三五或二四六）。',
   tip:'拉日和腿日 24 組較緊，超級組休 60 秒要抓準。時間不夠先砍超級組裡的單關節動作。',
   key:'w3-ppl-checks-v1',
   days:[
    {name:'推：胸、肩、三頭',ex:[
     {n:'平胸推',rm:'8–10',rest:120,note:'隔週換器械胸推 10–12'},
     {n:'上胸推',rm:'10–15',rest:90},
-    {n:'下胸推或 Dip',rm:'10–12',rest:90,note:'隔週交替，Dip 做 12–15'},
+    {n:'下胸推或 Dip（雙槓撐體）',rm:'10–12',rest:90,note:'隔週交替，Dip 做 12–15'},
     {n:'肩推',rm:'8–12',rest:90},
     {sup:[{n:'夾胸',rm:'12–15'},{n:'側平舉',rm:'12–15'}],rest:60},
-    {n:'Cable 三頭下壓',rm:'12–15',rest:60},
+    {n:'Cable（滑輪）三頭下壓',rm:'12–15',rest:60},
    ]},
    {name:'拉：背、二頭、肩後',ex:[
     {n:'大剪刀下拉',rm:'8–12',rest:120,note:'隔週換窄握下拉 8–12'},
