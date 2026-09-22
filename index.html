@@ -163,7 +163,11 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
  --accent:#E4572E;--accent-ink:#fff;--accent-soft:rgba(228,87,46,.12);--done:#2E8B57;--danger:#C0392B;--warn:#B8741A;--r:12px;--r-s:10px}
 html{color-scheme:light}
 .brand h1{font-weight:900;letter-spacing:-.02em}
-.ex,.super,.hrec,.auth{border:1px solid var(--line)}.super{border-color:rgba(184,116,26,.45)}
+.ex,.super,.hrec,.auth{border:1px solid var(--line)}
+.super{border-color:rgba(184,116,26,.45);padding-bottom:0}
+.super .ex{border:0;border-top:1px dashed var(--line);border-radius:0;box-shadow:none;padding:12px 0 14px;margin:0}
+.super .ex:first-of-type{border-top:0}
+.super .tag{margin-bottom:4px}
 .tab{background:var(--card)}.wrow input{background:#fff}.set{background:#fff;border-radius:10px}.set[aria-pressed="true"]{color:#fff}
 .prog button{border-radius:10px}.hbtn,.hbar button,.hbar label,.swapbtn,.alts .close{background:var(--card2);border-radius:10px}
 .finish{border-radius:12px;box-shadow:none}.timer{border-radius:14px;box-shadow:0 12px 32px rgba(34,29,23,.25)}.alts{background:#fff}
