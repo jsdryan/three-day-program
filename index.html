@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#F6F1E8">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="一週三練">
+<link rel="apple-touch-icon" href="icon-180.png">
 <title>一週三練課表</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -133,6 +139,23 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .daterow .hint{font-weight:400;color:var(--muted)}
 .hdate{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--muted)}
 .hdate input{height:36px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);font:inherit;font-size:14px;padding:0 8px}
+.notif{display:flex;align-items:center;gap:10px;margin:0 0 8px;padding:10px 12px;border-radius:12px;background:var(--card);border:1px solid var(--line);font-size:13px;color:var(--ink2)}
+.notif span{flex:1}
+.notif button{height:34px;padding:0 12px;border-radius:999px;border:0;background:var(--accent);color:#fff;font-weight:700;font-size:13px;white-space:nowrap}
+.install{display:flex;align-items:center;gap:10px;margin-top:10px;padding:10px 12px;border-radius:12px;background:var(--accent-soft);border:1px solid var(--accent);font-size:13px;color:var(--ink2)}
+.install span{flex:1}
+.install button{height:34px;padding:0 12px;border-radius:999px;border:0;background:var(--accent);color:#fff;font-weight:700;font-size:13px;white-space:nowrap}
+.install button.x{background:none;color:var(--muted);font-size:20px;padding:0 4px}
+.sheet{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.45);display:flex;align-items:flex-end;justify-content:center}
+.sheetbox{width:100%;max-width:520px;background:var(--card);border-radius:18px 18px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px))}
+.sheetbox h3{margin:0 0 10px;font-size:18px}
+.sheetbox ol{list-style:none;margin:0;padding:0}
+.sheetbox li{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line);font-size:15px}
+.sheetbox li:first-child{border-top:0}
+.sheetbox li b{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;flex:none;font-size:14px}
+.sheetbox li svg{vertical-align:-3px;color:var(--accent)}
+.sheetbox p{font-size:13px;color:var(--muted);margin:10px 0 14px}
+.sheetbox button{width:100%;height:46px;border-radius:12px;border:0;background:var(--accent);color:#fff;font-weight:700;font-size:15px}
 .finish{margin-top:12px;width:100%;height:52px;border-radius:14px;border:0;background:var(--accent);color:var(--accent-ink);font-size:16px;font-weight:700;box-shadow:0 8px 24px rgba(76,141,255,.25)}
 .msg{font-size:13px;color:var(--done);margin:8px 2px 0;min-height:1.2em}
 .reset{margin-top:8px;width:100%;height:44px;border-radius:14px;border:0;background:var(--card);color:var(--muted);font-weight:600}
@@ -193,6 +216,23 @@ html{color-scheme:light}
     </div>
     <p class="sub" id="sub"></p>
     <div class="auth" id="auth" hidden></div>
+    <div class="install" id="install" hidden>
+      <span>加到主畫面，像 App 一樣打開，休息結束才能收到通知。</span>
+      <button type="button" id="installbtn">加到主畫面</button>
+      <button type="button" class="x" id="installx" aria-label="關閉">×</button>
+    </div>
+    <div class="sheet" id="iosguide" hidden>
+      <div class="sheetbox">
+        <h3>iPhone 加到主畫面</h3>
+        <ol>
+          <li><b>1</b><span>按 Safari 下方的 <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 3v13M7 8l5-5 5 5M5 12v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8"/></svg> 分享按鈕</span></li>
+          <li><b>2</b><span>往下找到「加入主畫面」</span></li>
+          <li><b>3</b><span>右上角按「新增」</span></li>
+        </ol>
+        <p>之後從主畫面的「一週三練」圖示打開，再按「開啟通知」。</p>
+        <button type="button" id="iosclose">知道了</button>
+      </div>
+    </div>
   </header>
 
   <div id="train">
@@ -200,8 +240,9 @@ html{color-scheme:light}
     <div id="days"></div>
 
     <div class="foot">
+      <div class="notif" id="notif" hidden><span id="notiftxt"></span><button type="button" id="notifbtn">開啟通知</button></div>
       <p id="tip"></p>
-      <p>休息倒數結束會震動（Android）並發出嗶聲（iPhone 網頁無法震動，請開音量）。倒數期間螢幕不會自動關。</p>
+      <p>休息倒數結束會彈通知（需先開啟通知），Android 另外會震動。倒數期間螢幕不會自動關。</p>
       <p>RM 是「最大反覆次數」：8–10 RM 指這個重量最多只做得到 8–10 下。組間休息：複合動作 90–120 秒，單關節與超級組 60 秒，點一組會自動倒數。</p>
       <p>每一組各自填重量和次數，沒填的會沿用上一組；按「＋ 加一組」可以加，× 可以移除。器材被佔走時，按「器材被佔？」挑替代動作，紀錄會存替代後的名稱。</p>
       <label class="daterow">訓練日期<input type="date" id="fdate"><span class="hint" id="fdatehint"></span></label>
@@ -712,47 +753,73 @@ document.getElementById('himport').onchange=ev=>{
 
 // rest timer
 const timer=document.getElementById('timer'),tt=document.getElementById('tt'),bar=document.getElementById('bar');
-let left=0,total=0,iv=null,endAt=0,actx=null,wakeLock=null;
+let left=0,total=0,iv=null,endAt=0,wakeLock=null;
 function render(){tt.textContent=fmt(left);bar.style.transform='scaleX('+(total?left/total:0)+')'}
-// 音效：iPhone 網頁不能震動，用嗶聲提醒；必須在使用者點擊時先建立 AudioContext
-function audioReady(){
-  try{
-    if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();
-    if(actx.state==='suspended')actx.resume();
-  }catch(e){}
-}
-function beep(){
-  if(!actx)return;
-  try{
-    const t0=actx.currentTime;
-    [0,0.22,0.44].forEach((dt,i)=>{
-      const o=actx.createOscillator(),g=actx.createGain();
-      o.type='sine';o.frequency.value=i===2?1320:880;
-      g.gain.setValueAtTime(0.0001,t0+dt);g.gain.exponentialRampToValueAtTime(0.5,t0+dt+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t0+dt+0.18);
-      o.connect(g);g.connect(actx.destination);o.start(t0+dt);o.stop(t0+dt+0.2);
-    });
-  }catch(e){}
-}
 function vibrate(p){if(navigator.vibrate)try{navigator.vibrate(p)}catch(e){}}
+
+// 通知：iPhone 必須「加到主畫面」後才支援；Android Chrome 直接支援
+const isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent)&&!window.MSStream;
+const standalone=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+const notifEl=document.getElementById('notif'),notifTxt=document.getElementById('notiftxt'),notifBtn=document.getElementById('notifbtn');
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{})}
+function notifState(){
+  if(!('Notification' in window)||!('serviceWorker' in navigator))return isIOS&&!standalone?'ios-need-install':'unsupported';
+  return Notification.permission;
+}
+function renderNotif(){
+  const st=notifState();
+  notifEl.hidden=false;notifBtn.hidden=true;
+  if(st==='granted'){notifEl.hidden=true}
+  else if(st==='ios-need-install'){notifTxt.textContent='想在休息結束時收到通知：用 Safari 的分享 → 「加入主畫面」，從主畫面開啟後再按開啟通知。'}
+  else if(st==='default'){notifTxt.textContent='休息結束時彈通知提醒你';notifBtn.hidden=false}
+  else if(st==='denied'){notifTxt.textContent='通知被關閉了。到手機設定 → 通知 → 一週三練 重新打開。'}
+  else notifEl.hidden=true;
+}
+notifBtn.onclick=async()=>{try{await Notification.requestPermission()}catch(e){};renderNotif()};
+async function notify(){
+  if(notifState()!=='granted')return;
+  try{const reg=await navigator.serviceWorker.ready;await reg.showNotification('休息結束',{body:'開始下一組',tag:'rest-end',renotify:true,vibrate:[300,120,300],icon:'icon-192.png'})}catch(e){}
+}
 async function keepAwake(on){
   try{
     if(on&&'wakeLock' in navigator&&!wakeLock){wakeLock=await navigator.wakeLock.request('screen');wakeLock.addEventListener('release',()=>{wakeLock=null})}
     if(!on&&wakeLock){await wakeLock.release();wakeLock=null}
   }catch(e){}
 }
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&iv)keepAwake(true)});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&iv){keepAwake(true);tick()}});
 function tick(){
   left=Math.max(0,Math.ceil((endAt-Date.now())/1000));
-  if(left<=0){stopTimer();vibrate([300,120,300,120,500]);beep()}else render();
+  if(left<=0){stopTimer();vibrate([300,120,300,120,500]);notify()}else render();
 }
 function startTimer(sec){
-  clearInterval(iv);audioReady();keepAwake(true);
+  clearInterval(iv);keepAwake(true);
+  if(notifState()==='default'&&!notifAsked){notifAsked=true;Notification.requestPermission().then(renderNotif).catch(()=>{})}
   left=sec;total=sec;endAt=Date.now()+sec*1000;timer.classList.add('on');render();
   iv=setInterval(tick,250);
 }
+let notifAsked=false;
 function stopTimer(){clearInterval(iv);iv=null;timer.classList.remove('on');keepAwake(false)}
 document.getElementById('t30').onclick=()=>{endAt+=30000;total=Math.max(total,Math.ceil((endAt-Date.now())/1000));tick()};
 document.getElementById('tskip').onclick=stopTimer;
+renderNotif();
+
+// 加到主畫面：Android 用瀏覽器的安裝提示；iPhone 沒有 API，顯示步驟教學
+const installEl=document.getElementById('install'),installBtn=document.getElementById('installbtn'),iosGuide=document.getElementById('iosguide');
+let installEvt=null;
+function renderInstall(){
+  let dismissed=false;try{dismissed=localStorage.getItem('w3-install-x')==='1'}catch(e){}
+  installEl.hidden=standalone||dismissed||!(installEvt||isIOS);
+}
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;renderInstall()});
+window.addEventListener('appinstalled',()=>{installEvt=null;installEl.hidden=true});
+installBtn.onclick=async()=>{
+  if(installEvt){installEvt.prompt();try{await installEvt.userChoice}catch(e){};installEvt=null;renderInstall();return}
+  if(isIOS){iosGuide.hidden=false}
+};
+document.getElementById('installx').onclick=()=>{try{localStorage.setItem('w3-install-x','1')}catch(e){};installEl.hidden=true};
+document.getElementById('iosclose').onclick=()=>{iosGuide.hidden=true};
+iosGuide.onclick=e=>{if(e.target===iosGuide)iosGuide.hidden=true};
+renderInstall();
 
 // ---------- 雲端同步（Supabase） ----------
 const authEl=document.getElementById('auth');
