@@ -160,6 +160,33 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .sheetbox li svg{vertical-align:-3px;color:var(--accent)}
 .sheetbox p{font-size:13px;color:var(--muted);margin:10px 0 14px}
 .sheetbox button{width:100%;height:46px;border-radius:12px;border:0;background:var(--accent);color:#fff;font-weight:700;font-size:15px}
+.meta .editbtn{height:30px;padding:0 10px;border-radius:999px;border:0;background:var(--card2);color:var(--ink2);font-size:12px;font-weight:600;margin-left:8px}
+.edit{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.edname{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted);font-weight:600;margin-bottom:10px}
+.edname input,.sheetbox input[type=text],.sheetbox select{height:42px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);font:inherit;font-size:16px;padding:0 10px;width:100%}
+.edrow{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
+.edrow:first-child{border-top:0}
+.edmain{flex:1;min-width:0}
+.edmain b{display:block;font-size:15px}
+.edmain span{display:block;font-size:12px;color:var(--muted)}
+.edact{display:flex;gap:4px;flex:none}
+.edact button{height:34px;min-width:34px;padding:0 8px;border-radius:8px;border:0;background:var(--card2);color:var(--ink2);font-size:13px;font-weight:600}
+.edact button[disabled]{opacity:.3}
+.edact .del{color:var(--danger)}
+.addex{margin-top:10px;width:100%;height:42px;border-radius:10px;border:1px dashed var(--line);background:none;color:var(--ink2);font-weight:600;font-size:14px}
+.edfoot{display:flex;gap:8px;margin-top:12px}
+.edfoot button{flex:1;height:44px;border-radius:12px;border:0;font-weight:700;font-size:14px}
+.edfoot .restore{background:var(--card2);color:var(--ink2)}
+.edfoot .done{background:var(--accent);color:#fff}
+.sheetbox form{display:flex;flex-direction:column;gap:10px}
+.sheetbox form label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);font-weight:600}
+.sheetbox form .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sheetbox form .chk{flex-direction:row;align-items:center;gap:8px;color:var(--ink2)}
+.sheetbox form .chk input{width:20px;height:20px}
+.sheetbox form .second{display:flex;flex-direction:column;gap:10px;padding:10px;border-radius:10px;background:var(--bg)}
+.sheetbox form .two button{height:46px;border-radius:12px;border:0;font-weight:700;font-size:15px}
+.sheetbox form .cancel{background:var(--card2);color:var(--ink2)}
+.sheetbox form button[type=submit]{background:var(--accent);color:#fff}
 .finish{margin-top:12px;width:100%;height:52px;border-radius:14px;border:0;background:var(--accent);color:var(--accent-ink);font-size:16px;font-weight:700;box-shadow:0 8px 24px rgba(76,141,255,.25)}
 .msg{font-size:13px;color:var(--done);margin:8px 2px 0;min-height:1.2em}
 .reset{margin-top:8px;width:100%;height:44px;border-radius:14px;border:0;background:var(--card);color:var(--muted);font-weight:600}
@@ -224,6 +251,23 @@ html{color-scheme:light}
       <span>加到主畫面，像 App 一樣打開，休息結束才能收到通知。</span>
       <button type="button" id="installbtn">加到主畫面</button>
       <button type="button" class="x" id="installx" aria-label="關閉">×</button>
+    </div>
+    <div class="sheet" id="exform" hidden>
+      <div class="sheetbox">
+        <h3>新增動作</h3>
+        <form>
+          <label>動作名稱<input name="n1" type="text" required maxlength="30" placeholder="例如：啞鈴臥推"></label>
+          <div class="two"><label>RM（次數範圍）<input name="rm1" type="text" maxlength="10" placeholder="8–12"></label><label>休息<select name="rest"><option value="60">60 秒</option><option value="90">90 秒</option><option value="120">2 分鐘</option><option value="150">2 分半</option><option value="180">3 分鐘</option></select></label></div>
+          <label>肌群（選填）<input name="mus1" type="text" maxlength="40" placeholder="例如：胸大肌、肱三頭肌"></label>
+          <label class="chk"><input name="sup" type="checkbox">超級組：和另一個動作交替做</label>
+          <div class="second" hidden>
+            <label>第二個動作<input name="n2" type="text" maxlength="30"></label>
+            <div class="two"><label>RM<input name="rm2" type="text" maxlength="10" placeholder="12–15"></label><label>肌群（選填）<input name="mus2" type="text" maxlength="40"></label></div>
+          </div>
+          <label>備註（選填）<input name="note" type="text" maxlength="40" placeholder="例如：隔週換器械胸推"></label>
+          <div class="two"><button type="button" class="cancel">取消</button><button type="submit">儲存</button></div>
+        </form>
+      </div>
     </div>
     <div class="sheet" id="iosguide" hidden>
       <div class="sheetbox">
@@ -482,7 +526,7 @@ function saveHistory(){try{localStorage.setItem(HKEY,JSON.stringify(history))}ca
 
 let DAYS=[],KEY='',logs={},swaps={},cur=0;
 function load(){
-  DAYS=PROGRAMS[prog].days;KEY=PROGRAMS[prog].key;
+  loadCustom();DAYS=daysOf(prog);KEY=PROGRAMS[prog].key;
   try{logs=JSON.parse(localStorage.getItem(KEY+'-log')||'{}')||{}}catch(e){logs={}}
   try{swaps=JSON.parse(localStorage.getItem(KEY+'-swap')||'{}')||{}}catch(e){swaps={}}
   try{cur=parseInt(localStorage.getItem('w3-day-'+prog)||'0',10)||0}catch(e){cur=0}
@@ -497,6 +541,19 @@ function load(){
     saveLog(false);
   }
 }
+// ---- 自訂課表：使用者改過就存一份完整的 days，沒改過用預設 ----
+let custom={};
+function cloneDays(days){return JSON.parse(JSON.stringify(days))}
+function withIds(days){days.forEach((d,di)=>d.ex.forEach((e,ei)=>{(e.sup||[e]).forEach((it,ii)=>{if(!it.id)it.id=`${di}-${ei}-${ii}`})}));return days}
+function loadCustom(){for(const p in PROGRAMS){try{const c=JSON.parse(localStorage.getItem('w3-custom-'+p)||'null');custom[p]=c&&Array.isArray(c.days)?c:null}catch(e){custom[p]=null}}}
+function daysOf(p){return custom[p]?withIds(custom[p].days):withIds(cloneDays(PROGRAMS[p].days))}
+function ensureCustom(p){if(!custom[p])custom[p]={days:withIds(cloneDays(PROGRAMS[p].days)),updated:Date.now()};return custom[p]}
+function saveCustom(p){
+  if(custom[p])custom[p].updated=Date.now();
+  try{if(custom[p])localStorage.setItem('w3-custom-'+p,JSON.stringify(custom[p]));else localStorage.removeItem('w3-custom-'+p)}catch(e){}
+  pushPrefs();
+}
+function newId(){return 'c'+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
 function rows(wk){if(!Array.isArray(logs[wk])||!logs[wk].length)logs[wk]=[0,1,2].map(()=>({w:null,r:null,done:false}));return logs[wk]}
 // 某一組的有效值：自己沒填就沿用上一組
 function eff(rs,i,key){for(let k=i;k>=0;k--)if(rs[k][key]!=null)return rs[k][key];return null}
@@ -538,7 +595,7 @@ function fmtLog(it){
 function effective(it,wk){
   const a=ALTS[it.n];const s=swaps[wk];
   if(a&&s!=null&&a.alts[s])return {n:a.alts[s].n,rm:a.alts[s].rm||it.rm,note:a.alts[s].note||'',orig:it.n,mus:a.m};
-  return {n:it.n,rm:it.rm,note:'',orig:null,mus:a?a.m:''};
+  return {n:it.n,rm:it.rm,note:'',orig:null,mus:a?a.m:(it.mus||'')};
 }
 
 const seg=document.getElementById('seg'),tabs=document.getElementById('tabs'),daysEl=document.getElementById('days');
@@ -581,7 +638,9 @@ function build(){
     const sec=document.createElement('section');sec.className='day';sec.id='day'+di;
     sec.setAttribute('role','tabpanel');
     const nm=d.ex.reduce((a,e)=>a+(e.sup?e.sup.length:1),0);
-    sec.innerHTML=`<div class="meta"><span>${nm} 個動作，${nm*3} 組</span><span id="c${di}"></span></div>`;
+    sec.innerHTML=`<div class="meta"><span>${nm} 個動作${custom[prog]?'（已自訂）':''}</span><span id="c${di}"></span><button type="button" class="editbtn">編輯課表</button></div>`;
+    sec.querySelector('.editbtn').onclick=()=>{editing=di;build()};
+    if(editing===di){sec.appendChild(renderEditor(di));daysEl.appendChild(sec);progress(di);return}
     d.ex.forEach((e,ei)=>{
       const items=e.sup||[e];
       let holder=sec;
@@ -591,8 +650,7 @@ function build(){
         sec.appendChild(holder);
       }
       items.forEach((it,ii)=>{
-        const wk=`${di}-${ei}-${ii}`;
-        holder.appendChild(renderEx(it,e,wk,di));
+        holder.appendChild(renderEx(it,e,it.id,di));
       });
       if(!e.sup){/* rest line is inside renderEx */}
     });
@@ -679,13 +737,83 @@ function renderEx(it,e,wk,di){
   return art;
 }
 
-function slots(di){const out=[];DAYS[di].ex.forEach((e,ei)=>{(e.sup||[e]).forEach((it,ii)=>out.push({it,e,wk:`${di}-${ei}-${ii}`}))});return out}
+function slots(di){const out=[];DAYS[di].ex.forEach((e,ei)=>{(e.sup||[e]).forEach((it,ii)=>out.push({it,e,wk:it.id}))});return out}
 function progress(di){
   let total=0,done=0;
   slots(di).forEach(x=>{const rs=rows(x.wk);total+=rs.length;done+=rs.filter(r=>r.done).length});
-  document.getElementById('p'+di).textContent=done?done+' / '+total+' 組':'';
-  document.getElementById('c'+di).innerHTML=`<span class="num">${done}</span> / ${total} 組完成`;
+  const pe=document.getElementById('p'+di),ce=document.getElementById('c'+di);
+  if(pe)pe.textContent=done?done+' / '+total+' 組':'';
+  if(ce)ce.innerHTML=`<span class="num">${done}</span> / ${total} 組完成`;
 }
+let editing=null;
+function restLabel(sec){return sec>=60?(sec%60?Math.floor(sec/60)+'分'+(sec%60)+'秒':(sec/60)+' 分鐘'):sec+' 秒'}
+function renderEditor(di){
+  const c=ensureCustom(prog);const d=c.days[di];
+  const box=document.createElement('div');box.className='edit';
+  box.innerHTML=`<label class="edname">這一天的名稱<input type="text" value="${d.name}" maxlength="20"></label><div class="edlist"></div>`
+    +`<button type="button" class="addex">＋ 新增動作</button>`
+    +`<div class="edfoot"><button type="button" class="restore">還原這一天為預設</button><button type="button" class="done">完成編輯</button></div>`;
+  const nameIn=box.querySelector('.edname input');
+  nameIn.onchange=()=>{d.name=nameIn.value.trim()||d.name;saveCustom(prog)};
+  const list=box.querySelector('.edlist');
+  d.ex.forEach((e,ei)=>{
+    const items=e.sup||[e];
+    const row=document.createElement('div');row.className='edrow';
+    row.innerHTML=`<div class="edmain"><b>${items.map(x=>x.n).join(' ＋ ')}</b><span>${items.map(x=>x.rm).join(' / ')} RM，休息 ${restLabel(e.rest)}${e.sup?'，超級組':''}${e.note?'，'+e.note:''}</span></div>`
+      +`<div class="edact"><button type="button" class="up" ${ei===0?'disabled':''} aria-label="上移">↑</button><button type="button" class="dn2" ${ei===d.ex.length-1?'disabled':''} aria-label="下移">↓</button><button type="button" class="ed">編輯</button><button type="button" class="del">刪除</button></div>`;
+    row.querySelector('.up').onclick=()=>{[d.ex[ei-1],d.ex[ei]]=[d.ex[ei],d.ex[ei-1]];saveCustom(prog);build()};
+    row.querySelector('.dn2').onclick=()=>{[d.ex[ei+1],d.ex[ei]]=[d.ex[ei],d.ex[ei+1]];saveCustom(prog);build()};
+    row.querySelector('.ed').onclick=()=>openExForm(di,ei);
+    const del=row.querySelector('.del');let armed=false;
+    del.onclick=()=>{if(!armed){armed=true;del.textContent='確定刪除';return}d.ex.splice(ei,1);saveCustom(prog);build()};
+    list.appendChild(row);
+  });
+  box.querySelector('.addex').onclick=()=>openExForm(di,null);
+  box.querySelector('.restore').onclick=()=>{
+    const def=withIds(cloneDays(PROGRAMS[prog].days))[di];c.days[di]=def;saveCustom(prog);build();
+  };
+  box.querySelector('.done').onclick=()=>{
+    // 全部三天都和預設一樣就不算自訂
+    const same=JSON.stringify(c.days.map(x=>({name:x.name,ex:x.ex})))===JSON.stringify(withIds(cloneDays(PROGRAMS[prog].days)).map(x=>({name:x.name,ex:x.ex})));
+    if(same)custom[prog]=null;
+    editing=null;saveCustom(prog);build();
+  };
+  return box;
+}
+const exForm=document.getElementById('exform');
+function openExForm(di,ei){
+  const c=ensureCustom(prog);const d=c.days[di];const e=ei==null?null:d.ex[ei];
+  const items=e?(e.sup||[e]):[{n:'',rm:'10–12'}];
+  const isSup=!!(e&&e.sup);
+  exForm.hidden=false;
+  exForm.querySelector('h3').textContent=e?'編輯動作':'新增動作';
+  const f=exForm.querySelector('form');
+  f.n1.value=items[0].n||'';f.rm1.value=items[0].rm||'';f.mus1.value=items[0].mus||'';
+  f.sup.checked=isSup;
+  f.n2.value=isSup?(items[1].n||''):'';f.rm2.value=isSup?(items[1].rm||''):'';f.mus2.value=isSup?(items[1].mus||''):'';
+  f.rest.value=String(e?e.rest:90);f.note.value=(e&&e.note)||'';
+  exForm.querySelector('.second').hidden=!isSup;
+  f.sup.onchange=()=>{exForm.querySelector('.second').hidden=!f.sup.checked};
+  f.onsubmit=ev=>{
+    ev.preventDefault();
+    const n1=f.n1.value.trim();if(!n1)return;
+    const mk=(n,rm,mus,old)=>({id:old&&old.id||newId(),n,rm:rm.trim()||'10–12',mus:mus.trim()});
+    const a=mk(n1,f.rm1.value,f.mus1.value,items[0]);
+    let ne;
+    if(f.sup.checked&&f.n2.value.trim()){
+      const b=mk(f.n2.value.trim(),f.rm2.value,f.mus2.value,isSup?items[1]:null);
+      ne={sup:[a,b],rest:parseInt(f.rest.value,10)||60};
+    }else{
+      ne={id:a.id,n:a.n,rm:a.rm,mus:a.mus,rest:parseInt(f.rest.value,10)||90};
+    }
+    const note=f.note.value.trim();if(note)ne.note=note;
+    if(e)d.ex[ei]=ne;else d.ex.push(ne);
+    saveCustom(prog);exForm.hidden=true;build();
+  };
+  exForm.querySelector('.cancel').onclick=()=>{exForm.hidden=true};
+  setTimeout(()=>f.n1.focus(),50);
+}
+exForm.onclick=ev=>{if(ev.target===exForm)exForm.hidden=true};
 function show(di){
   cur=di;
   document.querySelectorAll('.tab').forEach((t,i)=>t.setAttribute('aria-selected',i===di));
@@ -872,7 +1000,7 @@ function allPrefs(){
     const k=PROGRAMS[p].key;let lg={},sw={};
     try{lg=JSON.parse(localStorage.getItem(k+'-log')||'{}')||{}}catch(e){}
     try{sw=JSON.parse(localStorage.getItem(k+'-swap')||'{}')||{}}catch(e){}
-    o[p]={log:lg,swap:sw};
+    o[p]={log:lg,swap:sw,custom:custom[p]||null};
   }
   return o;
 }
@@ -888,6 +1016,10 @@ function applyPrefs(remote){
     if(r.w)for(const wk in r.w)if(!rl[wk])rl[wk]=[0,1,2].map(()=>({w:r.w[wk],r:null,done:false}));
     try{localStorage.setItem(k+'-log',JSON.stringify(Object.assign({},rl,lg)))}catch(e){}
     try{localStorage.setItem(k+'-swap',JSON.stringify(Object.assign({},r.swap||{},sw)))}catch(e){}
+    // 自訂課表：比較修改時間，新的贏
+    let lc=null;try{lc=JSON.parse(localStorage.getItem('w3-custom-'+p)||'null')}catch(e){}
+    const rc=r.custom||null;
+    if(rc&&rc.days&&(!lc||(rc.updated||0)>(lc.updated||0))){try{localStorage.setItem('w3-custom-'+p,JSON.stringify(rc))}catch(e){}}
   }
 }
 let prefsTimer=null;
