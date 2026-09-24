@@ -91,6 +91,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .wrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;font-size:12px;color:var(--muted)}
 .wrow .last{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .swapbtn{height:32px;padding:0 12px;border-radius:999px;border:0;background:var(--card2);color:var(--ink2);font-size:12px;font-weight:600;white-space:nowrap}
+.demo{height:32px;padding:0 12px;border-radius:999px;background:var(--card2);color:var(--accent);font-size:12px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;text-decoration:none}
 .swapbtn[aria-expanded="true"]{background:var(--accent-soft);color:var(--accent)}
 .st{margin-top:10px}
 .sth,.str{display:grid;grid-template-columns:26px 1fr 1fr 50px 26px;gap:8px;align-items:center}
@@ -129,6 +130,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .alt .num small{font-size:11px;color:var(--muted);font-weight:400}
 .alt[aria-pressed="true"] b{color:var(--accent)}
 .altw .src{position:absolute;right:0;top:12px;font-size:11px;color:var(--accent);text-decoration:none}
+.altw .demo2{right:36px}
+.altw .alt{padding-right:84px}
 .alts .close{margin-top:6px;width:100%;height:36px;border-radius:999px;border:0;background:var(--card2);color:var(--ink2);font-weight:600;font-size:13px}
 
 /* footer actions */
@@ -521,6 +524,10 @@ function lastOf(name){
   }
   return null;
 }
+function demoUrl(name){
+  const q=name.replace(/（.*?）|\(.*?\)/g,'').split('或')[0].trim()+' 教學';
+  return 'https://www.youtube.com/results?search_query='+encodeURIComponent(q);
+}
 // 60×12、50×12 這種格式
 function fmtLog(it){
   if(it.log&&it.log.length)return it.log.map(x=>(x.w!=null?x.w:'–')+'×'+(x.r!=null?x.r:'–')).join('、');
@@ -608,7 +615,7 @@ function renderEx(it,e,wk,di){
     `<div class="rm"><span class="num">${ef.rm}</span><small>RM</small></div></div>`+
     (note?`<div class="note">${note}</div>`:'')+
     (ef.orig?`<div class="swapped">代替「${ef.orig}」<button type="button" class="unswap">換回原動作</button></div>`:'')+
-    `<div class="wrow"><span class="last">${lastTxt}</span>`+(ALTS[it.n]?`<button type="button" class="swapbtn" aria-expanded="false">器材被佔？</button>`:'')+`</div>`+
+    `<div class="wrow"><span class="last">${lastTxt}</span><a class="demo" href="${demoUrl(ef.n)}" target="_blank" rel="noopener">示範影片</a>`+(ALTS[it.n]?`<button type="button" class="swapbtn" aria-expanded="false">器材被佔？</button>`:'')+`</div>`+
     `<div class="st"><div class="sth"><span>組</span><span>kg</span><span>次數</span><span>完成</span><span></span></div><div class="strs"></div>`+
     `<button type="button" class="addset">＋ 加一組</button></div>`+
     `<div class="rest"><span>休息 ${fmt(e.rest)}</span><button type="button">手動計時</button></div>`;
@@ -659,7 +666,8 @@ function renderEx(it,e,wk,di){
       b.onclick=()=>{swaps[wk]=idx;saveS();rerender()};
       const wrapEl=document.createElement('div');wrapEl.className='altw';
       wrapEl.appendChild(b);
-      if(alt.src){const l=document.createElement('a');l.className='src';l.href=alt.src;l.target='_blank';l.rel='noopener';l.textContent='資料來源';wrapEl.appendChild(l)}
+      const dl=document.createElement('a');dl.className='src demo2';dl.href=demoUrl(alt.n);dl.target='_blank';dl.rel='noopener';dl.textContent='示範';wrapEl.appendChild(dl);
+      if(alt.src){const l=document.createElement('a');l.className='src';l.href=alt.src;l.target='_blank';l.rel='noopener';l.textContent='來源';wrapEl.appendChild(l)}
       box.appendChild(wrapEl);
     });
     const c=document.createElement('button');c.type='button';c.className='close';c.textContent='收起';
