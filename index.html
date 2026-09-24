@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#F6F1E8">
 <title>一週三練課表</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,6 +18,7 @@
   --r:16px; --r-s:12px;
 }
 *{box-sizing:border-box}
+html,body,button,input,label{touch-action:manipulation}
 html{scroll-padding-top:130px;color-scheme:dark}
 body{
   margin:0;background:var(--bg);color:var(--ink);
@@ -81,21 +82,25 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .swapped{font-size:12px;color:var(--warn);margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .swapped button{border:0;background:none;padding:0;color:var(--ink2);font-weight:600;text-decoration:underline;text-underline-offset:3px;font-size:12px}
 
-.wrow{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:12px;color:var(--muted)}
-.wrow label{display:flex;align-items:center;gap:6px;color:var(--ink2);white-space:nowrap;font-weight:600}
-.wrow input{width:72px;height:38px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);
-  font:inherit;font-weight:700;font-size:17px;padding:0 10px;text-align:center;-moz-appearance:textfield}
-.wrow input::-webkit-outer-spin-button,.wrow input::-webkit-inner-spin-button{-webkit-appearance:none}
+.wrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;font-size:12px;color:var(--muted)}
 .wrow .last{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .swapbtn{height:32px;padding:0 12px;border-radius:999px;border:0;background:var(--card2);color:var(--ink2);font-size:12px;font-weight:600;white-space:nowrap}
 .swapbtn[aria-expanded="true"]{background:var(--accent-soft);color:var(--accent)}
-
-.sets{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
-.set{height:46px;border-radius:999px;border:1px solid var(--line);background:var(--card2);color:var(--ink2);display:flex;align-items:center;justify-content:center;gap:4px;font-size:15px;transition:background .12s,color .12s,border-color .12s}
-.set .num{font-size:16px}
-.set small{font-size:13px;color:inherit;opacity:.8}
-.set[aria-pressed="true"]{background:var(--done);border-color:var(--done);color:#0B1A11}
-.set[aria-pressed="true"] .num::before{content:"✓ ";font-weight:800}
+.st{margin-top:10px}
+.sth,.str{display:grid;grid-template-columns:26px 1fr 1fr 50px 26px;gap:8px;align-items:center}
+.sth{font-size:11px;color:var(--muted);padding:0 0 4px;text-align:center}
+.sth span:first-child{text-align:left}
+.str{padding:3px 0}
+.str .sn{font-size:14px;color:var(--muted)}
+.str input{width:100%;min-width:0;height:42px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);font:inherit;font-weight:700;font-size:17px;padding:0 6px;text-align:center;-moz-appearance:textfield}
+.str input::-webkit-outer-spin-button,.str input::-webkit-inner-spin-button{-webkit-appearance:none}
+.str input::placeholder{color:var(--muted);font-weight:500;opacity:.6}
+.str .dn{height:42px;border-radius:10px;border:1px solid var(--line);background:var(--card2);color:var(--muted);font-size:18px;font-weight:800;padding:0}
+.str .dn[aria-pressed="true"]{background:var(--done);border-color:var(--done);color:#fff}
+.str.on input{border-color:var(--done);background:rgba(46,139,87,.08)}
+.str .rmrow{height:42px;border:0;background:none;color:var(--muted);font-size:20px;padding:0;line-height:1}
+.str .rmrow[disabled]{visibility:hidden}
+.addset{margin-top:6px;width:100%;height:38px;border-radius:10px;border:1px dashed var(--line);background:none;color:var(--ink2);font-weight:600;font-size:13px}
 .rest{display:flex;justify-content:space-between;align-items:center;margin-top:10px;font-size:12px;color:var(--muted)}
 .rest button{border:0;background:none;padding:0;color:var(--accent);font-weight:600;font-size:12px}
 
@@ -168,7 +173,7 @@ html{color-scheme:light}
 .super .ex{border:0;border-top:1px dashed var(--line);border-radius:0;box-shadow:none;padding:12px 0 14px;margin:0}
 .super .ex:first-of-type{border-top:0}
 .super .tag{margin-bottom:4px}
-.tab{background:var(--card)}.wrow input{background:#fff}.set{background:#fff;border-radius:10px}.set[aria-pressed="true"]{color:#fff}
+.tab{background:var(--card)}.wrow input{background:#fff}
 .prog button{border-radius:10px}.hbtn,.hbar button,.hbar label,.swapbtn,.alts .close{background:var(--card2);border-radius:10px}
 .finish{border-radius:12px;box-shadow:none}.timer{border-radius:14px;box-shadow:0 12px 32px rgba(34,29,23,.25)}.alts{background:#fff}
 </style>
@@ -192,7 +197,7 @@ html{color-scheme:light}
     <div class="foot">
       <p id="tip"></p>
       <p>RM 是「最大反覆次數」：8–10 RM 指這個重量最多只做得到 8–10 下。組間休息：複合動作 90–120 秒，單關節與超級組 60 秒，點一組會自動倒數。</p>
-      <p>器材被佔走時，按「器材被佔？」挑一個練同樣肌群的替代動作，紀錄會存替代後的名稱。</p>
+      <p>每一組各自填重量和次數，沒填的會沿用上一組；按「＋ 加一組」可以加，× 可以移除。器材被佔走時，按「器材被佔？」挑替代動作，紀錄會存替代後的名稱。</p>
       <button class="finish" id="finish">完成訓練，存入紀錄</button>
       <div class="msg" id="fmsg"></div>
       <button class="reset" id="reset">清除今天的打勾（不存檔）</button>
@@ -423,18 +428,28 @@ try{history=JSON.parse(localStorage.getItem(HKEY)||'[]')||[]}catch(e){history=[]
 if(!Array.isArray(history))history=[];
 function saveHistory(){try{localStorage.setItem(HKEY,JSON.stringify(history))}catch(e){}}
 
-let DAYS=[],KEY='',state={},weights={},swaps={},cur=0;
+let DAYS=[],KEY='',logs={},swaps={},cur=0;
 function load(){
   DAYS=PROGRAMS[prog].days;KEY=PROGRAMS[prog].key;
-  try{state=JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch(e){state={}}
-  try{weights=JSON.parse(localStorage.getItem(KEY+'-w')||'{}')||{}}catch(e){weights={}}
+  try{logs=JSON.parse(localStorage.getItem(KEY+'-log')||'{}')||{}}catch(e){logs={}}
   try{swaps=JSON.parse(localStorage.getItem(KEY+'-swap')||'{}')||{}}catch(e){swaps={}}
   try{cur=parseInt(localStorage.getItem('w3-day-'+prog)||'0',10)||0}catch(e){cur=0}
+  // 舊版資料（固定 3 組打勾＋單一重量）轉成每組一筆
+  let st={},w={};
+  try{st=JSON.parse(localStorage.getItem(KEY)||'{}')||{}}catch(e){}
+  try{w=JSON.parse(localStorage.getItem(KEY+'-w')||'{}')||{}}catch(e){}
+  if(Object.keys(st).length||Object.keys(w).length){
+    const keys=new Set(Object.keys(w));for(const k in st)keys.add(k.replace(/-\d+$/,''));
+    keys.forEach(wk=>{if(!logs[wk])logs[wk]=[1,2,3].map(n=>({w:w[wk]!=null?w[wk]:null,r:null,done:!!st[wk+'-'+n]}))});
+    try{localStorage.removeItem(KEY);localStorage.removeItem(KEY+'-w')}catch(e){}
+    saveLog(false);
+  }
 }
-function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}}
-function saveW(){try{localStorage.setItem(KEY+'-w',JSON.stringify(weights))}catch(e){};pushPrefs()}
+function rows(wk){if(!Array.isArray(logs[wk])||!logs[wk].length)logs[wk]=[0,1,2].map(()=>({w:null,r:null,done:false}));return logs[wk]}
+// 某一組的有效值：自己沒填就沿用上一組
+function eff(rs,i,key){for(let k=i;k>=0;k--)if(rs[k][key]!=null)return rs[k][key];return null}
+function saveLog(sync){try{localStorage.setItem(KEY+'-log',JSON.stringify(logs))}catch(e){};if(sync!==false)pushPrefs()}
 function saveS(){try{localStorage.setItem(KEY+'-swap',JSON.stringify(swaps))}catch(e){};pushPrefs()}
-function isOn(id){return !!state[id]}
 function fmt(s){return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
 function fdate(iso){
   const d=new Date(iso);const y=d.getFullYear();
@@ -444,9 +459,14 @@ function fdate(iso){
 function lastOf(name){
   for(let i=history.length-1;i>=0;i--){
     const it=(history[i].items||[]).find(x=>canon(x.n)===canon(name));
-    if(it&&(it.w!=null||it.sets))return {w:it.w,sets:it.sets,t:history[i].t};
+    if(it&&((it.log&&it.log.length)||it.w!=null||it.sets))return {log:it.log||null,w:it.w,sets:it.sets,t:history[i].t};
   }
   return null;
+}
+// 60×12、50×12 這種格式
+function fmtLog(it){
+  if(it.log&&it.log.length)return it.log.map(x=>(x.w!=null?x.w:'–')+'×'+(x.r!=null?x.r:'–')).join('、');
+  return (it.w!=null?it.w+' kg × ':'')+it.sets+' 組';
 }
 // 目前這一格實際要做的動作（原動作或替代動作）
 function effective(it,wk){
@@ -519,37 +539,54 @@ function build(){
 function renderEx(it,e,wk,di){
   const ef=effective(it,wk);
   const last=lastOf(ef.n);
-  const lastTxt=last?('上次 '+(last.w!=null?last.w+' kg × ':'')+last.sets+' 組，'+fdate(last.t)):'還沒有紀錄';
+  const lastTxt=last?('上次 '+fmtLog(last)+'，'+fdate(last.t)):'還沒有紀錄';
   const note=ef.note||it.note||e.note||'';
+  const rs=rows(wk);
+  const lastW=last&&last.log&&last.log.length?last.log[0].w:(last?last.w:null);
+  const lastR=last&&last.log&&last.log.length?last.log[0].r:null;
   const art=document.createElement('article');art.className='ex';
   art.innerHTML=
     `<div class="exh"><div><span class="name">${ef.n}</span>${ef.mus?`<span class="mus">${ef.mus}</span>`:''}</div>`+
-    `<div class="rm"><span class="num">${ef.rm}</span><small>RM × 3 組</small></div></div>`+
+    `<div class="rm"><span class="num">${ef.rm}</span><small>RM</small></div></div>`+
     (note?`<div class="note">${note}</div>`:'')+
     (ef.orig?`<div class="swapped">代替「${ef.orig}」<button type="button" class="unswap">換回原動作</button></div>`:'')+
-    `<div class="wrow"><label><input type="number" inputmode="decimal" step="0.5" min="0" placeholder="${last&&last.w!=null?last.w:'—'}" value="${weights[wk]!=null?weights[wk]:''}" aria-label="${ef.n} 重量"><span>kg</span></label>`+
-    `<span class="last">${lastTxt}</span>`+
-    (ALTS[it.n]?`<button type="button" class="swapbtn" aria-expanded="false">器材被佔？</button>`:'')+`</div>`+
-    `<div class="sets"></div>`+
+    `<div class="wrow"><span class="last">${lastTxt}</span>`+(ALTS[it.n]?`<button type="button" class="swapbtn" aria-expanded="false">器材被佔？</button>`:'')+`</div>`+
+    `<div class="st"><div class="sth"><span>組</span><span>kg</span><span>次數</span><span>完成</span><span></span></div><div class="strs"></div>`+
+    `<button type="button" class="addset">＋ 加一組</button></div>`+
     `<div class="rest"><span>休息 ${fmt(e.rest)}</span><button type="button">手動計時</button></div>`;
-  const inp=art.querySelector('input');
-  inp.oninput=()=>{const v=parseFloat(inp.value);if(isNaN(v))delete weights[wk];else weights[wk]=v;saveW()};
-  const sets=art.querySelector('.sets');
-  for(let s=1;s<=3;s++){
-    const id=`${wk}-${s}`;
-    const b=document.createElement('button');b.type='button';b.className='set';
-    b.innerHTML=`<span class="num">${s}</span><small>組</small>`;
-    b.setAttribute('aria-pressed',isOn(id));
-    b.onclick=()=>{
-      const on=!isOn(id);state[id]=on;if(!on)delete state[id];save();
-      b.setAttribute('aria-pressed',on);progress(di);
-      if(on)startTimer(e.rest);
+  const list=art.querySelector('.strs');
+  const rerender=()=>art.replaceWith(renderEx(it,e,wk,di));
+  rs.forEach((row,i)=>{
+    const el=document.createElement('div');el.className='str'+(row.done?' on':'');
+    const pw=i>0?eff(rs,i-1,'w'):lastW, pr=i>0?eff(rs,i-1,'r'):lastR;
+    el.innerHTML=`<span class="sn num">${i+1}</span>`
+      +`<input class="w" type="number" inputmode="decimal" step="0.5" min="0" placeholder="${pw!=null?pw:'kg'}" value="${row.w!=null?row.w:''}" aria-label="第 ${i+1} 組重量">`
+      +`<input class="r" type="number" inputmode="numeric" step="1" min="0" placeholder="${pr!=null?pr:ef.rm}" value="${row.r!=null?row.r:''}" aria-label="第 ${i+1} 組次數">`
+      +`<button type="button" class="dn" aria-pressed="${row.done}" aria-label="第 ${i+1} 組完成">✓</button>`
+      +`<button type="button" class="rmrow" aria-label="移除這一組" ${rs.length>1?'':'disabled'}>×</button>`;
+    const iw=el.querySelector('.w'),ir=el.querySelector('.r');
+    iw.oninput=()=>{const v=parseFloat(iw.value);row.w=isNaN(v)?null:v;saveLog();
+      // 下一列的提示值跟著變
+      const nx=list.children[i+1];if(nx){const q=nx.querySelector('.w');if(q&&!q.value)q.placeholder=row.w!=null?row.w:(eff(rs,i,'w')??'kg')}};
+    ir.oninput=()=>{const v=parseInt(ir.value,10);row.r=isNaN(v)?null:v;saveLog();
+      const nx=list.children[i+1];if(nx){const q=nx.querySelector('.r');if(q&&!q.value)q.placeholder=row.r!=null?row.r:(eff(rs,i,'r')??ef.rm)}};
+    el.querySelector('.dn').onclick=()=>{
+      row.done=!row.done;
+      if(row.done){
+        // 沒填的就用提示值，做完才不會是空的
+        if(row.w==null){const v=parseFloat(iw.placeholder);if(!isNaN(v)){row.w=v;iw.value=v}}
+        if(row.r==null){const v=parseInt(ir.placeholder,10);if(!isNaN(v)){row.r=v;ir.value=v}}
+      }
+      el.classList.toggle('on',row.done);el.querySelector('.dn').setAttribute('aria-pressed',row.done);
+      saveLog();progress(di);if(row.done)startTimer(e.rest);
     };
-    sets.appendChild(b);
-  }
+    el.querySelector('.rmrow').onclick=()=>{rs.splice(i,1);saveLog();progress(di);rerender()};
+    list.appendChild(el);
+  });
+  art.querySelector('.addset').onclick=()=>{rs.push({w:null,r:null,done:false});saveLog();progress(di);rerender();};
   art.querySelector('.rest button').onclick=()=>startTimer(e.rest);
   const un=art.querySelector('.unswap');
-  if(un)un.onclick=()=>{delete swaps[wk];saveS();art.replaceWith(renderEx(it,e,wk,di))};
+  if(un)un.onclick=()=>{delete swaps[wk];saveS();rerender()};
   const sb=art.querySelector('.swapbtn');
   if(sb)sb.onclick=()=>{
     const open=art.querySelector('.alts');
@@ -561,7 +598,7 @@ function renderEx(it,e,wk,di){
       const b=document.createElement('button');b.type='button';b.className='alt';
       b.setAttribute('aria-pressed',swaps[wk]===idx);
       b.innerHTML=`<div><b>${alt.n}</b>${alt.note?`<span>${alt.note}</span>`:''}</div><span class="num">${alt.rm||it.rm}<small> RM</small></span>`;
-      b.onclick=()=>{swaps[wk]=idx;saveS();art.replaceWith(renderEx(it,e,wk,di))};
+      b.onclick=()=>{swaps[wk]=idx;saveS();rerender()};
       const wrapEl=document.createElement('div');wrapEl.className='altw';
       wrapEl.appendChild(b);
       if(alt.src){const l=document.createElement('a');l.className='src';l.href=alt.src;l.target='_blank';l.rel='noopener';l.textContent='資料來源';wrapEl.appendChild(l)}
@@ -575,9 +612,10 @@ function renderEx(it,e,wk,di){
   return art;
 }
 
+function slots(di){const out=[];DAYS[di].ex.forEach((e,ei)=>{(e.sup||[e]).forEach((it,ii)=>out.push({it,e,wk:`${di}-${ei}-${ii}`}))});return out}
 function progress(di){
-  const total=DAYS[di].ex.reduce((a,e)=>a+((e.sup?e.sup.length:1)*3),0);
-  let done=0;for(const k in state)if(k.startsWith(di+'-'))done++;
+  let total=0,done=0;
+  slots(di).forEach(x=>{const rs=rows(x.wk);total+=rs.length;done+=rs.filter(r=>r.done).length});
   document.getElementById('p'+di).textContent=done?done+' / '+total+' 組':'';
   document.getElementById('c'+di).innerHTML=`<span class="num">${done}</span> / ${total} 組完成`;
 }
@@ -590,26 +628,24 @@ function show(di){
 
 document.getElementById('finish').onclick=()=>{
   const d=DAYS[cur];const items=[];let done=0,total=0;
-  d.ex.forEach((e,ei)=>{(e.sup||[e]).forEach((it,ii)=>{
-    const wk=`${cur}-${ei}-${ii}`;const ef=effective(it,wk);
-    let n=0;for(let s=1;s<=3;s++)if(isOn(`${wk}-${s}`))n++;
-    total+=3;done+=n;const w=weights[wk];
-    if(n>0)items.push({n:ef.n,orig:ef.orig,rm:ef.rm,sets:n,w:w!=null?w:null});
-  })});
+  slots(cur).forEach(({it,wk})=>{
+    const ef=effective(it,wk);const rs=rows(wk);
+    const dn=[];rs.forEach((r,i)=>{if(r.done)dn.push({w:eff(rs,i,'w'),r:eff(rs,i,'r')})});
+    total+=rs.length;done+=dn.length;
+    if(dn.length)items.push({n:ef.n,orig:ef.orig,rm:ef.rm,sets:dn.length,w:dn[0].w,log:dn});
+  });
   if(done===0){fmsg.textContent='今天還沒打勾，先做完再存。';return}
   const rec={id:Date.now(),t:new Date().toISOString(),prog,day:cur,name:d.name,done,total,items};
   history.push(rec);saveHistory();pushSession(rec);
-  for(const k in state)if(k.startsWith(cur+'-'))delete state[k];save();
+  slots(cur).forEach(({wk})=>rows(wk).forEach(r=>r.done=false));saveLog();
   stopTimer();build();
-  fmsg.textContent='已存入 '+fdate(new Date().toISOString())+' '+d.name+'，'+done+'/'+total+' 組。打勾已清空，重量和替代動作都保留。';
+  fmsg.textContent='已存入 '+fdate(new Date().toISOString())+' '+d.name+'，'+done+'/'+total+' 組。打勾已清空，重量、次數和替代動作都保留。';
   hbtn.textContent='歷史紀錄 '+history.length;
 };
 
 document.getElementById('reset').onclick=()=>{
-  for(const k in state)if(k.startsWith(cur+'-'))delete state[k];
-  save();
-  document.querySelectorAll('#day'+cur+' .set').forEach(b=>b.setAttribute('aria-pressed','false'));
-  progress(cur);fmsg.textContent='';
+  slots(cur).forEach(({wk})=>rows(wk).forEach(r=>r.done=false));saveLog();
+  build();fmsg.textContent='';
 };
 
 function renderHistory(){
@@ -617,7 +653,7 @@ function renderHistory(){
   if(!history.length){list.innerHTML='<p class="empty">還沒有紀錄。練完在課表頁按「完成訓練，存入紀錄」，這裡就會出現。</p>';return}
   history.slice().sort((a,b)=>b.t<a.t?-1:1).forEach(r=>{
     const el=document.createElement('div');el.className='hrec';
-    const rows=(r.items||[]).map(it=>`<div class="hrow"><span>${it.n}${it.orig?`<small style="color:var(--muted)">（代替${it.orig}）</small>`:''}</span><span>${it.w!=null?it.w+' kg × ':''}${it.sets} 組</span></div>`).join('');
+    const rows=(r.items||[]).map(it=>`<div class="hrow"><span>${it.n}${it.orig?`<small style="color:var(--muted)">（代替${it.orig}）</small>`:''}</span><span>${fmtLog(it)}</span></div>`).join('');
     el.innerHTML=`<button class="hhead" type="button"><div><div class="d num">${fdate(r.t)}</div><div class="w">${PNAME[r.prog]||r.prog}，第 ${r.day+1} 天 ${r.name}</div></div><span class="hc num">${r.done}<small> / ${r.total} 組</small></span></button>`
       +`<div class="hbody" hidden>${rows}<button class="hdel" type="button">刪除這筆</button></div>`;
     const body=el.querySelector('.hbody');
@@ -706,10 +742,10 @@ async function signOut(){await sb.auth.signOut();user=null;renderAuth()}
 function allPrefs(){
   const o={prog};
   for(const p in PROGRAMS){
-    const k=PROGRAMS[p].key;let w={},sw={};
-    try{w=JSON.parse(localStorage.getItem(k+'-w')||'{}')||{}}catch(e){}
+    const k=PROGRAMS[p].key;let lg={},sw={};
+    try{lg=JSON.parse(localStorage.getItem(k+'-log')||'{}')||{}}catch(e){}
     try{sw=JSON.parse(localStorage.getItem(k+'-swap')||'{}')||{}}catch(e){}
-    o[p]={w,swap:sw};
+    o[p]={log:lg,swap:sw};
   }
   return o;
 }
@@ -717,11 +753,13 @@ function applyPrefs(remote){
   if(!remote)return;
   for(const p in PROGRAMS){
     const k=PROGRAMS[p].key;const r=remote[p]||{};
-    let w={},sw={};
-    try{w=JSON.parse(localStorage.getItem(k+'-w')||'{}')||{}}catch(e){}
+    let lg={},sw={};
+    try{lg=JSON.parse(localStorage.getItem(k+'-log')||'{}')||{}}catch(e){}
     try{sw=JSON.parse(localStorage.getItem(k+'-swap')||'{}')||{}}catch(e){}
-    // 遠端為底，本機蓋上去（本機通常比較新）
-    try{localStorage.setItem(k+'-w',JSON.stringify(Object.assign({},r.w||{},w)))}catch(e){}
+    // 遠端為底，本機蓋上去（本機通常比較新）；舊版遠端只有重量的話也轉成每組一列
+    const rl=Object.assign({},r.log||{});
+    if(r.w)for(const wk in r.w)if(!rl[wk])rl[wk]=[0,1,2].map(()=>({w:r.w[wk],r:null,done:false}));
+    try{localStorage.setItem(k+'-log',JSON.stringify(Object.assign({},rl,lg)))}catch(e){}
     try{localStorage.setItem(k+'-swap',JSON.stringify(Object.assign({},r.swap||{},sw)))}catch(e){}
   }
 }
