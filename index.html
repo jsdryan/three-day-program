@@ -169,6 +169,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .edmain{flex:1;min-width:0}
 .edmain b{display:block;font-size:15px}
 .edmain span{display:block;font-size:12px;color:var(--muted)}
+.edmain .edsub{color:var(--warn)}
 .edact{display:flex;gap:4px;flex:none}
 .edact button{height:34px;min-width:34px;padding:0 8px;border-radius:8px;border:0;background:var(--card2);color:var(--ink2);font-size:13px;font-weight:600}
 .edact button[disabled]{opacity:.3}
@@ -759,7 +760,8 @@ function renderEditor(di){
   d.ex.forEach((e,ei)=>{
     const items=e.sup||[e];
     const row=document.createElement('div');row.className='edrow';
-    row.innerHTML=`<div class="edmain"><b>${items.map(x=>x.n).join(' ＋ ')}</b><span>${items.map(x=>x.rm).join(' / ')} RM，休息 ${restLabel(e.rest)}${e.sup?'，超級組':''}${e.note?'，'+e.note:''}</span></div>`
+    const subs=items.map(x=>{const ef=effective(x,x.id);return ef.orig?`${x.n} → 目前用「${ef.n}」`:null}).filter(Boolean);
+    row.innerHTML=`<div class="edmain"><b>${items.map(x=>x.n).join(' ＋ ')}</b><span>${items.map(x=>x.rm).join(' / ')} RM，休息 ${restLabel(e.rest)}${e.sup?'，超級組':''}${e.note?'，'+e.note:''}</span>${subs.length?`<span class="edsub">${subs.join('；')}</span>`:''}</div>`
       +`<div class="edact"><button type="button" class="up" ${ei===0?'disabled':''} aria-label="上移">↑</button><button type="button" class="dn2" ${ei===d.ex.length-1?'disabled':''} aria-label="下移">↓</button><button type="button" class="ed">編輯</button><button type="button" class="del">刪除</button></div>`;
     row.querySelector('.up').onclick=()=>{[d.ex[ei-1],d.ex[ei]]=[d.ex[ei],d.ex[ei-1]];saveCustom(prog);build()};
     row.querySelector('.dn2').onclick=()=>{[d.ex[ei+1],d.ex[ei]]=[d.ex[ei],d.ex[ei+1]];saveCustom(prog);build()};
