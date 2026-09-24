@@ -128,6 +128,11 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 /* footer actions */
 .foot{margin-top:16px;font-size:12px;color:var(--muted)}
 .foot p{margin:6px 2px}
+.daterow{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:13px;color:var(--ink2);font-weight:600}
+.daterow input{height:40px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);font:inherit;font-size:15px;padding:0 10px}
+.daterow .hint{font-weight:400;color:var(--muted)}
+.hdate{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:var(--muted)}
+.hdate input{height:36px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);font:inherit;font-size:14px;padding:0 8px}
 .finish{margin-top:12px;width:100%;height:52px;border-radius:14px;border:0;background:var(--accent);color:var(--accent-ink);font-size:16px;font-weight:700;box-shadow:0 8px 24px rgba(76,141,255,.25)}
 .msg{font-size:13px;color:var(--done);margin:8px 2px 0;min-height:1.2em}
 .reset{margin-top:8px;width:100%;height:44px;border-radius:14px;border:0;background:var(--card);color:var(--muted);font-weight:600}
@@ -196,8 +201,10 @@ html{color-scheme:light}
 
     <div class="foot">
       <p id="tip"></p>
+      <p>休息倒數結束會震動（Android）並發出嗶聲（iPhone 網頁無法震動，請開音量）。倒數期間螢幕不會自動關。</p>
       <p>RM 是「最大反覆次數」：8–10 RM 指這個重量最多只做得到 8–10 下。組間休息：複合動作 90–120 秒，單關節與超級組 60 秒，點一組會自動倒數。</p>
       <p>每一組各自填重量和次數，沒填的會沿用上一組；按「＋ 加一組」可以加，× 可以移除。器材被佔走時，按「器材被佔？」挑替代動作，紀錄會存替代後的名稱。</p>
+      <label class="daterow">訓練日期<input type="date" id="fdate"><span class="hint" id="fdatehint"></span></label>
       <button class="finish" id="finish">完成訓練，存入紀錄</button>
       <div class="msg" id="fmsg"></div>
       <button class="reset" id="reset">清除今天的打勾（不存檔）</button>
@@ -451,6 +458,16 @@ function eff(rs,i,key){for(let k=i;k>=0;k--)if(rs[k][key]!=null)return rs[k][key
 function saveLog(sync){try{localStorage.setItem(KEY+'-log',JSON.stringify(logs))}catch(e){};if(sync!==false)pushPrefs()}
 function saveS(){try{localStorage.setItem(KEY+'-swap',JSON.stringify(swaps))}catch(e){};pushPrefs()}
 function fmt(s){return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function isoFromDateStr(ds){
+  // 選今天就用現在時間；補填過去日期則記中午 12:00
+  if(!ds||ds===todayStr())return new Date().toISOString();
+  const [y,m,d]=ds.split('-').map(Number);return new Date(y,m-1,d,12,0,0).toISOString();
+}
+function dateStrOf(iso){const d=new Date(iso);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+const fdateEl=document.getElementById('fdate'),fdateHint=document.getElementById('fdatehint');
+function resetFdate(){fdateEl.value=todayStr();fdateEl.max=todayStr();fdateHint.textContent=''}
+fdateEl.onchange=()=>{fdateHint.textContent=fdateEl.value&&fdateEl.value!==todayStr()?'補填 '+fdate(isoFromDateStr(fdateEl.value)):''};
 function fdate(iso){
   const d=new Date(iso);const y=d.getFullYear();
   const t=(d.getMonth()+1)+'/'+d.getDate()+'（'+'日一二三四五六'[d.getDay()]+'）';
@@ -635,11 +652,12 @@ document.getElementById('finish').onclick=()=>{
     if(dn.length)items.push({n:ef.n,orig:ef.orig,rm:ef.rm,sets:dn.length,w:dn[0].w,log:dn});
   });
   if(done===0){fmsg.textContent='今天還沒打勾，先做完再存。';return}
-  const rec={id:Date.now(),t:new Date().toISOString(),prog,day:cur,name:d.name,done,total,items};
-  history.push(rec);saveHistory();pushSession(rec);
+  const when=isoFromDateStr(fdateEl.value);
+  const rec={id:Date.now(),t:when,prog,day:cur,name:d.name,done,total,items};
+  history.push(rec);saveHistory();pushSession(rec);resetFdate();
   slots(cur).forEach(({wk})=>rows(wk).forEach(r=>r.done=false));saveLog();
   stopTimer();build();
-  fmsg.textContent='已存入 '+fdate(new Date().toISOString())+' '+d.name+'，'+done+'/'+total+' 組。打勾已清空，重量、次數和替代動作都保留。';
+  fmsg.textContent='已存入 '+fdate(when)+' '+d.name+'，'+done+'/'+total+' 組。打勾已清空，重量、次數和替代動作都保留。';
   hbtn.textContent='歷史紀錄 '+history.length;
 };
 
@@ -655,9 +673,11 @@ function renderHistory(){
     const el=document.createElement('div');el.className='hrec';
     const rows=(r.items||[]).map(it=>`<div class="hrow"><span>${it.n}${it.orig?`<small style="color:var(--muted)">（代替${it.orig}）</small>`:''}</span><span>${fmtLog(it)}</span></div>`).join('');
     el.innerHTML=`<button class="hhead" type="button"><div><div class="d num">${fdate(r.t)}</div><div class="w">${PNAME[r.prog]||r.prog}，第 ${r.day+1} 天 ${r.name}</div></div><span class="hc num">${r.done}<small> / ${r.total} 組</small></span></button>`
-      +`<div class="hbody" hidden>${rows}<button class="hdel" type="button">刪除這筆</button></div>`;
+      +`<div class="hbody" hidden>${rows}<label class="hdate">改日期<input type="date" value="${dateStrOf(r.t)}" max="${todayStr()}"></label><button class="hdel" type="button">刪除這筆</button></div>`;
     const body=el.querySelector('.hbody');
     el.querySelector('.hhead').onclick=()=>{body.hidden=!body.hidden};
+    const di=el.querySelector('.hdate input');
+    di.onchange=()=>{if(!di.value)return;r.t=isoFromDateStr(di.value);saveHistory();pushSession(r);renderHistory();build()};
     const del=el.querySelector('.hdel');let armed=false;
     del.onclick=()=>{
       if(!armed){armed=true;del.textContent='再按一次確認刪除';return}
@@ -692,16 +712,47 @@ document.getElementById('himport').onchange=ev=>{
 
 // rest timer
 const timer=document.getElementById('timer'),tt=document.getElementById('tt'),bar=document.getElementById('bar');
-let left=0,total=0,iv=null;
+let left=0,total=0,iv=null,endAt=0,actx=null,wakeLock=null;
 function render(){tt.textContent=fmt(left);bar.style.transform='scaleX('+(total?left/total:0)+')'}
-function startTimer(sec){
-  clearInterval(iv);left=sec;total=sec;timer.classList.add('on');render();
-  iv=setInterval(()=>{left--;if(left<=0){stopTimer();if(navigator.vibrate)try{navigator.vibrate([200,100,200])}catch(e){}}else render()},1000);
+// 音效：iPhone 網頁不能震動，用嗶聲提醒；必須在使用者點擊時先建立 AudioContext
+function audioReady(){
+  try{
+    if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();
+    if(actx.state==='suspended')actx.resume();
+  }catch(e){}
 }
-function stopTimer(){clearInterval(iv);iv=null;timer.classList.remove('on')}
-document.getElementById('t30').onclick=()=>{left+=30;total=Math.max(total,left);render()};
+function beep(){
+  if(!actx)return;
+  try{
+    const t0=actx.currentTime;
+    [0,0.22,0.44].forEach((dt,i)=>{
+      const o=actx.createOscillator(),g=actx.createGain();
+      o.type='sine';o.frequency.value=i===2?1320:880;
+      g.gain.setValueAtTime(0.0001,t0+dt);g.gain.exponentialRampToValueAtTime(0.5,t0+dt+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t0+dt+0.18);
+      o.connect(g);g.connect(actx.destination);o.start(t0+dt);o.stop(t0+dt+0.2);
+    });
+  }catch(e){}
+}
+function vibrate(p){if(navigator.vibrate)try{navigator.vibrate(p)}catch(e){}}
+async function keepAwake(on){
+  try{
+    if(on&&'wakeLock' in navigator&&!wakeLock){wakeLock=await navigator.wakeLock.request('screen');wakeLock.addEventListener('release',()=>{wakeLock=null})}
+    if(!on&&wakeLock){await wakeLock.release();wakeLock=null}
+  }catch(e){}
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&iv)keepAwake(true)});
+function tick(){
+  left=Math.max(0,Math.ceil((endAt-Date.now())/1000));
+  if(left<=0){stopTimer();vibrate([300,120,300,120,500]);beep()}else render();
+}
+function startTimer(sec){
+  clearInterval(iv);audioReady();keepAwake(true);
+  left=sec;total=sec;endAt=Date.now()+sec*1000;timer.classList.add('on');render();
+  iv=setInterval(tick,250);
+}
+function stopTimer(){clearInterval(iv);iv=null;timer.classList.remove('on');keepAwake(false)}
+document.getElementById('t30').onclick=()=>{endAt+=30000;total=Math.max(total,Math.ceil((endAt-Date.now())/1000));tick()};
 document.getElementById('tskip').onclick=stopTimer;
-
 
 // ---------- 雲端同步（Supabase） ----------
 const authEl=document.getElementById('auth');
@@ -830,7 +881,7 @@ async function initAuth(){
 }
 function history_replace(){try{window.history.replaceState({},'',location.pathname)}catch(e){}}
 
-build();renderView();initAuth();
+resetFdate();build();renderView();initAuth();
 </script>
 </body>
 </html>
