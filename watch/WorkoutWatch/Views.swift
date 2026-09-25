@@ -231,88 +231,145 @@ struct SetView: View {
     let item: WItem
     let index: Int
 
-    // Apple 原生滾輪：錶冠滾動、震動回饋、快轉加速都交給系統，動畫最順
-    @State private var selW: Double
-    @State private var selR: Int
+    enum Field { case w, r }
+    @FocusState private var focus: Field?
+    // 錶冠用 detent（一格一格）讀值，不會像原生滾輪那樣自己停錯格改掉重量
+    @State private var crownW: Double
+    @State private var crownR: Double
+    @State private var lastTurn = Date.distantPast
+    @State private var skipNext = false
 
-    // 一開始就用正確的值建立滾輪；先建在 0 再滾過去，滾輪會停錯格（實測 62.5 變 68）
     init(item: WItem, index: Int) {
         self.item = item
         self.index = index
         let s = item.sets[item.nextSet ?? max(0, item.sets.count - 1)]
-        _selW = State(initialValue: ((s.w ?? 0) * 2).rounded() / 2)
-        _selR = State(initialValue: min(60, max(0, s.r ?? 0)))
+        _crownW = State(initialValue: ((s.w ?? 0) * 2).rounded() / 2)
+        _crownR = State(initialValue: Double(min(60, max(0, s.r ?? 0))))
     }
-    private static let weights: [Double] = stride(from: 0.0, through: 300.0, by: 0.5).map { $0 }
-    private static let reps: [Int] = Array(0...60)
 
     private var si: Int { item.nextSet ?? max(0, item.sets.count - 1) }
     private var cur: WSet { item.sets[si] }
+    // 這一組上次的數字，例如「上次 62.5×9」
+    private var lastThisSet: String? {
+        guard !item.last.isEmpty else { return nil }
+        let l = item.last[min(si, item.last.count - 1)]
+        return "上次 \(l.w.map(fmtW) ?? "自體")×\(l.r.map(String.init) ?? "–")"
+    }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 4) {
-                ElapsedLine()
-                if let mc = item.mc {
-                    Text(mc).font(.caption2.weight(.semibold)).foregroundStyle(Color.brandRed).lineLimit(1)
-                }
-                Text(item.n).font(.headline).multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.7)
-                Text("第 \(si + 1)/\(item.sets.count) 組 · \(item.rm) RM\(item.groupSize > 1 ? " · 超級組" : "")")
-                    .font(.caption2).foregroundStyle(.secondary)
-
-                HStack(spacing: 6) {
-                    Picker(selection: $selW) {
-                        ForEach(SetView.weights, id: \.self) { v in weightRow(v).tag(v) }
-                    } label: { Text("kg") }
-                    Picker(selection: $selR) {
-                        ForEach(SetView.reps, id: \.self) { r in
-                            Text(String(r)).font(.system(size: 24, weight: .heavy, design: .rounded)).monospacedDigit().tag(r)
-                        }
-                    } label: { Text("次") }
-                    .frame(width: 62)
-                }
-                .pickerStyle(.wheel)
-                .frame(height: 78)
-
-                Button {
-                    store.completeSet()
-                } label: {
-                    Label("完成", systemImage: "checkmark").font(.headline).frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                // 雙指互點＝完成這一組；休息中／休息結束畫面時停用，避免誤按或跟「開始下一組」搶
-                .handGestureShortcut(.primaryAction, isEnabled: store.restEnd == nil && !store.alarming)
-
-                if !item.last.isEmpty {
-                    Text("上次 " + item.last.map { "\($0.w.map(fmtW) ?? "自體")×\($0.r.map(String.init) ?? "–")" }.joined(separator: "、"))
-                        .font(.caption2).foregroundStyle(.secondary).multilineTextAlignment(.center)
-                }
+        // 不能包在 ScrollView 裡：錶冠會被拿去捲畫面
+        VStack(spacing: 4) {
+            ElapsedLine()
+            if let mc = item.mc {
+                Text(mc).font(.caption2.weight(.semibold)).foregroundStyle(Color.brandRed).lineLimit(1)
             }
+            Text(item.n).font(.headline).multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.7)
+            Text("第 \(si + 1)/\(item.sets.count) 組 · \(lastThisSet ?? item.rm + " RM")")
+                .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+
+            HStack(spacing: 6) {
+                wheelBox(field: .w, unit: "kg") {
+                    Wheel(value: crownW, step: 0.5) { v in weightRow(v) }
+                }
+                .digitalCrownRotation(detent: $crownW, from: 0, through: 300, by: 0.5,
+                                      sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
+                wheelBox(field: .r, unit: "次") {
+                    Wheel(value: crownR, step: 1) { v in
+                        Text(String(Int(v))).frame(maxWidth: .infinity, alignment: .trailing)
+                    }
+                }
+                .digitalCrownRotation(detent: $crownR, from: 0, through: 60, by: 1,
+                                      sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
+                .frame(width: 80)
+            }
+
+            Button {
+                store.completeSet()
+            } label: {
+                Label("完成", systemImage: "checkmark").font(.headline).frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            // 雙指互點＝完成這一組；休息中／休息結束畫面時停用，避免誤按或跟「開始下一組」搶
+            .handGestureShortcut(.primaryAction, isEnabled: store.restEnd == nil && !store.alarming)
         }
-        .onChange(of: selW) { _, v in
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { focus = .w }
+        }
+        .onChange(of: crownW) { old, new in
+            if skipNext { skipNext = false; return }
+            // 快轉（兩格間隔不到 0.1 秒）直接跳到下一個 2.5 kg；慢轉維持 0.5 kg 微調
+            let now = Date()
+            let fast = now.timeIntervalSince(lastTurn) < 0.1
+            lastTurn = now
+            var v = new
+            if fast && new != old {
+                let up = new > old
+                v = min(300, max(0, (up ? (old / 2.5).rounded(.down) + 1 : (old / 2.5).rounded(.up) - 1) * 2.5))
+                if v != new { skipNext = true; crownW = v }
+            }
             let nv: Double? = (item.bw && v == 0) ? nil : v
             if nv != cur.w { store.setWeight(nv) }
         }
-        .onChange(of: selR) { _, v in
-            if v != cur.r { store.setReps(v) }
+        .onChange(of: crownR) { _, v in
+            if Int(v) != cur.r { store.setReps(Int(v)) }
         }
     }
 
-    // 每一列：整數靠右、小數固定一格（整數時留白），滾動時數字不會左右晃
+    private func wheelBox<C: View>(field: Field, unit: String, @ViewBuilder content: () -> C) -> some View {
+        HStack(spacing: 4) {
+            content().frame(maxWidth: .infinity)
+            // 單位固定在右邊，不跟著數字滑
+            Text(unit).font(.caption.weight(.semibold)).foregroundStyle(.secondary).fixedSize()
+        }
+        .padding(.horizontal, 8)
+        .frame(maxWidth: .infinity)
+        .frame(height: 74)
+        .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.08)))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(focus == field ? Color.brandRed : .clear, lineWidth: 2))
+        .focusable(true)
+        .focused($focus, equals: field)
+        .onTapGesture { focus = field }
+    }
+
+    // 整數靠右、小數固定一格（整數時留白），滑動時數字不會左右晃
     private func weightRow(_ v: Double) -> some View {
         let whole = v.rounded(.down)
         let half = v - whole > 0
         return HStack(spacing: 0) {
             if v == 0 && item.bw {
-                Text("自體").font(.system(size: 20, weight: .heavy)).frame(maxWidth: .infinity)
+                Text("自體").frame(maxWidth: .infinity, alignment: .trailing)
             } else {
                 Text(String(Int(whole))).frame(maxWidth: .infinity, alignment: .trailing)
                 Text(".5").font(.system(size: 16, weight: .heavy, design: .rounded)).opacity(half ? 1 : 0)
-                Spacer().frame(width: 10)
             }
         }
-        .font(.system(size: 24, weight: .heavy, design: .rounded))
-        .monospacedDigit()
+    }
+}
+
+// 自己畫的滾輪：中間是目前的值，上下露出前後一格；值一變整排往上或往下滑
+struct Wheel<Row: View>: View {
+    let value: Double
+    let step: Double
+    @ViewBuilder let row: (Double) -> Row
+    private let rowH: CGFloat = 27
+
+    var body: some View {
+        let vals = (-2...2).map { value + Double($0) * step }.filter { $0 >= 0 }
+        ZStack {
+            ForEach(vals, id: \.self) { v in
+                let d = CGFloat((v - value) / step)
+                row(v)
+                    .font(.system(size: 26, weight: .heavy, design: .rounded))
+                    .monospacedDigit()
+                    .scaleEffect(d == 0 ? 1 : 0.72, anchor: .trailing)
+                    .opacity(d == 0 ? 1 : (abs(d) == 1 ? 0.35 : 0))
+                    .offset(y: d * rowH)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: 74)
+        .clipped()
+        .animation(.snappy(duration: 0.2), value: value)
     }
 }
 
