@@ -100,8 +100,12 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .swapped{font-size:12px;color:var(--warn);margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .swapped button{border:0;background:none;padding:0;color:var(--ink2);font-weight:600;text-decoration:underline;text-underline-offset:3px;font-size:12px}
 
-.wrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px;font-size:12px;color:var(--muted)}
-.wrow .last{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wrow{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:8px;font-size:12px;color:var(--muted)}
+.wrow .nolast{margin-right:auto}
+.lastbox{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin-top:10px;padding:8px 10px;border-radius:8px;background:var(--card2)}
+.lastbox .ll{font-size:12px;color:var(--muted);white-space:nowrap}
+.lastbox .ls{display:flex;flex-wrap:wrap;gap:6px}
+.lastbox .chip{font-size:15px;font-weight:700;color:var(--ink);background:var(--bg);border-radius:6px;padding:1px 8px;white-space:nowrap}
 .swapbtn{height:32px;padding:0 12px;border-radius:999px;border:0;background:var(--card2);color:var(--ink2);font-size:12px;font-weight:600;white-space:nowrap}
 .demo{height:32px;padding:0 12px;border-radius:999px;background:var(--card2);color:var(--accent);font-size:12px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;text-decoration:none}
 .swapbtn[aria-expanded="true"]{background:var(--accent-soft);color:var(--accent)}
@@ -707,7 +711,10 @@ function build(){
 function renderEx(it,e,wk,di,rests=true){
   const ef=effective(it,wk);
   const last=lastOf(ef.n);
-  const lastTxt=last?('上次 '+fmtLog(last)+'，'+fdate(last.t)):'還沒有紀錄';
+  // 上次紀錄：日期一行、每組一格，不截斷
+  const lastSets=!last?[]:last.log&&last.log.length?last.log.map(x=>(x.w!=null?x.w:'自體')+'×'+(x.r!=null?x.r:'–')):[fmtLog(last)];
+  const lastHtml=last?`<div class="lastbox"><span class="ll">上次 ${fdate(last.t)}</span><span class="ls">${lastSets.map(x=>`<span class="chip num">${x}</span>`).join('')}</span></div>`
+    :'';
   const note=ef.note||it.note||e.note||'';
   const rs=rows(wk);
   const wph=ef.bw?'自體':'kg';
@@ -719,7 +726,7 @@ function renderEx(it,e,wk,di,rests=true){
     `<div class="rm"><span class="num">${ef.rm}</span><small>RM</small></div></div>`+
     (note?`<div class="note">${note}</div>`:'')+
     (ef.orig?`<div class="swapped">代替「${ef.orig}」<button type="button" class="unswap">換回原動作</button></div>`:'')+
-    `<div class="wrow"><span class="last">${lastTxt}</span><a class="demo" href="${demoUrl(ef.n)}" target="_blank" rel="noopener">示範影片</a>`+(ALTS[it.n]?`<button type="button" class="swapbtn" aria-expanded="false">器材被佔？</button>`:'')+`</div>`+
+    lastHtml+`<div class="wrow">${last?'':'<span class="nolast">還沒有紀錄</span>'}<a class="demo" href="${demoUrl(ef.n)}" target="_blank" rel="noopener">示範影片</a>`+(ALTS[it.n]?`<button type="button" class="swapbtn" aria-expanded="false">器材被佔？</button>`:'')+`</div>`+
     `<div class="st"><div class="sth"><span>組</span><span>${ef.bw?'kg（選填）':'kg'}</span><span>次數</span><span>完成</span><span></span></div><div class="strs"></div>`+
     `<button type="button" class="addset">＋ 加一組</button></div>`+
     (rests?`<div class="rest"><span>${e.sup?'兩個都做完再休息 ':'休息 '}${fmt(e.rest)}</span><button type="button">手動計時</button></div>`:'');
