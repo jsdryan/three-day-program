@@ -275,7 +275,7 @@ struct SetView: View {
                                       sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
                 wheelBox(field: .r, unit: "次") {
                     Wheel(value: crownR, step: 1) { v in
-                        Text(String(Int(v))).frame(maxWidth: .infinity, alignment: .trailing)
+                        Text(String(Int(v))).frame(maxWidth: .infinity)
                     }
                 }
                 .digitalCrownRotation(detent: $crownR, from: 0, through: 60, by: 1,
@@ -315,17 +315,17 @@ struct SetView: View {
         }
     }
 
+    // 跟設定鬧鐘一樣：上面小標題，下面一個框只放一個大數字；選中的框變粗亮框
     private func wheelBox<C: View>(field: Field, unit: String, @ViewBuilder content: () -> C) -> some View {
-        HStack(spacing: 4) {
-            content().frame(maxWidth: .infinity)
-            // 單位固定在右邊，不跟著數字滑
-            Text(unit).font(.caption.weight(.semibold)).foregroundStyle(.secondary).fixedSize()
+        VStack(spacing: 2) {
+            Text(unit).font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+            content()
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .overlay(RoundedRectangle(cornerRadius: 12)
+                    .strokeBorder(focus == field ? Color.brandRed : Color.white.opacity(0.55),
+                                  lineWidth: focus == field ? 3 : 1.5))
         }
-        .padding(.horizontal, 8)
-        .frame(maxWidth: .infinity)
-        .frame(height: 74)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Color.white.opacity(0.08)))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(focus == field ? Color.brandRed : .clear, lineWidth: 2))
         .focusable(true)
         .focused($focus, equals: field)
         .onTapGesture { focus = field }
@@ -337,37 +337,39 @@ struct SetView: View {
         let half = v - whole > 0
         return HStack(spacing: 0) {
             if v == 0 && item.bw {
-                Text("自體").frame(maxWidth: .infinity, alignment: .trailing)
+                Text("自體")
             } else {
-                Text(String(Int(whole))).frame(maxWidth: .infinity, alignment: .trailing)
-                Text(".5").font(.system(size: 16, weight: .heavy, design: .rounded)).opacity(half ? 1 : 0)
+                // 整數和「.5」格子寬度固定，整組置中，數字不會左右晃
+                Text(String(Int(whole))).frame(width: 58, alignment: .trailing)
+                Text(".5").font(.system(size: 18, weight: .heavy, design: .rounded)).opacity(half ? 1 : 0)
+                    .frame(width: 22, alignment: .leading)
             }
         }
+        .frame(maxWidth: .infinity)
     }
 }
 
-// 自己畫的滾輪：中間是目前的值，上下露出前後一格；值一變整排往上或往下滑
+// 只顯示目前的值；值一變，舊的往上／下滑出、新的滑進來（上下不露出其他數字）
 struct Wheel<Row: View>: View {
     let value: Double
     let step: Double
     @ViewBuilder let row: (Double) -> Row
-    private let rowH: CGFloat = 27
+    private let rowH: CGFloat = 30
 
     var body: some View {
-        let vals = (-2...2).map { value + Double($0) * step }.filter { $0 >= 0 }
+        let vals = (-1...1).map { value + Double($0) * step }.filter { $0 >= 0 }
         ZStack {
             ForEach(vals, id: \.self) { v in
                 let d = CGFloat((v - value) / step)
                 row(v)
-                    .font(.system(size: 26, weight: .heavy, design: .rounded))
+                    .font(.system(size: 30, weight: .semibold, design: .rounded))
                     .monospacedDigit()
-                    .scaleEffect(d == 0 ? 1 : 0.72, anchor: .trailing)
-                    .opacity(d == 0 ? 1 : (abs(d) == 1 ? 0.35 : 0))
+                    .opacity(d == 0 ? 1 : 0)
                     .offset(y: d * rowH)
             }
         }
         .frame(maxWidth: .infinity)
-        .frame(height: 74)
+        .frame(height: 50)
         .clipped()
         .animation(.snappy(duration: 0.2), value: value)
     }
