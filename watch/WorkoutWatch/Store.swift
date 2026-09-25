@@ -255,7 +255,8 @@ final class Store: ObservableObject {
         if let p = w.pname { rec["pname"] = p }
         let data = (try? JSONSerialization.data(withJSONObject: rec)) ?? Data()
         workout = nil
-        await HealthWorkout.shared.end(save: true)
+        // 不到 1 分鐘多半是誤按或測試，不存進 Apple 健身，免得留下 0:01 這種紀錄
+        await HealthWorkout.shared.end(save: Date().timeIntervalSince(w.started) >= 60)
         loading = true; defer { loading = false }
         do {
             let a = try await validAuth()
