@@ -926,6 +926,7 @@ const HKEY='w3-history-v1';
 let history=[];
 try{history=JSON.parse(localStorage.getItem(HKEY)||'[]')||[]}catch(e){history=[]}
 if(!Array.isArray(history))history=[];
+history.forEach(r=>{if(r&&!r.did&&r.day!=null)r.did='d'+r.day});
 function saveHistory(){try{localStorage.setItem(HKEY,JSON.stringify(history))}catch(e){}}
 
 let DAYS=[],KEY='',logs={},swaps={},cur=0;
@@ -948,7 +949,8 @@ function load(){
 // ---- 自訂課表：使用者改過就存一份完整的 days，沒改過用預設 ----
 let custom={};
 function cloneDays(days){return JSON.parse(JSON.stringify(days))}
-function withIds(days){days.forEach((d,di)=>d.ex.forEach((e,ei)=>{(e.sup||[e]).forEach((it,ii)=>{if(!it.id)it.id=`${di}-${ei}-${ii}`})}));return days}
+// 每一天有固定的 did，歷史紀錄靠它找到這一天「現在」的名稱；舊資料依原本位置補上
+function withIds(days){days.forEach((d,di)=>{if(!d.did)d.did='d'+di});days.forEach((d,di)=>d.ex.forEach((e,ei)=>{(e.sup||[e]).forEach((it,ii)=>{if(!it.id)it.id=`${di}-${ei}-${ii}`})}));return days}
 function loadCustom(){custom={};for(const {id:p} of profiles.list){try{const c=JSON.parse(localStorage.getItem('w3-custom-'+p)||'null');custom[p]=c&&Array.isArray(c.days)?c:null}catch(e){custom[p]=null}}}
 function daysOf(p){return custom[p]?withIds(custom[p].days):defDays(p)}
 function ensureCustom(p){if(!custom[p])custom[p]={days:defDays(p),updated:Date.now()};return custom[p]}
@@ -1153,7 +1155,7 @@ function restLabel(sec){return sec>=60?(sec%60?Math.floor(sec/60)+'分'+(sec%60)
 // 加一天：直接進入那一天的編輯畫面
 function addDay(){
   const c=ensureCustom(prog);
-  c.days.push({name:'第 '+(c.days.length+1)+' 天',ex:[]});saveCustom(prog);
+  c.days.push({did:newId(),name:'第 '+(c.days.length+1)+' 天',ex:[]});saveCustom(prog);
   editing=cur=c.days.length-1;try{localStorage.setItem('w3-day-'+prog,cur)}catch(e){}build();
   const t=document.getElementById('tab'+cur);if(t)t.scrollIntoView({inline:'end',block:'nearest'});
 }
@@ -1288,7 +1290,7 @@ document.getElementById('finish').onclick=()=>{
   });
   if(done===0){fmsg.textContent='今天還沒打勾，先做完再存。';return}
   const when=isoFromDateStr(fdateEl.value);
-  const rec={id:Date.now(),t:when,prog,pname:pname(prog),day:cur,name:d.name,done,total,items};
+  const rec={id:Date.now(),t:when,prog,pname:pname(prog),day:cur,did:d.did,name:d.name,done,total,items};
   history.push(rec);saveHistory();pushSession(rec);resetFdate();
   slots(cur).forEach(({wk})=>rows(wk).forEach(r=>r.done=false));saveLog();
   stopTimer();build();
@@ -1341,6 +1343,12 @@ function fillHEdit(box){
   addEx.onclick=()=>openLib(x=>{hDraft.push({n:x.n,rm:x.rm,bw:x.bw,...(x.mc?{mc:mcLabel(mcById(x.mc))}:{}),log:[{w:null,r:null},{w:null,r:null},{w:null,r:null}]});fillHEdit(box)});
   box.appendChild(addEx);
 }
+// 紀錄上的「第 N 天 名稱」跟著課表現在的設定；那天已刪掉就用存檔當時的
+function dayLabel(r){
+  const days=custom[r.prog]?custom[r.prog].days:defDays(r.prog);
+  const did=r.did||'d'+r.day,i=days.findIndex(d=>d.did===did);
+  return i>=0?`第 ${i+1} 天 ${days[i].name}`:`第 ${r.day+1} 天 ${r.name}`;
+}
 function renderHistory(){
   const list=document.getElementById('hlist');list.innerHTML='';
   if(!history.length){list.innerHTML='<p class="empty">還沒有紀錄。練完在課表頁按「完成訓練，存入紀錄」，這裡就會出現。</p>';return}
@@ -1348,7 +1356,7 @@ function renderHistory(){
     const el=document.createElement('div');el.className='hrec';
     const editing=hEditId===r.id;
     const rows=(r.items||[]).map(it=>`<div class="hrow"><span>${it.n}${it.orig?`<small style="color:var(--muted)">（代替${it.orig}）</small>`:''}</span><span>${fmtLog(it)}</span></div>`).join('');
-    el.innerHTML=`<button class="hhead" type="button"><div><div class="d num">${fdate(r.t)}</div><div class="w">${profiles.list.length>1&&(pname(r.prog)||r.pname)?(pname(r.prog)||r.pname)+' · ':''}第 ${r.day+1} 天 ${r.name}</div></div><span class="hc num">${r.done}<small> / ${r.total} 組</small></span></button>`
+    el.innerHTML=`<button class="hhead" type="button"><div><div class="d num">${fdate(r.t)}</div><div class="w">${profiles.list.length>1&&(pname(r.prog)||r.pname)?(pname(r.prog)||r.pname)+' · ':''}${dayLabel(r)}</div></div><span class="hc num">${r.done}<small> / ${r.total} 組</small></span></button>`
       +`<div class="hbody" ${hOpen.has(r.id)?'':'hidden'}>${editing?'<div class="hedit"></div>':rows}<label class="hdate">改日期<input type="date" value="${dateStrOf(r.t)}" max="${todayStr()}"></label>`
       +(editing
         ?`<div class="msg herr"></div><div class="hacts"><button class="hedbtn cancel" type="button">取消</button><button class="hedbtn save" type="button">儲存修改</button></div>`
