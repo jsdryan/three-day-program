@@ -1,0 +1,245 @@
+import Foundation
+import SwiftUI
+import UserNotifications
+import WatchKit
+
+// 整個手錶 App 的狀態：登入、課表快照、進行中的訓練、休息倒數
+@MainActor
+final class Store: ObservableObject {
+    @Published var auth: AuthSession? { didSet { save(auth, "auth") } }
+    @Published var snapshot: Snapshot? { didSet { save(snapshot, "snapshot") } }
+    @Published var workout: Workout? { didSet { save(workout, "workout") } }
+    @Published var restEnd: Date? { didSet { save(restEnd, "restEnd") } }
+    @Published var loading = false
+    @Published var message: String?
+
+    // 手錶自己練過的上次紀錄（網頁快照還沒更新前先用這個）
+    private var localLast: [String: [SSet]] { didSet { save(localLast, "localLast") } }
+    // 沒網路時存不上去的紀錄，下次連線再補傳
+    private var pending: [Data] { didSet { save(pending, "pending") } }
+
+    init() {
+        auth = Store.load("auth")
+        snapshot = Store.load("snapshot")
+        workout = Store.load("workout")
+        restEnd = Store.load("restEnd")
+        localLast = Store.load("localLast") ?? [:]
+        pending = Store.load("pending") ?? []
+    }
+
+    // ---- 存取 ----
+    private func save<T: Encodable>(_ v: T?, _ key: String) {
+        let d = UserDefaults.standard
+        if let v, let data = try? JSONEncoder().encode(v) { d.set(data, forKey: key) } else { d.removeObject(forKey: key) }
+    }
+    private static func load<T: Decodable>(_ key: String) -> T? {
+        guard let data = UserDefaults.standard.data(forKey: key) else { return nil }
+        return try? JSONDecoder().decode(T.self, from: data)
+    }
+
+    // ---- 登入 ----
+    func sendCode(email: String) async -> Bool {
+        loading = true; defer { loading = false }
+        do { try await Supa.shared.sendCode(email: email); message = nil; return true }
+        catch { message = "寄不出去：\(error.localizedDescription)"; return false }
+    }
+
+    func verify(email: String, code: String) async {
+        loading = true; defer { loading = false }
+        do {
+            auth = try await Supa.shared.verify(email: email, code: code)
+            message = nil
+            await refresh()
+        } catch { message = "驗證碼不對或過期了：\(error.localizedDescription)" }
+    }
+
+    func logout() { auth = nil; snapshot = nil; workout = nil; restEnd = nil }
+
+    private func validAuth() async throws -> AuthSession {
+        guard let a = auth else { throw SupaError.http(0, "還沒登入") }
+        let fresh = try await Supa.shared.refreshed(a)
+        if fresh.access != a.access { auth = fresh }
+        return fresh
+    }
+
+    // 從雲端抓最新課表，順便補傳之前沒傳成功的紀錄
+    func refresh() async {
+        guard auth != nil else { return }
+        loading = true; defer { loading = false }
+        do {
+            let a = try await validAuth()
+            await flushPending(a)
+            if let s = try await Supa.shared.loadSnapshot(a) { snapshot = s; message = nil }
+            else if snapshot == nil { message = "雲端還沒有課表。先用手機打開網頁版一次（登入同一個帳號）。" }
+        } catch {
+            message = snapshot == nil ? "連不上雲端：\(error.localizedDescription)" : nil
+        }
+    }
+
+    // ---- 訓練 ----
+    func start(day: Int, askNotify: Bool = true) {
+        guard let s = snapshot, s.days.indices.contains(day) else { return }
+        var w = Workout(snapshot: s, day: day, localLast: localLast)
+        w.current = w.items.firstIndex { !$0.isDone } ?? 0
+        workout = w
+        if askNotify { requestNotificationPermission() }
+    }
+
+    func jump(to i: Int) { workout?.current = i }
+
+    // 調整目前這組；後面還沒做的組跟著一起變（通常每組同重量）
+    func setWeight(_ v: Double?) {
+        guard var w = workout, let si = w.items[w.current].nextSet else { return }
+        for j in si..<w.items[w.current].sets.count where !w.items[w.current].sets[j].done {
+            w.items[w.current].sets[j].w = v
+        }
+        workout = w
+    }
+
+    func setReps(_ v: Int?) {
+        guard var w = workout, let si = w.items[w.current].nextSet else { return }
+        for j in si..<w.items[w.current].sets.count where !w.items[w.current].sets[j].done {
+            w.items[w.current].sets[j].r = v
+        }
+        workout = w
+    }
+
+    func addSet() {
+        guard var w = workout else { return }
+        let last = w.items[w.current].sets.last
+        w.items[w.current].sets.append(WSet(w: last?.w, r: last?.r))
+        workout = w
+    }
+
+    func removeSet() {
+        guard var w = workout, let si = w.items[w.current].sets.lastIndex(where: { !$0.done }),
+              w.items[w.current].sets.count > 1 else { return }
+        w.items[w.current].sets.remove(at: si)
+        workout = w
+    }
+
+    // 按「完成」：記這一組，決定下一步（超級組先換另一個動作，不休息）
+    func completeSet() {
+        guard var w = workout else { return }
+        let c = w.current
+        guard let si = w.items[c].nextSet else { return }
+        w.items[c].sets[si].done = true
+        let it = w.items[c]
+        WKInterfaceDevice.current().play(.success)
+
+        if it.groupSize > 1 && it.pos < it.groupSize - 1 && !w.items[c + 1].isDone {
+            w.current = c + 1
+            workout = w
+            return
+        }
+        let first = c - it.pos
+        let groupRange = first..<(first + it.groupSize)
+        if let again = groupRange.first(where: { !w.items[$0].isDone }) {
+            w.current = again
+        } else if let next = (groupRange.upperBound..<w.items.count).first(where: { !w.items[$0].isDone })
+                    ?? (0..<w.items.count).first(where: { !w.items[$0].isDone }) {
+            w.current = next
+        }
+        workout = w
+        if w.items.contains(where: { !$0.isDone }) { startRest(it.rest) }
+    }
+
+    // ---- 休息倒數 ----
+    func startRest(_ sec: Int) {
+        let end = Date().addingTimeInterval(TimeInterval(sec))
+        restEnd = end
+        scheduleRestNotification(at: end)
+    }
+
+    func addRest(_ sec: Int) {
+        guard let e = restEnd else { return }
+        let end = e.addingTimeInterval(TimeInterval(sec))
+        restEnd = end
+        scheduleRestNotification(at: end)
+    }
+
+    func skipRest() {
+        restEnd = nil
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["rest"])
+    }
+
+    // 畫面上倒數到 0 時呼叫：手腕連震三下
+    func restFinished() {
+        guard restEnd != nil else { return }
+        restEnd = nil
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["rest"])
+        let dev = WKInterfaceDevice.current()
+        dev.play(.notification)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) { dev.play(.notification) }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) { dev.play(.stop) }
+    }
+
+    private func requestNotificationPermission() {
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
+    }
+
+    // 手放下、App 退到背景時，靠系統通知在時間到時震手腕
+    private func scheduleRestNotification(at date: Date) {
+        let c = UNUserNotificationCenter.current()
+        c.removePendingNotificationRequests(withIdentifiers: ["rest"])
+        let content = UNMutableNotificationContent()
+        content.title = "休息結束"
+        content.body = workout.map { $0.items[$0.current].n } ?? "開始下一組"
+        content.sound = .default
+        content.interruptionLevel = .timeSensitive
+        let t = max(1, date.timeIntervalSinceNow)
+        c.add(UNNotificationRequest(identifier: "rest", content: content,
+                                    trigger: UNTimeIntervalNotificationTrigger(timeInterval: t, repeats: false)))
+    }
+
+    // ---- 練完存檔：格式跟網頁版的歷史紀錄一樣 ----
+    func finish() async -> Bool {
+        guard let w = workout else { return false }
+        skipRest()
+        var items: [[String: Any]] = []
+        var done = 0
+        for it in w.items {
+            let log = it.sets.filter(\.done)
+            guard !log.isEmpty else { continue }
+            done += log.count
+            var o: [String: Any] = ["n": it.n, "rm": it.rm, "sets": log.count,
+                                    "log": log.map { ["w": $0.w as Any? ?? NSNull(), "r": $0.r as Any? ?? NSNull()] },
+                                    "w": log[0].w as Any? ?? NSNull()]
+            if let orig = it.orig { o["orig"] = orig }
+            if it.bw { o["bw"] = true }
+            if let mc = it.mc { o["mc"] = mc }
+            items.append(o)
+            localLast[it.n] = log.map { SSet(w: $0.w, r: $0.r) }
+        }
+        guard done > 0 else { message = "還沒完成任何一組。"; return false }
+        let fmt = ISO8601DateFormatter()
+        fmt.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        var rec: [String: Any] = ["id": Int(Date().timeIntervalSince1970 * 1000), "t": fmt.string(from: Date()),
+                                  "prog": w.prog, "day": w.day, "did": w.did, "name": w.dayName,
+                                  "done": done, "total": w.totalSets, "items": items, "src": "watch"]
+        if let p = w.pname { rec["pname"] = p }
+        let data = (try? JSONSerialization.data(withJSONObject: rec)) ?? Data()
+        workout = nil
+        loading = true; defer { loading = false }
+        do {
+            let a = try await validAuth()
+            try await Supa.shared.saveSession(a, record: rec)
+            message = "已存檔：\(done) 組。手機歷史紀錄打開就會看到。"
+        } catch {
+            pending.append(data)
+            message = "先存在手錶上，連上網路後會自動上傳。"
+        }
+        return true
+    }
+
+    func discard() { skipRest(); workout = nil }
+
+    private func flushPending(_ a: AuthSession) async {
+        var left: [Data] = []
+        for d in pending {
+            guard let rec = (try? JSONSerialization.jsonObject(with: d)) as? [String: Any] else { continue }
+            do { try await Supa.shared.saveSession(a, record: rec) } catch { left.append(d) }
+        }
+        if left.count != pending.count { pending = left }
+    }
+}
