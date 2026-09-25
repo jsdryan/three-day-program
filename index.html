@@ -99,6 +99,9 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .rm{flex:none;text-align:center;background:var(--card2);border-radius:10px;padding:6px 10px;line-height:1.1}
 .rm .num{font-size:15px;display:block}
 .rm small{display:block;font-size:10px;color:var(--muted);margin-top:2px}
+.mc{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:13px;color:var(--ink2);font-weight:600}
+.mc .brand{font-size:11px;font-weight:800;letter-spacing:.04em;color:#fff;background:var(--accent);border-radius:4px;padding:1px 6px}
+.mc small{font-size:11px;color:var(--muted);font-weight:400}
 .note{font-size:12px;color:var(--ink2);margin-top:8px;padding:6px 10px;border-radius:8px;background:var(--card2)}
 .swapped{font-size:12px;color:var(--warn);margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .swapped button{border:0;background:none;padding:0;color:var(--ink2);font-weight:600;text-decoration:underline;text-underline-offset:3px;font-size:12px}
@@ -215,6 +218,8 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .sheetbox .libit{width:100%;height:auto;display:block;text-align:left;padding:10px 0;border-radius:0;background:none;color:var(--ink);border-top:1px solid var(--line)}
 .libit b{display:block;font-size:15px}
 .libit span{display:block;font-size:12px;color:var(--muted);font-weight:400;margin-top:1px}
+.libit .gymtag{font-style:normal;font-size:11px;font-weight:700;color:#fff;background:var(--done);border-radius:4px;padding:0 6px;margin-right:6px;vertical-align:2px}
+.libit .gymtag.no{background:var(--card2);color:var(--muted)}
 .libit .eq{font-style:normal;display:inline-block;font-size:11px;font-weight:700;color:var(--ink2);background:var(--card2);border-radius:4px;padding:0 6px;margin-right:6px}
 .sheetbox form label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);font-weight:600}
 .sheetbox form .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -312,12 +317,14 @@ html{color-scheme:dark}
           <label>動作名稱<input name="n1" type="text" required maxlength="30" placeholder="例如：啞鈴臥推"></label>
           <div class="two"><label>RM（次數範圍）<input name="rm1" type="text" maxlength="10" placeholder="8–12"></label><label>休息<select name="rest"><option value="60">60 秒</option><option value="90">90 秒</option><option value="120">2 分鐘</option><option value="150">2 分半</option><option value="180">3 分鐘</option></select></label></div>
           <label>肌群（選填）<input name="mus1" type="text" maxlength="40" placeholder="例如：胸大肌、肱三頭肌"></label>
+          <label>器材<select name="mc1"></select></label>
           <label class="chk"><input name="bw1" type="checkbox">自體重量（不掛重量，kg 可以不填）</label>
           <label class="chk"><input name="sup" type="checkbox">超級組：和另一個動作交替做</label>
           <div class="second" hidden>
             <button type="button" class="libpick" data-t="2">第二個動作從動作庫挑選</button>
             <label>第二個動作<input name="n2" type="text" maxlength="30"></label>
             <div class="two"><label>RM<input name="rm2" type="text" maxlength="10" placeholder="12–15"></label><label>肌群（選填）<input name="mus2" type="text" maxlength="40"></label></div>
+            <label>器材<select name="mc2"></select></label>
             <label class="chk"><input name="bw2" type="checkbox">自體重量</label>
           </div>
           <label>備註（選填）<input name="note" type="text" maxlength="40" placeholder="例如：隔週換器械胸推"></label>
@@ -683,6 +690,197 @@ const LIB=[
  ['核心','啞鈴','俄羅斯轉體','12–20','腹斜肌'],
 ].map(([part,eq,n,rm,mus,bw,kw])=>({part,eq,n,rm,mus,bw:!!bw,kw:kw||''}));
 
+// 健身房的器材（新莊健身星球：MaxPump、Npoint）。ex 是這台機器對應到的動作名稱，用來自動綁定
+// [id, 品牌, 中文名, 英文名, 型號, 部位, 次數, 肌群, 對應動作..., gym: 確認在新莊]
+const MACHINES=[
+ ["mp-A7072", "MaxPump", "哈克深蹲機", "Multi Hack Squat", "A7072", "腿臀", "8–12", "股四頭肌、臀大肌", "哈克或史密斯深蹲|哈克深蹲（Hack Squat）", 1],
+ ["mp-A7024", "MaxPump", "水平腿推機", "Horizontal Multi Leg Press", "A7024", "腿臀", "8–12", "股四頭肌、臀大肌", "腿推機|腿推機（Leg Press）", 1],
+ ["mp-A7051", "MaxPump", "70 度腿推機", "70-Degree Leg Press", "A7051", "腿臀", "8–12", "股四頭肌、臀大肌", "", 1],
+ ["mp-A7064", "MaxPump", "腿伸展機", "Classic Power Leg Extension", "A7064", "腿臀", "12–15", "股四頭肌", "腿前伸", 1],
+ ["mp-A7018A7095", "MaxPump", "坐姿腿後勾機", "Seated Leg Curl", "A7018／A7095", "腿臀", "12–15", "腿後肌群", "腿後勾", 1],
+ ["mp-A7075", "MaxPump", "弓步蹲機", "Max Lunge Pro", "A7075", "腿臀", "8–12", "股四頭肌、臀大肌", "分腿蹲", 1],
+ ["mp-A7073", "MaxPump", "動力深蹲機", "Power Squat", "A7073", "腿臀", "8–12", "股四頭肌、臀大肌", "", 1],
+ ["mp-A7002", "MaxPump", "深蹲站", "Squat Station Pro", "A7002", "腿臀", "8–12", "股四頭肌、臀大肌", "", 1],
+ ["mp-A7022", "MaxPump", "腿推／腿伸展二合一", "Leg Press & Extension Superset", "A7022", "腿臀", "12–15", "股四頭肌、臀大肌", "", 1],
+ ["mp-A7089", "MaxPump", "交叉式下拉機", "Crossover Lat Pulldown", "A7089", "背", "8–12", "闊背肌、大圓肌、肱二頭肌", "大剪刀下拉", 1],
+ ["mp-A7034", "MaxPump", "下拉／長划船二合一", "Lat Pulldown & Long Row Superset", "A7034", "背", "8–12", "闊背肌、大圓肌、肱二頭肌", "滑輪下拉|窄握划船", 1],
+ ["mp-A7039", "MaxPump", "站姿旋轉二頭彎舉機", "Standing Multi Rotary Bicep Curl", "A7039", "手臂", "12–15", "肱二頭肌", "二頭彎舉", 1],
+ ["mp-A7009", "MaxPump", "蝴蝶機／反向飛鳥", "Pec Dec Fly Pro", "A7009", "胸", "12–15", "後三角肌、菱形肌", "夾胸|反向飛鳥|蝴蝶機夾胸（Pec Deck）", 1],
+ ["mp-A7030A7097", "MaxPump", "史密斯機", "Smith Machine", "A7030／A7097", "腿臀", "8–12", "依動作而定", "史密斯臥推|史密斯臥推（Smith Machine Bench Press）|史密斯分腿蹲（Smith Machine Split Squat）", 1],
+ ["mp-A7011", "MaxPump", "坐姿胸推機", "Classic Seated Chest Press", "A7011", "胸", "8–12", "胸大肌、前三角肌、肱三頭肌", "", 0],
+ ["mp-A7010", "MaxPump", "上斜胸推機", "Classic Incline Chest Press", "A7010", "胸", "8–12", "上胸、前三角肌、肱三頭肌", "", 0],
+ ["mp-A7086", "MaxPump", "單邊上斜胸推機", "ISO Incline Chest Press", "A7086", "胸", "8–12", "上胸、前三角肌、肱三頭肌", "", 0],
+ ["mp-A7087", "MaxPump", "單邊下斜胸推機", "ISO Decline Chest Press", "A7087", "胸", "8–12", "下胸、肱三頭肌", "", 0],
+ ["mp-A7092", "MaxPump", "下斜胸推機", "Decline Chest Press", "A7092", "胸", "8–12", "下胸、肱三頭肌", "", 0],
+ ["mp-A7062", "MaxPump", "單邊臥推機", "ISO Bench Press Pro", "A7062", "胸", "8–12", "胸大肌、前三角肌、肱三頭肌", "", 0],
+ ["mp-A7045", "MaxPump", "交叉式平胸推", "Crossover Flat Chest Press", "A7045", "胸", "8–12", "胸大肌、前三角肌、肱三頭肌", "", 0],
+ ["mp-A7046", "MaxPump", "交叉式上斜胸推", "Crossover Incline Chest Press", "A7046", "胸", "8–12", "上胸、前三角肌、肱三頭肌", "", 0],
+ ["mp-A7078", "MaxPump", "平胸飛鳥機", "Multi Flat Chest Fly", "A7078", "胸", "12–15", "胸大肌", "", 0],
+ ["mp-A7017", "MaxPump", "上斜蝴蝶機", "Incline Pec Dec Fly", "A7017", "胸", "12–15", "胸大肌", "", 0],
+ ["mp-A7112", "MaxPump", "軸心推舉機", "Max Pivot Press", "A7112", "肩", "8–12", "三角肌、肱三頭肌", "", 0],
+ ["mp-A7005", "MaxPump", "仰臥肩推機", "Supine Shoulder Press", "A7005", "肩", "8–12", "三角肌、肱三頭肌", "", 0],
+ ["mp-A7042", "MaxPump", "軍事肩推機", "Military Shoulder Press Pro", "A7042", "肩", "8–12", "三角肌、肱三頭肌", "", 0],
+ ["mp-A7060", "MaxPump", "多角度肩推機", "Multi Shoulder Press", "A7060", "肩", "8–12", "三角肌、肱三頭肌", "", 0],
+ ["mp-A7044", "MaxPump", "交叉式肩推機", "Crossover Multi Shoulder Press", "A7044", "肩", "8–12", "三角肌、肱三頭肌", "", 0],
+ ["mp-A7053", "MaxPump", "維京推舉機", "Viking Press", "A7053", "肩", "8–12", "三角肌、肱三頭肌", "", 0],
+ ["mp-A7004", "MaxPump", "坐姿後三角機", "Seated Rear Deltoid", "A7004", "肩", "12–15", "後三角肌、菱形肌", "", 0],
+ ["mp-A7007", "MaxPump", "寬握下拉機", "Classic Wide Pulldown", "A7007", "背", "8–12", "闊背肌、大圓肌、肱二頭肌", "", 0],
+ ["mp-A7093", "MaxPump", "前下拉機", "Multi Front Lat Pulldown", "A7093", "背", "8–12", "闊背肌、大圓肌、肱二頭肌", "", 0],
+ ["mp-A7006", "MaxPump", "仰臥拉舉機", "Classic Pullover", "A7006", "背", "8–12", "闊背肌", "", 0],
+ ["mp-A7098", "MaxPump", "坐姿划船機", "Seated Row", "A7098", "背", "8–12", "闊背肌、中背、後三角肌", "", 0],
+ ["mp-A7014", "MaxPump", "單邊低位划船機", "Seated ISO Low Row", "A7014", "背", "8–12", "闊背肌、中背、後三角肌", "", 0],
+ ["mp-A7015", "MaxPump", "高位划船機", "Seated Multi High Row", "A7015", "背", "8–12", "闊背肌、中背、後三角肌", "", 0],
+ ["mp-A7036", "MaxPump", "坐姿長划船機", "Classic Seated Long Row", "A7036", "背", "8–12", "闊背肌、中背、後三角肌", "", 0],
+ ["mp-A7038", "MaxPump", "單邊划船機", "Classic ISO Lateral Row", "A7038", "背", "8–12", "闊背肌、中背、後三角肌", "", 0],
+ ["mp-A7040", "MaxPump", "前划船機", "Max Multi Front Row", "A7040", "背", "8–12", "闊背肌、中背、後三角肌", "", 0],
+ ["mp-A7047", "MaxPump", "胸靠 T 槓划船機", "Supported Angle Row", "A7047", "背", "8–12", "闊背肌、中背、後三角肌", "", 0],
+ ["mp-A7048", "MaxPump", "坐姿中背划船機", "Seated Middle Row", "A7048", "背", "8–12", "闊背肌、中背、後三角肌", "", 0],
+ ["mp-A7083", "MaxPump", "胸靠划船機", "Pad Support Row", "A7083", "背", "8–12", "闊背肌、中背、後三角肌", "", 0],
+ ["mp-A7104", "MaxPump", "交叉式坐姿划船機", "Crossover Seated Row", "A7104", "背", "8–12", "闊背肌、中背、後三角肌", "", 0],
+ ["mp-A7037", "MaxPump", "低位划船／硬舉機", "Multi Low Row & Deadlift", "A7037", "背", "8–12", "臀大肌、腿後肌群、豎脊肌、斜方肌", "", 0],
+ ["mp-A7041", "MaxPump", "硬舉／聳肩機", "Multi Deadlift & Shrug", "A7041", "背", "8–12", "臀大肌、腿後肌群、豎脊肌、斜方肌", "", 0],
+ ["mp-A7013", "MaxPump", "坐姿過頭三頭伸展機", "Seated Tricep Overhead Extension", "A7013", "手臂", "12–15", "肱三頭肌", "", 0],
+ ["mp-A7025", "MaxPump", "坐姿三頭伸展機", "Seated Tricep Extension", "A7025", "手臂", "12–15", "肱三頭肌", "", 0],
+ ["mp-A7061", "MaxPump", "站姿三頭／撐體機", "Standing Tricep Extension & Dip", "A7061", "手臂", "8–12", "肱三頭肌", "", 0],
+ ["mp-A6017", "MaxPump", "45 度腿推機", "Power Leg Press", "A6017", "腿臀", "8–12", "股四頭肌、臀大肌", "", 0],
+ ["mp-A7016", "MaxPump", "垂直腿推機", "Vertical Leg Press", "A7016", "腿臀", "8–12", "股四頭肌、臀大肌", "", 0],
+ ["mp-A7049", "MaxPump", "鐘擺深蹲機", "Pendulum Squat Pro", "A7049", "腿臀", "8–12", "股四頭肌、臀大肌", "", 0],
+ ["mp-A7090", "MaxPump", "反向深蹲機", "Reverse Squat", "A7090", "腿臀", "8–12", "股四頭肌、臀大肌", "", 0],
+ ["mp-A7091", "MaxPump", "深蹲／提踵機", "Power Squat & Calf", "A7091", "腿臀", "12–15", "小腿", "", 0],
+ ["mp-A7080", "MaxPump", "安全槓深蹲機", "3D Safety Squat", "A7080", "腿臀", "8–12", "股四頭肌、臀大肌", "", 0],
+ ["mp-A7081", "MaxPump", "雙軌深蹲機", "Double Track Squat", "A7081", "腿臀", "8–12", "股四頭肌、臀大肌", "", 0],
+ ["mp-A7001", "MaxPump", "腰帶深蹲機", "Belt Squat", "A7001", "腿臀", "8–12", "股四頭肌、臀大肌", "", 0],
+ ["mp-A7070", "MaxPump", "多功能弓步蹲機", "Multi Lunge", "A7070", "腿臀", "8–12", "股四頭肌、臀大肌", "", 0],
+ ["mp-A7084", "MaxPump", "腿伸展機（插片）", "Leg Extension", "A7084", "腿臀", "12–15", "股四頭肌", "", 0],
+ ["mp-A7076", "MaxPump", "單邊腿伸展機", "ISO Leg Extension", "A7076", "腿臀", "12–15", "股四頭肌", "", 0],
+ ["mp-A7085", "MaxPump", "腿後勾機（插片）", "Leg Curl", "A7085", "腿臀", "12–15", "腿後肌群", "", 0],
+ ["mp-A7077", "MaxPump", "跪姿單邊腿後勾機", "ISO Kneeling Leg Curl", "A7077", "腿臀", "12–15", "腿後肌群", "", 0],
+ ["mp-A7027", "MaxPump", "臀推機", "Hip Thrust", "A7027", "腿臀", "8–12", "臀大肌、腿後肌群", "", 0],
+ ["mp-A7026", "MaxPump", "站姿臀推機", "Standing Hip Thrust", "A7026", "腿臀", "8–12", "臀大肌、腿後肌群", "", 0],
+ ["mp-A7068", "MaxPump", "臀部推蹬機", "Hip Press", "A7068", "腿臀", "8–12", "股四頭肌、臀大肌", "", 0],
+ ["mp-A7074", "MaxPump", "臀部後踢機", "Max Glute Kickback Pro", "A7074", "腿臀", "12–15", "臀大肌、腿後肌群", "", 0],
+ ["mp-A7029", "MaxPump", "髖外展機", "MAX 3D Abductor", "A7029", "腿臀", "12–15", "臀中肌、臀小肌", "", 0],
+ ["mp-A7065", "MaxPump", "站姿髖外展機（插片）", "Standing Abductor", "A7065", "腿臀", "12–15", "臀中肌、臀小肌", "", 0],
+ ["mp-A6012", "MaxPump", "反向背伸機", "Reverse Hyper", "A6012", "腿臀", "8–12", "豎脊肌、臀大肌", "", 0],
+ ["mp-A6020", "MaxPump", "捲腹機（插片）", "Abdominal Crunch", "A6020", "核心", "12–15", "腹直肌", "", 0],
+ ["mp-A7102", "MaxPump", "單邊胸推機", "Ultra ISO Chest Press", "A7102", "胸", "8–12", "胸大肌、前三角肌、肱三頭肌", "", 0],
+ ["mp-A7101", "MaxPump", "單邊上斜胸推機（插銷）", "Ultra ISO Incline Chest Press", "A7101", "胸", "8–12", "上胸、前三角肌、肱三頭肌", "", 0],
+ ["mp-A7021", "MaxPump", "下斜胸推／蝴蝶二合一", "Decline Chest Press & Pec Dec Superset", "A7021", "胸", "12–15", "下胸", "", 0],
+ ["mp-A7088", "MaxPump", "下斜蝴蝶機", "Decline Pec Dec Fly", "A7088", "胸", "12–15", "下胸", "", 0],
+ ["mp-A7003", "MaxPump", "站姿側平舉／飛鳥機", "Standing Lateral Raise & Fly", "A7003", "肩", "12–15", "胸大肌", "", 0],
+ ["mp-A7103", "MaxPump", "單邊肩推機", "Ultra ISO Shoulder Press", "A7103", "肩", "8–12", "三角肌、肱三頭肌", "", 0],
+ ["mp-A7020", "MaxPump", "側平舉／肩推二合一", "Seated Lateral Raise & Press Superset", "A7020", "肩", "12–15", "三角肌中束", "", 0],
+ ["mp-A7082", "MaxPump", "側平舉機", "ISO Lateral Raise", "A7082", "肩", "12–15", "三角肌中束", "", 0],
+ ["mp-A7115", "MaxPump", "肩內外旋機", "Shoulder Internal/External Rotation", "A7115", "肩", "12–15", "旋轉肌群", "", 0],
+ ["mp-A7035", "MaxPump", "雙軌下拉機", "Seated Super Dual Pulldown", "A7035", "背", "8–12", "闊背肌、大圓肌、肱二頭肌", "", 0],
+ ["mp-A7032", "MaxPump", "背部二合一", "Multi Double Back Superset", "A7032", "背", "8–12", "", "", 0],
+ ["mp-A7008", "MaxPump", "高／低位划船二合一", "High Row & Low Row Superset", "A7008", "背", "8–12", "闊背肌、中背、後三角肌", "", 0],
+ ["mp-A7100", "MaxPump", "單邊坐姿划船機", "Ultra ISO Seated Row", "A7100", "背", "8–12", "闊背肌、中背、後三角肌", "", 0],
+ ["mp-A7096", "MaxPump", "坐姿滑輪划船機", "Classic Seated Cable Row", "A7096", "背", "8–12", "闊背肌、中背、後三角肌", "", 0],
+ ["mp-A7012", "MaxPump", "牧師椅二頭彎舉機", "Preacher Multi Bicep Curl", "A7012", "手臂", "12–15", "肱二頭肌", "", 0],
+ ["mp-A7019", "MaxPump", "坐姿單邊二頭彎舉機", "Seated ISO Multi Bicep Curl", "A7019", "手臂", "12–15", "肱二頭肌", "", 0],
+ ["mp-A7099", "MaxPump", "站姿二頭彎舉機", "Max Standing Bicep", "A7099", "手臂", "12–15", "肱二頭肌", "", 0],
+ ["mp-A7023", "MaxPump", "臥姿三頭伸展機", "Lying Tricep Extension", "A7023", "手臂", "12–15", "肱三頭肌", "", 0],
+ ["mp-A7043", "MaxPump", "坐姿單邊三頭伸展機", "Seated ISO Tricep Extension", "A7043", "手臂", "12–15", "肱三頭肌", "", 0],
+ ["mp-A7031", "MaxPump", "三頭過頭伸展／撐體二合一", "Tricep Overhead Extension & Dip Superset", "A7031", "手臂", "12–15", "肱三頭肌", "", 0],
+ ["mp-A7054", "MaxPump", "站姿單邊腿後勾機", "Standing ISO Multi Leg Curl", "A7054", "腿臀", "12–15", "腿後肌群", "", 0],
+ ["mp-A7105", "MaxPump", "髖伸展機", "Hip Extension", "A7105", "腿臀", "12–15", "臀大肌、腿後肌群", "", 0],
+ ["mp-A7106", "MaxPump", "站姿髖外展機（插銷）", "Standing Abductor", "A7106", "腿臀", "12–15", "臀中肌、臀小肌", "", 0],
+ ["mp-A7107", "MaxPump", "站姿臀推機（插銷）", "Standing Hip Thrust", "A7107", "腿臀", "8–12", "臀大肌、腿後肌群", "", 0],
+ ["mp-A7033", "MaxPump", "下腹訓練機", "Max Lower Abs", "A7033", "核心", "12–15", "腹直肌（下段）", "", 0],
+ ["np-GP8034", "Npoint", "坐姿胸推機（插片）", "Plated Seated Chest Press", "GP8034", "胸", "8–12", "胸大肌、前三角肌、肱三頭肌", "", 0],
+ ["np-GP8018", "Npoint", "寬握胸推機", "Wide Chest Press", "GP8018", "胸", "8–12", "胸大肌、前三角肌、肱三頭肌", "", 0],
+ ["np-GP8009", "Npoint", "上斜胸推機（插片）", "Incline Chest Press", "GP8009", "胸", "8–12", "上胸、前三角肌、肱三頭肌", "", 0],
+ ["np-GP8038", "Npoint", "上斜胸推機（插片 II）", "Plated Incline Chest Press", "GP8038", "胸", "8–12", "上胸、前三角肌、肱三頭肌", "", 0],
+ ["np-GP8008", "Npoint", "平／下斜胸推機", "Chest & Decline Combo", "GP8008", "胸", "8–12", "下胸、肱三頭肌", "", 0],
+ ["np-GP8029", "Npoint", "蝴蝶機（插片）", "Pec Dec Fly", "GP8029", "胸", "12–15", "胸大肌", "", 0],
+ ["np-GP8030", "Npoint", "蝴蝶／後三角二合一", "Pec Deck Rear Combo", "GP8030", "胸", "12–15", "後三角肌、菱形肌", "", 0],
+ ["np-GP8013", "Npoint", "肩推機（插片）", "Shoulder Press", "GP8013", "肩", "8–12", "三角肌、肱三頭肌", "", 0],
+ ["np-GP8042", "Npoint", "仰臥肩推機", "Supine Shoulder Press", "GP8042", "肩", "8–12", "三角肌、肱三頭肌", "", 0],
+ ["np-GP8028", "Npoint", "側平舉機（插片）", "Lateral Raise", "GP8028", "肩", "12–15", "三角肌中束", "", 0],
+ ["np-GP8033", "Npoint", "後三角飛鳥機", "Plated Seated Back Deltoid Fly", "GP8033", "肩", "12–15", "後三角肌、菱形肌", "", 0],
+ ["np-GP8004", "Npoint", "前寬握下拉機", "Wide Pulldown Front", "GP8004", "背", "8–12", "闊背肌、大圓肌、肱二頭肌", "", 0],
+ ["np-GP8006", "Npoint", "後寬握下拉機", "Wide Pulldown Rear", "GP8006", "背", "8–12", "闊背肌、大圓肌、肱二頭肌", "", 0],
+ ["np-GP8031", "Npoint", "多握把下拉機", "Super Handles Lat Pulldown", "GP8031", "背", "8–12", "闊背肌、大圓肌、肱二頭肌", "", 0],
+ ["np-GP8044", "Npoint", "下拉／划船二合一", "Lat Pulldown & Long Row Superset", "GP8044", "背", "8–12", "闊背肌、大圓肌、肱二頭肌", "", 0],
+ ["np-GP8045", "Npoint", "仰臥拉舉機", "Pull Over", "GP8045", "背", "8–12", "闊背肌", "", 0],
+ ["np-GP8001", "Npoint", "坐姿划船機（插片）", "Seated Row", "GP8001", "背", "8–12", "闊背肌、中背、後三角肌", "", 0],
+ ["np-GP8001S", "Npoint", "單邊划船機", "Lateral Rowing", "GP8001S", "背", "8–12", "闊背肌、中背、後三角肌", "", 0],
+ ["np-GP8002", "Npoint", "低位划船機", "Low Row", "GP8002", "背", "8–12", "闊背肌、中背、後三角肌", "", 0],
+ ["np-GP8002A", "Npoint", "低位划船／硬舉機", "Low Row & Deadlift", "GP8002A", "背", "8–12", "臀大肌、腿後肌群、豎脊肌、斜方肌", "", 0],
+ ["np-GP8003", "Npoint", "前划船機", "Front Row", "GP8003", "背", "8–12", "闊背肌、中背、後三角肌", "", 0],
+ ["np-GP8007", "Npoint", "俯身划船機", "Bentover Row", "GP8007", "背", "8–12", "闊背肌、中背、後三角肌", "", 0],
+ ["np-GP8032", "Npoint", "低位划船機（II）", "Plated Low Row", "GP8032", "背", "8–12", "闊背肌、中背、後三角肌", "", 0],
+ ["np-GP8043", "Npoint", "高位划船機", "Plated High Row", "GP8043", "背", "8–12", "闊背肌、中背、後三角肌", "", 0],
+ ["np-GP8040", "Npoint", "胸靠 T 槓划船機", "Supported Angle Row", "GP8040", "背", "8–12", "闊背肌、中背、後三角肌", "", 0],
+ ["np-GP8027", "Npoint", "二頭彎舉機（插片）", "Arm Curl", "GP8027", "手臂", "12–15", "肱二頭肌", "", 0],
+ ["np-GP8026", "Npoint", "過頭三頭伸展機", "Overhead Extension", "GP8026", "手臂", "12–15", "肱三頭肌", "", 0],
+ ["np-GP8041", "Npoint", "站姿三頭伸展機", "Standing Tricep Extension", "GP8041", "手臂", "12–15", "肱三頭肌", "", 0],
+ ["np-GP8020", "Npoint", "45 度腿推機", "Power Leg Press", "GP8020", "腿臀", "8–12", "股四頭肌、臀大肌", "", 0],
+ ["np-GP8039", "Npoint", "70 度腿推機", "70 Degree Multi Leg Press", "GP8039", "腿臀", "8–12", "股四頭肌、臀大肌", "", 0],
+ ["np-GP8017", "Npoint", "俯臥腿推機", "Prone Leg Press", "GP8017", "腿臀", "8–12", "股四頭肌、臀大肌", "", 0],
+ ["np-GP8024", "Npoint", "哈克深蹲機", "Hack Squat", "GP8024", "腿臀", "8–12", "股四頭肌、臀大肌", "", 0],
+ ["np-GP8024A", "Npoint", "哈克深蹲機（Super）", "Super Hack Squat", "GP8024A", "腿臀", "8–12", "股四頭肌、臀大肌", "", 0],
+ ["np-GP8021", "Npoint", "V 型深蹲機", "V-Squat", "GP8021", "腿臀", "8–12", "股四頭肌、臀大肌", "", 0],
+ ["np-GP8014", "Npoint", "深蹲機", "Squat Machine", "GP8014", "腿臀", "8–12", "股四頭肌、臀大肌", "", 0],
+ ["np-GP8022", "Npoint", "深蹲／提踵機", "Squat & Calf Raise", "GP8022", "腿臀", "12–15", "小腿", "", 0],
+ ["np-GP8023", "Npoint", "下沉深蹲機", "Drop Squat", "GP8023", "腿臀", "8–12", "股四頭肌、臀大肌", "", 0],
+ ["np-GP8035", "Npoint", "深蹲站", "Plated Squat Station", "GP8035", "腿臀", "8–12", "股四頭肌、臀大肌", "", 0],
+ ["np-GP8036", "Npoint", "雙軌深蹲機", "Multi Double Track Squat", "GP8036", "腿臀", "8–12", "股四頭肌、臀大肌", "", 0],
+ ["np-GP8037", "Npoint", "腰帶深蹲機", "Belt Squat", "GP8037", "腿臀", "8–12", "股四頭肌、臀大肌", "", 0],
+ ["np-GP8011", "Npoint", "腿伸展機（插片）", "Leg Extension", "GP8011", "腿臀", "12–15", "股四頭肌", "", 0],
+ ["np-GP8012", "Npoint", "腿後勾機（插片）", "Leg Curl", "GP8012", "腿臀", "12–15", "腿後肌群", "", 0],
+ ["np-GP8010", "Npoint", "跪姿腿後勾機", "Kneeling Leg Curl", "GP8010", "腿臀", "12–15", "腿後肌群", "", 0],
+ ["np-GP8019", "Npoint", "臀推機", "Hip Thrust", "GP8019", "腿臀", "8–12", "臀大肌、腿後肌群", "", 0],
+ ["np-GP8016", "Npoint", "臀腿訓練機", "Glute Ham", "GP8016", "腿臀", "8–12", "臀大肌、腿後肌群", "", 0],
+ ["np-GP8015", "Npoint", "反向背伸機", "Reverse Hyper", "GP8015", "腿臀", "8–12", "豎脊肌、臀大肌", "", 0],
+ ["np-CP6001", "Npoint", "坐姿胸推機", "Seated Chest Press", "CP6001", "胸", "8–12", "胸大肌、前三角肌、肱三頭肌", "", 0],
+ ["np-CP6023", "Npoint", "上斜胸推機", "Incline Chest Press", "CP6023", "胸", "8–12", "上胸、前三角肌、肱三頭肌", "", 0],
+ ["np-CP6014", "Npoint", "蝴蝶機／反向飛鳥", "Pec Deck Fly with Reverse", "CP6014", "胸", "12–15", "後三角肌、菱形肌", "", 0],
+ ["np-CP6024", "Npoint", "站姿飛鳥機", "Standing Fly Chest & Back", "CP6024", "胸", "12–15", "胸大肌", "", 0],
+ ["np-CP6004", "Npoint", "肩推機", "Shoulder Press", "CP6004", "肩", "8–12", "三角肌、肱三頭肌", "", 0],
+ ["np-CP6021", "Npoint", "側平舉機", "Lateral Raise", "CP6021", "肩", "12–15", "三角肌中束", "", 0],
+ ["np-CP6025", "Npoint", "站姿側平舉／飛鳥機", "Standing Lateral Raise & Fly", "CP6025", "肩", "12–15", "胸大肌", "", 0],
+ ["np-CP6003", "Npoint", "滑輪下拉機", "Lat Pulldown", "CP6003", "背", "8–12", "闊背肌、大圓肌、肱二頭肌", "", 0],
+ ["np-CP6005", "Npoint", "坐姿划船機", "Seated Row", "CP6005", "背", "8–12", "闊背肌、中背、後三角肌", "", 0],
+ ["np-CP6016", "Npoint", "低位滑輪划船機", "Low Pulley (Long Pull)", "CP6016", "背", "8–12", "闊背肌、中背、後三角肌", "", 0],
+ ["np-CP6015", "Npoint", "輔助引體向上／撐體機", "Chin-Up/Dip Assist", "CP6015", "背", "8–12", "闊背肌、肱二頭肌", "", 0],
+ ["np-CP6011", "Npoint", "二頭彎舉機", "Arm Curl", "CP6011", "手臂", "12–15", "肱二頭肌", "", 0],
+ ["np-CP6006", "Npoint", "坐姿撐體機", "Seated Dip", "CP6006", "手臂", "8–12", "肱三頭肌", "", 0],
+ ["np-CP6008", "Npoint", "坐姿腿推機", "Seated Leg Press", "CP6008", "腿臀", "8–12", "股四頭肌、臀大肌", "", 0],
+ ["np-CP6009", "Npoint", "腿伸展機", "Leg Extension", "CP6009", "腿臀", "12–15", "股四頭肌", "", 0],
+ ["np-CP6010", "Npoint", "腿後勾機", "Leg Curl", "CP6010", "腿臀", "12–15", "腿後肌群", "", 0],
+ ["np-CP6012", "Npoint", "髖內收機", "Hip Adduction", "CP6012", "腿臀", "12–15", "內收肌群", "", 0],
+ ["np-CP6013", "Npoint", "髖內收／外展機", "Hip Adduction/Abduction Combo", "CP6013", "腿臀", "12–15", "內收肌群、臀中肌", "", 0],
+ ["np-CP6007", "Npoint", "臀腿訓練機（插銷）", "Glute Ham", "CP6007", "腿臀", "8–12", "臀大肌、腿後肌群", "", 0],
+ ["np-CP6022", "Npoint", "站姿提踵機", "Standing Calf Raise", "CP6022", "腿臀", "12–15", "小腿", "", 0],
+ ["np-CP6002", "Npoint", "捲腹機", "Abdominal", "CP6002", "核心", "12–15", "腹直肌", "", 0],
+ ["np-CP6019", "Npoint", "軀幹旋轉機", "Rotary Torso", "CP6019", "核心", "12–15", "腹斜肌", "", 0],
+ ["np-E9001", "Npoint", "Evo 坐姿胸推機", "Evo Seated Chest Press", "E9001", "胸", "8–12", "胸大肌、前三角肌、肱三頭肌", "", 0],
+ ["np-E9016", "Npoint", "Evo 上斜胸推機", "Evo Incline Chest Press", "E9016", "胸", "8–12", "上胸、前三角肌、肱三頭肌", "", 0],
+ ["np-E9003", "Npoint", "Evo 蝴蝶機／反向飛鳥", "Evo Pec Deck Fly with Reverse", "E9003", "胸", "12–15", "後三角肌、菱形肌", "", 0],
+ ["np-E9019", "Npoint", "Evo 肩推機", "Evo Deltoid Press", "E9019", "肩", "8–12", "三角肌、肱三頭肌", "", 0],
+ ["np-E9014", "Npoint", "Evo 側平舉機", "Evo Lateral Raise", "E9014", "肩", "12–15", "三角肌中束", "", 0],
+ ["np-E9013", "Npoint", "Evo 滑輪下拉機", "Evo Lat Pulldown", "E9013", "背", "8–12", "闊背肌、大圓肌、肱二頭肌", "", 0],
+ ["np-E9006", "Npoint", "Evo 單邊坐姿划船機", "Evo ISO-lateral Seated Row", "E9006", "背", "8–12", "闊背肌、中背、後三角肌", "", 0],
+ ["np-E9012", "Npoint", "Evo 低位划船機", "Evo Low Pulley", "E9012", "背", "8–12", "闊背肌、中背、後三角肌", "", 0],
+ ["np-E9010", "Npoint", "Evo 二頭彎舉機", "Evo Arm Curl", "E9010", "手臂", "12–15", "肱二頭肌", "", 0],
+ ["np-E9009", "Npoint", "Evo 坐姿撐體機", "Evo Seated Dip", "E9009", "手臂", "8–12", "肱三頭肌", "", 0],
+ ["np-E9011", "Npoint", "Evo 坐姿腿推機", "Evo Seated Leg Press", "E9011", "腿臀", "8–12", "股四頭肌、臀大肌", "", 0],
+ ["np-E9005", "Npoint", "Evo 腿伸展機", "Evo Leg Extension", "E9005", "腿臀", "12–15", "股四頭肌", "", 0],
+ ["np-E9005D", "Npoint", "Evo 腿後勾機", "Evo Leg Curl", "E9005D", "腿臀", "12–15", "腿後肌群", "", 0],
+ ["np-E9004", "Npoint", "Evo 髖內收／外展機", "Evo Hip Adduction/Abduction", "E9004", "腿臀", "12–15", "內收肌群、臀中肌", "", 0],
+ ["np-E9017", "Npoint", "Evo 臀部後踢機", "Evo Glute Extension", "E9017", "腿臀", "12–15", "臀大肌、腿後肌群", "", 0],
+ ["np-E9018", "Npoint", "Evo 站姿提踵機", "Evo Standing Calf", "E9018", "腿臀", "12–15", "小腿", "", 0],
+ ["np-E9008", "Npoint", "Evo 捲腹機", "Evo Abdominal", "E9008", "核心", "12–15", "腹直肌", "", 0]
+].map(([id,brand,name,en,model,part,rm,mus,ex,gym])=>({id,brand,name,en,model,part,rm,mus,ex:ex?ex.split('|'):[],gym:!!gym}));
+MACHINES.forEach(m=>LIB.push({part:m.part,eq:m.brand,n:m.name,rm:m.rm,mus:m.mus,bw:false,kw:[m.en,m.model].filter(Boolean).join(' '),mc:m.id,gym:m.gym}));
+function mcById(id){return MACHINES.find(m=>m.id===id)||null}
+// 沒特別指定時，依動作名稱自動對應：只綁「確認新莊有」的機器，型錄裡的不自動綁
+function mcAuto(n){const c=canon(n);return MACHINES.find(m=>m.gym&&m.ex.includes(c))||null}
+function mcOf(it){return it.mc!=null?(it.mc?mcById(it.mc):null):mcAuto(it.n)}
+function mcLabel(m){return m?m.brand+' '+m.name:''}
+
 let prog='ppl';
 try{prog=localStorage.getItem('w3-prog')||'ppl'}catch(e){}
 let profiles=null;
@@ -776,8 +974,8 @@ function fmtLog(it){
 // 目前這一格實際要做的動作（原動作或替代動作）
 function effective(it,wk){
   const a=ALTS[it.n];const s=swaps[wk];
-  if(a&&s!=null&&a.alts[s])return {n:a.alts[s].n,rm:a.alts[s].rm||it.rm,note:a.alts[s].note||'',orig:it.n,mus:a.m,bw:!!a.alts[s].bw};
-  return {n:it.n,rm:it.rm,note:'',orig:null,mus:a?a.m:(it.mus||''),bw:isBw(it)};
+  if(a&&s!=null&&a.alts[s])return {n:a.alts[s].n,rm:a.alts[s].rm||it.rm,note:a.alts[s].note||'',orig:it.n,mus:a.m,bw:!!a.alts[s].bw,mc:mcAuto(a.alts[s].n)};
+  return {n:it.n,rm:it.rm,note:'',orig:null,mus:a?a.m:(it.mus||''),bw:isBw(it),mc:mcOf(it)};
 }
 
 const tabs=document.getElementById('tabs'),daysEl=document.getElementById('days');
@@ -852,6 +1050,7 @@ function renderEx(it,e,wk,di,rests=true){
   art.innerHTML=
     `<div class="exh"><div><span class="name">${ef.n}</span>${ef.mus?`<span class="mus">${ef.mus}</span>`:''}</div>`+
     `<div class="rm"><span class="num">${ef.rm}</span><small>RM</small></div></div>`+
+    (ef.mc?`<div class="mc"><span class="brand">${ef.mc.brand}</span>${ef.mc.name}${ef.mc.model?`<small>${ef.mc.model}</small>`:''}</div>`:'')+
     (note?`<div class="note">${note}</div>`:'')+
     (ef.orig?`<div class="swapped">代替「${ef.orig}」<button type="button" class="unswap">換回原動作</button></div>`:'')+
     lastHtml+`<div class="wrow">${last?'':'<span class="nolast">還沒有紀錄</span>'}<a class="demo" href="${demoUrl(ef.n)}" target="_blank" rel="noopener">示範影片</a>`+(ALTS[it.n]?`<button type="button" class="swapbtn" aria-expanded="false">器材被佔？</button>`:'')+`</div>`+
@@ -976,6 +1175,17 @@ function renderEditor(di){
   return box;
 }
 const exForm=document.getElementById('exform');
+function fillMcSelect(sel,it){
+  const auto=it&&it.n?mcAuto(it.n):null;
+  let h=`<option value="auto">${auto?'自動：'+mcLabel(auto):'自動（依動作名稱）'}</option><option value="">不指定器材</option>`;
+  ['MaxPump','Npoint'].forEach(b=>{
+    const g=MACHINES.filter(m=>m.brand===b&&m.gym),o=MACHINES.filter(m=>m.brand===b&&!m.gym);
+    const opt=m=>`<option value="${m.id}">${m.part}｜${m.name}（${m.model}）</option>`;
+    if(g.length)h+=`<optgroup label="${b}：新莊有">`+g.map(opt).join('')+'</optgroup>';
+    if(o.length)h+=`<optgroup label="${b}：型錄（未確認新莊有）">`+o.map(opt).join('')+'</optgroup>';
+  });
+  sel.innerHTML=h;sel.value=it&&it.mc!=null?it.mc:'auto';
+}
 function openExForm(di,ei){
   const c=ensureCustom(prog);const d=c.days[di];const e=ei==null?null:d.ex[ei];
   const items=e?(e.sup||[e]):[{n:'',rm:'10–12'}];
@@ -986,6 +1196,7 @@ function openExForm(di,ei){
   f.n1.value=items[0].n||'';f.rm1.value=items[0].rm||'';f.mus1.value=items[0].mus||'';
   f.sup.checked=isSup;
   f.bw1.checked=!!items[0].n&&isBw(items[0]);f.bw2.checked=isSup&&isBw(items[1]);
+  fillMcSelect(f.mc1,items[0]);fillMcSelect(f.mc2,isSup?items[1]:{});
   f.n2.value=isSup?(items[1].n||''):'';f.rm2.value=isSup?(items[1].rm||''):'';f.mus2.value=isSup?(items[1].mus||''):'';
   f.rest.value=String(e?e.rest:90);f.note.value=(e&&e.note)||'';
   exForm.querySelector('.second').hidden=!isSup;
@@ -993,14 +1204,15 @@ function openExForm(di,ei){
   f.onsubmit=ev=>{
     ev.preventDefault();
     const n1=f.n1.value.trim();if(!n1)return;
-    const mk=(n,rm,mus,bw,old)=>({id:old&&old.id||newId(),n,rm:rm.trim()||'10–12',mus:mus.trim(),bw});
-    const a=mk(n1,f.rm1.value,f.mus1.value,f.bw1.checked,items[0]);
+    // mc：auto＝依名稱自動對應（不存），空字串＝不指定器材
+    const mk=(n,rm,mus,bw,mc,old)=>Object.assign({id:old&&old.id||newId(),n,rm:rm.trim()||'10–12',mus:mus.trim(),bw},mc==='auto'?{}:{mc});
+    const a=mk(n1,f.rm1.value,f.mus1.value,f.bw1.checked,f.mc1.value,items[0]);
     let ne;
     if(f.sup.checked&&f.n2.value.trim()){
-      const b=mk(f.n2.value.trim(),f.rm2.value,f.mus2.value,f.bw2.checked,isSup?items[1]:null);
+      const b=mk(f.n2.value.trim(),f.rm2.value,f.mus2.value,f.bw2.checked,f.mc2.value,isSup?items[1]:null);
       ne={sup:[a,b],rest:parseInt(f.rest.value,10)||60};
     }else{
-      ne={id:a.id,n:a.n,rm:a.rm,mus:a.mus,bw:a.bw,rest:parseInt(f.rest.value,10)||90};
+      ne=Object.assign({},a,{rest:parseInt(f.rest.value,10)||90});
     }
     const note=f.note.value.trim();if(note)ne.note=note;
     if(e)d.ex[ei]=ne;else d.ex.push(ne);
@@ -1023,7 +1235,7 @@ document.getElementById('finish').onclick=()=>{
     const ef=effective(it,wk);const rs=rows(wk);
     const dn=[];rs.forEach((r,i)=>{if(r.done)dn.push({w:eff(rs,i,'w'),r:eff(rs,i,'r')})});
     total+=rs.length;done+=dn.length;
-    if(dn.length)items.push(Object.assign({n:ef.n,orig:ef.orig,rm:ef.rm,sets:dn.length,w:dn[0].w,log:dn},ef.bw?{bw:true}:{}));
+    if(dn.length)items.push(Object.assign({n:ef.n,orig:ef.orig,rm:ef.rm,sets:dn.length,w:dn[0].w,log:dn},ef.bw?{bw:true}:{},ef.mc?{mc:mcLabel(ef.mc)}:{}));
   });
   if(done===0){fmsg.textContent='今天還沒打勾，先做完再存。';return}
   const when=isoFromDateStr(fdateEl.value);
@@ -1135,27 +1347,29 @@ document.getElementById('himport').onchange=ev=>{
 // ---- 動作庫挑選 ----
 const libSheet=document.getElementById('libsheet'),libQ=document.getElementById('libq'),libEq=document.getElementById('libeq'),libList=document.getElementById('liblist');
 let libTarget='1',libEqSel='全部';
-['全部','器械','滑輪','啞鈴','槓鈴','徒手'].forEach(k=>{
+['全部','MaxPump','Npoint','器械','滑輪','啞鈴','槓鈴','徒手'].filter(k=>!['MaxPump','Npoint'].includes(k)||MACHINES.some(m=>m.brand===k)).forEach(k=>{
   const b=document.createElement('button');b.type='button';b.textContent=k;
   b.onclick=()=>{libEqSel=k;renderLib()};libEq.appendChild(b);
 });
 function renderLib(){
   libEq.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.textContent===libEqSel));
   const q=libQ.value.trim();
-  const hit=LIB.filter(x=>(libEqSel==='全部'||x.eq===libEqSel)&&(!q||[x.n,x.kw,x.mus,x.part].some(v=>v.includes(q))));
+  const PARTS=['胸','背','肩','手臂','腿臀','核心'];
+  const hit=LIB.filter(x=>(libEqSel==='全部'?(!x.mc||x.gym):x.eq===libEqSel)&&(!q||[x.n,x.kw,x.mus,x.part].some(v=>v.includes(q)))).sort((a,b)=>PARTS.indexOf(a.part)-PARTS.indexOf(b.part)||(b.gym?1:0)-(a.gym?1:0));
   libList.innerHTML='';
   if(!hit.length){libList.innerHTML='<p>找不到。關掉這個視窗，直接在「動作名稱」打字也可以。</p>';return}
   let part='';
   hit.forEach(x=>{
     if(x.part!==part){part=x.part;const h=document.createElement('h4');h.textContent=part;libList.appendChild(h)}
     const b=document.createElement('button');b.type='button';b.className='libit';
-    b.innerHTML=`<b>${x.n}${x.kw?`<small style="font-weight:400;color:var(--muted)">（${x.kw}）</small>`:''}</b><span><i class="eq">${x.eq}</i>${x.rm} RM · ${x.mus}</span>`;
+    b.innerHTML=`<b>${x.mc?(x.gym?'<i class="gymtag">新莊有</i>':'<i class="gymtag no">未確認新莊有</i>'):''}${x.n}${x.kw?`<small style="font-weight:400;color:var(--muted)">（${x.kw}）</small>`:''}</b><span><i class="eq">${x.eq}</i>${x.rm} RM · ${x.mus}</span>`;
     b.onclick=()=>pickLib(x);libList.appendChild(b);
   });
 }
 function pickLib(x){
   const f=exForm.querySelector('form'),t=libTarget;
   f['n'+t].value=x.n;f['rm'+t].value=x.rm;f['mus'+t].value=x.mus;f['bw'+t].checked=x.bw;
+  fillMcSelect(f['mc'+t],{n:x.n,mc:x.mc});
   // 休息時間照次數粗估：低次數的複合動作休久一點
   if(t==='1'){const lo=parseInt(x.rm,10);f.rest.value=String(lo<=6?180:lo<=8?120:lo<=10?90:60)}
   libSheet.hidden=true;
