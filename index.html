@@ -207,6 +207,21 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .hrow span:last-child{color:var(--ink2);white-space:nowrap}
 .hdel{margin-top:12px;height:36px;padding:0 14px;border-radius:999px;border:0;background:rgba(255,92,92,.14);color:var(--danger);font-weight:600;font-size:13px}
 .empty{color:var(--muted);font-size:13px;margin:14px 2px}
+.hacts{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.hacts .hdel{margin-top:0}
+.hedbtn{height:36px;padding:0 14px;border-radius:999px;border:0;background:var(--card2);color:var(--ink);font-weight:600;font-size:13px}
+.hedbtn.save{background:var(--accent);color:#fff}
+.hitem{padding:10px 0 8px;border-top:1px solid var(--line)}
+.hitem>b{display:block;font-size:14px;margin-bottom:4px}
+.hes{display:grid;grid-template-columns:22px 1fr 1fr 30px;gap:8px;align-items:center;padding:3px 0}
+.hes.hd{font-size:11px;color:var(--muted);text-align:center;padding:0}
+.hes .sn{font-size:13px;color:var(--muted)}
+.hes input{width:100%;min-width:0;height:38px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);font:inherit;font-weight:700;font-size:16px;text-align:center;padding:0 4px;-moz-appearance:textfield}
+.hes input::-webkit-outer-spin-button,.hes input::-webkit-inner-spin-button{-webkit-appearance:none}
+.hes input::placeholder{color:var(--muted);font-weight:500;opacity:.6}
+.hes button{height:38px;border:0;background:none;color:var(--muted);font-size:20px;padding:0;line-height:1}
+.hadd{margin-top:4px;width:100%;height:34px;border-radius:8px;border:1px dashed var(--line);background:none;color:var(--ink2);font-weight:600;font-size:13px}
+.herr{color:var(--danger)}
 
 /* rest timer */
 .timer{
@@ -260,10 +275,12 @@ html{color-scheme:light}
           <label>動作名稱<input name="n1" type="text" required maxlength="30" placeholder="例如：啞鈴臥推"></label>
           <div class="two"><label>RM（次數範圍）<input name="rm1" type="text" maxlength="10" placeholder="8–12"></label><label>休息<select name="rest"><option value="60">60 秒</option><option value="90">90 秒</option><option value="120">2 分鐘</option><option value="150">2 分半</option><option value="180">3 分鐘</option></select></label></div>
           <label>肌群（選填）<input name="mus1" type="text" maxlength="40" placeholder="例如：胸大肌、肱三頭肌"></label>
+          <label class="chk"><input name="bw1" type="checkbox">自體重量（不掛重量，kg 可以不填）</label>
           <label class="chk"><input name="sup" type="checkbox">超級組：和另一個動作交替做</label>
           <div class="second" hidden>
             <label>第二個動作<input name="n2" type="text" maxlength="30"></label>
             <div class="two"><label>RM<input name="rm2" type="text" maxlength="10" placeholder="12–15"></label><label>肌群（選填）<input name="mus2" type="text" maxlength="40"></label></div>
+            <label class="chk"><input name="bw2" type="checkbox">自體重量</label>
           </div>
           <label>備註（選填）<input name="note" type="text" maxlength="40" placeholder="例如：隔週換器械胸推"></label>
           <div class="two"><button type="button" class="cancel">取消</button><button type="submit">儲存</button></div>
@@ -430,13 +447,13 @@ const ALTS={
   {n:'三頭伸展機（Machine Triceps Extension）',note:'',src:'https://www.strengthlog.com/best-machine-exercises/'},
  ]},
  '滑輪下拉':{m:'闊背肌、大圓肌、後三角肌、肱二頭肌（次要）',alts:[
-  {n:'引體向上（Pull-Up）',rm:'8–12',note:'',src:'https://barbend.com/lat-pulldown/'},
+  {n:'引體向上（Pull-Up）',bw:true,rm:'8–12',note:'',src:'https://barbend.com/lat-pulldown/'},
   {n:'輔助引體向上機（Assisted Pull-Up Machine）',rm:'8–12',note:'',src:'https://barbend.com/lat-pulldown/'},
   {n:'單臂滑輪下拉（Single-Arm Lat Pulldown）',note:'D 型把手',src:'https://barbend.com/lat-pulldown/'},
  ]},
  '大剪刀下拉':{m:'闊背肌、中背（菱形肌）、肱二頭肌',alts:[
   {n:'反握滑輪下拉（Underhand Lat Pulldown）',note:'大剪刀本身就是反握弧線軌跡',src:'https://barbend.com/lat-pulldown-variations/'},
-  {n:'反握引體向上（Chin-Up）',note:'',src:'https://www.strengthlog.com/chin-up/'},
+  {n:'反握引體向上（Chin-Up）',bw:true,note:'',src:'https://www.strengthlog.com/chin-up/'},
   {n:'單臂滑輪下拉（Single-Arm Lat Pulldown）',note:'模擬單邊獨立發力',src:'https://barbend.com/lat-pulldown/'},
  ]},
  '窄握划船':{m:'闊背肌、斜方肌、後三角肌、肱二頭肌（次要）',alts:[
@@ -475,24 +492,24 @@ const ALTS={
   {n:'槓鈴深蹲（Barbell Back Squat）',rm:'8–12',note:'',src:'https://www.strengthlog.com/best-machine-exercises/'},
  ]},
  '腿前伸':{m:'股四頭肌（含股直肌）',alts:[
-  {n:'西西深蹲（Sissy Squat）',rm:'8–10',note:'先從 3–5 下開始，髖固定只彎膝',src:'https://barbend.com/leg-extension-alternatives/'},
-  {n:'反向北歐（Reverse Nordic）',note:'離心為主的股四頭伸展',src:'https://www.strengthlog.com/reverse-nordic/'},
+  {n:'西西深蹲（Sissy Squat）',bw:true,rm:'8–10',note:'先從 3–5 下開始，髖固定只彎膝',src:'https://barbend.com/leg-extension-alternatives/'},
+  {n:'反向北歐（Reverse Nordic）',bw:true,note:'離心為主的股四頭伸展',src:'https://www.strengthlog.com/reverse-nordic/'},
   {n:'前腳墊高分腿蹲（Front-Foot Elevated Split Squat）',rm:'10–12',note:'每腳',src:'https://barbend.com/leg-extension-alternatives/'},
  ]},
  '腿後勾':{m:'腿後肌群（膕旁肌）',alts:[
   {n:'另一台腿後勾機（坐姿或臥姿）',note:'坐姿與臥姿可互換',src:'https://www.strengthlog.com/best-machine-exercises/'},
   {n:'繩索腿後勾（Cable Leg Curl）',note:'腳踝綁帶接低位滑輪',src:'https://exrx.net/WeightExercises/Hamstrings/CBStandingLegCurl'},
-  {n:'抗力球腿後勾（Stability Ball Hamstring Curl）',rm:'12',note:'',src:'https://www.healthline.com/nutrition/leg-curl-alternative'},
+  {n:'抗力球腿後勾（Stability Ball Hamstring Curl）',bw:true,rm:'12',note:'',src:'https://www.healthline.com/nutrition/leg-curl-alternative'},
  ]},
  '髖內收':{m:'內收肌群（內收長肌、短肌、大肌、股薄肌）',alts:[
   {n:'繩索髖內收（Cable Hip Adduction）',note:'腳踝綁帶，扶穩機台',src:'https://exrx.net/WeightExercises/HipAdductors/CBHipAdduction'},
-  {n:'側臥髖內收（Side-Lying Adduction）',note:'徒手',src:'https://www.healthline.com/health/adductor-exercises'},
-  {n:'哥本哈根內收（Copenhagen Adduction）',rm:'8–12',note:'每腳',src:'https://www.healthline.com/health/adductor-exercises'},
+  {n:'側臥髖內收（Side-Lying Adduction）',bw:true,note:'徒手',src:'https://www.healthline.com/health/adductor-exercises'},
+  {n:'哥本哈根內收（Copenhagen Adduction）',bw:true,rm:'8–12',note:'每腳',src:'https://www.healthline.com/health/adductor-exercises'},
  ]},
  '髖外展':{m:'臀中肌、臀小肌、闊筋膜張肌',alts:[
   {n:'繩索髖外展（Cable Hip Abduction）',note:'腳踝綁帶',src:'https://exrx.net/WeightExercises/HipAbductor/CBHipAbduction'},
-  {n:'側臥抬腿（Side-Lying Leg Lift）',rm:'15–20',note:'',src:'https://www.healthline.com/health/fitness-exercise/hip-abductor-exercises'},
-  {n:'彈力帶側走（Banded Side Walk）',rm:'10–12 步',note:'每個方向',src:'https://www.healthline.com/health/fitness-exercise/hip-abductor-exercises'},
+  {n:'側臥抬腿（Side-Lying Leg Lift）',bw:true,rm:'15–20',note:'',src:'https://www.healthline.com/health/fitness-exercise/hip-abductor-exercises'},
+  {n:'彈力帶側走（Banded Side Walk）',bw:true,rm:'10–12 步',note:'每個方向',src:'https://www.healthline.com/health/fitness-exercise/hip-abductor-exercises'},
  ]},
  '臀推機':{m:'臀大肌、腿後肌群',alts:[
   {n:'槓鈴臀推（Barbell Hip Thrust）',note:'',src:'https://www.strengthlog.com/hip-thrust-variations/'},
@@ -505,9 +522,9 @@ const ALTS={
   {n:'登階（Step-Up）',rm:'10–12',note:'每腳',src:'https://barbend.com/leg-extension-alternatives/'},
  ]},
  '下腹':{m:'腹直肌（下段）、髖屈肌（輔助）',alts:[
-  {n:'反向捲腹（Reverse Crunch）',note:'骨盆捲起離地才有下腹收縮',src:'https://www.healthline.com/health/reverse-crunches'},
-  {n:'羅馬椅抬腿（Captain’s Chair Leg Raise）',note:'',src:'https://exrx.net/WeightExercises/HipFlexors/LVVerticalLegRaise'},
-  {n:'仰臥抬腿（Lying Leg Raise）',note:'',src:'https://barbend.com/hanging-knee-raises-alternatives/'},
+  {n:'反向捲腹（Reverse Crunch）',bw:true,note:'骨盆捲起離地才有下腹收縮',src:'https://www.healthline.com/health/reverse-crunches'},
+  {n:'羅馬椅抬腿（Captain’s Chair Leg Raise）',bw:true,note:'',src:'https://exrx.net/WeightExercises/HipFlexors/LVVerticalLegRaise'},
+  {n:'仰臥抬腿（Lying Leg Raise）',bw:true,note:'',src:'https://barbend.com/hanging-knee-raises-alternatives/'},
  ]},
 };
 
@@ -518,6 +535,9 @@ if(!PROGRAMS[prog])prog='full';
 const PNAME={full:'全身',ppl:'推拉腿'};
 const NAME_ALIAS={'下胸推或 Dip（雙槓撐體）':'下胸推或雙槓撐體','Cable（滑輪）三頭下壓':'滑輪三頭下壓'};
 function canon(n){return NAME_ALIAS[n]||n}
+// 自體重量的動作：kg 可以不填，紀錄顯示「自體」。課表裡勾過的以勾選為準，沒設定過的看預設名單
+const BW_NAMES=new Set(['下腹']);
+function isBw(it){return it.bw!=null?!!it.bw:BW_NAMES.has(canon(it.n))}
 
 const HKEY='w3-history-v1';
 let history=[];
@@ -589,14 +609,14 @@ function demoUrl(name){
 }
 // 60×12、50×12 這種格式
 function fmtLog(it){
-  if(it.log&&it.log.length)return it.log.map(x=>(x.w!=null?x.w:'–')+'×'+(x.r!=null?x.r:'–')).join('、');
+  if(it.log&&it.log.length)return it.log.map(x=>(x.w!=null?x.w:'自體')+'×'+(x.r!=null?x.r:'–')).join('、');
   return (it.w!=null?it.w+' kg × ':'')+it.sets+' 組';
 }
 // 目前這一格實際要做的動作（原動作或替代動作）
 function effective(it,wk){
   const a=ALTS[it.n];const s=swaps[wk];
-  if(a&&s!=null&&a.alts[s])return {n:a.alts[s].n,rm:a.alts[s].rm||it.rm,note:a.alts[s].note||'',orig:it.n,mus:a.m};
-  return {n:it.n,rm:it.rm,note:'',orig:null,mus:a?a.m:(it.mus||'')};
+  if(a&&s!=null&&a.alts[s])return {n:a.alts[s].n,rm:a.alts[s].rm||it.rm,note:a.alts[s].note||'',orig:it.n,mus:a.m,bw:!!a.alts[s].bw};
+  return {n:it.n,rm:it.rm,note:'',orig:null,mus:a?a.m:(it.mus||''),bw:isBw(it)};
 }
 
 const seg=document.getElementById('seg'),tabs=document.getElementById('tabs'),daysEl=document.getElementById('days');
@@ -667,6 +687,7 @@ function renderEx(it,e,wk,di){
   const lastTxt=last?('上次 '+fmtLog(last)+'，'+fdate(last.t)):'還沒有紀錄';
   const note=ef.note||it.note||e.note||'';
   const rs=rows(wk);
+  const wph=ef.bw?'自體':'kg';
   const lastW=last&&last.log&&last.log.length?last.log[0].w:(last?last.w:null);
   const lastR=last&&last.log&&last.log.length?last.log[0].r:null;
   const art=document.createElement('article');art.className='ex';
@@ -676,7 +697,7 @@ function renderEx(it,e,wk,di){
     (note?`<div class="note">${note}</div>`:'')+
     (ef.orig?`<div class="swapped">代替「${ef.orig}」<button type="button" class="unswap">換回原動作</button></div>`:'')+
     `<div class="wrow"><span class="last">${lastTxt}</span><a class="demo" href="${demoUrl(ef.n)}" target="_blank" rel="noopener">示範影片</a>`+(ALTS[it.n]?`<button type="button" class="swapbtn" aria-expanded="false">器材被佔？</button>`:'')+`</div>`+
-    `<div class="st"><div class="sth"><span>組</span><span>kg</span><span>次數</span><span>完成</span><span></span></div><div class="strs"></div>`+
+    `<div class="st"><div class="sth"><span>組</span><span>${ef.bw?'kg（選填）':'kg'}</span><span>次數</span><span>完成</span><span></span></div><div class="strs"></div>`+
     `<button type="button" class="addset">＋ 加一組</button></div>`+
     `<div class="rest"><span>休息 ${fmt(e.rest)}</span><button type="button">手動計時</button></div>`;
   const list=art.querySelector('.strs');
@@ -685,14 +706,14 @@ function renderEx(it,e,wk,di){
     const el=document.createElement('div');el.className='str'+(row.done?' on':'');
     const pw=i>0?eff(rs,i-1,'w'):lastW, pr=i>0?eff(rs,i-1,'r'):lastR;
     el.innerHTML=`<span class="sn num">${i+1}</span>`
-      +`<input class="w" type="number" inputmode="decimal" step="0.5" min="0" placeholder="${pw!=null?pw:'kg'}" value="${row.w!=null?row.w:''}" aria-label="第 ${i+1} 組重量">`
+      +`<input class="w" type="number" inputmode="decimal" step="0.5" min="0" placeholder="${pw!=null?pw:wph}" value="${row.w!=null?row.w:''}" aria-label="第 ${i+1} 組重量">`
       +`<input class="r" type="number" inputmode="numeric" step="1" min="0" placeholder="${pr!=null?pr:ef.rm}" value="${row.r!=null?row.r:''}" aria-label="第 ${i+1} 組次數">`
       +`<button type="button" class="dn" aria-pressed="${row.done}" aria-label="第 ${i+1} 組完成">✓</button>`
       +`<button type="button" class="rmrow" aria-label="移除這一組" ${rs.length>1?'':'disabled'}>×</button>`;
     const iw=el.querySelector('.w'),ir=el.querySelector('.r');
     iw.oninput=()=>{const v=parseFloat(iw.value);row.w=isNaN(v)?null:v;saveLog();
       // 下一列的提示值跟著變
-      const nx=list.children[i+1];if(nx){const q=nx.querySelector('.w');if(q&&!q.value)q.placeholder=row.w!=null?row.w:(eff(rs,i,'w')??'kg')}};
+      const nx=list.children[i+1];if(nx){const q=nx.querySelector('.w');if(q&&!q.value)q.placeholder=row.w!=null?row.w:(eff(rs,i,'w')??wph)}};
     ir.oninput=()=>{const v=parseInt(ir.value,10);row.r=isNaN(v)?null:v;saveLog();
       const nx=list.children[i+1];if(nx){const q=nx.querySelector('.r');if(q&&!q.value)q.placeholder=row.r!=null?row.r:(eff(rs,i,'r')??ef.rm)}};
     el.querySelector('.dn').onclick=()=>{
@@ -761,7 +782,7 @@ function renderEditor(di){
     const items=e.sup||[e];
     const row=document.createElement('div');row.className='edrow';
     const subs=items.map(x=>{const ef=effective(x,x.id);return ef.orig?`${x.n} → 目前用「${ef.n}」`:null}).filter(Boolean);
-    row.innerHTML=`<div class="edmain"><b>${items.map(x=>x.n).join(' ＋ ')}</b><span>${items.map(x=>x.rm).join(' / ')} RM，休息 ${restLabel(e.rest)}${e.sup?'，超級組':''}${e.note?'，'+e.note:''}</span>${subs.length?`<span class="edsub">${subs.join('；')}</span>`:''}</div>`
+    row.innerHTML=`<div class="edmain"><b>${items.map(x=>x.n).join(' ＋ ')}</b><span>${items.map(x=>x.rm).join(' / ')} RM，休息 ${restLabel(e.rest)}${items.some(isBw)?'，自體重量':''}${e.sup?'，超級組':''}${e.note?'，'+e.note:''}</span>${subs.length?`<span class="edsub">${subs.join('；')}</span>`:''}</div>`
       +`<div class="edact"><button type="button" class="up" ${ei===0?'disabled':''} aria-label="上移">↑</button><button type="button" class="dn2" ${ei===d.ex.length-1?'disabled':''} aria-label="下移">↓</button><button type="button" class="ed">編輯</button><button type="button" class="del">刪除</button></div>`;
     row.querySelector('.up').onclick=()=>{[d.ex[ei-1],d.ex[ei]]=[d.ex[ei],d.ex[ei-1]];saveCustom(prog);build()};
     row.querySelector('.dn2').onclick=()=>{[d.ex[ei+1],d.ex[ei]]=[d.ex[ei],d.ex[ei+1]];saveCustom(prog);build()};
@@ -792,6 +813,7 @@ function openExForm(di,ei){
   const f=exForm.querySelector('form');
   f.n1.value=items[0].n||'';f.rm1.value=items[0].rm||'';f.mus1.value=items[0].mus||'';
   f.sup.checked=isSup;
+  f.bw1.checked=!!items[0].n&&isBw(items[0]);f.bw2.checked=isSup&&isBw(items[1]);
   f.n2.value=isSup?(items[1].n||''):'';f.rm2.value=isSup?(items[1].rm||''):'';f.mus2.value=isSup?(items[1].mus||''):'';
   f.rest.value=String(e?e.rest:90);f.note.value=(e&&e.note)||'';
   exForm.querySelector('.second').hidden=!isSup;
@@ -799,14 +821,14 @@ function openExForm(di,ei){
   f.onsubmit=ev=>{
     ev.preventDefault();
     const n1=f.n1.value.trim();if(!n1)return;
-    const mk=(n,rm,mus,old)=>({id:old&&old.id||newId(),n,rm:rm.trim()||'10–12',mus:mus.trim()});
-    const a=mk(n1,f.rm1.value,f.mus1.value,items[0]);
+    const mk=(n,rm,mus,bw,old)=>({id:old&&old.id||newId(),n,rm:rm.trim()||'10–12',mus:mus.trim(),bw});
+    const a=mk(n1,f.rm1.value,f.mus1.value,f.bw1.checked,items[0]);
     let ne;
     if(f.sup.checked&&f.n2.value.trim()){
-      const b=mk(f.n2.value.trim(),f.rm2.value,f.mus2.value,isSup?items[1]:null);
+      const b=mk(f.n2.value.trim(),f.rm2.value,f.mus2.value,f.bw2.checked,isSup?items[1]:null);
       ne={sup:[a,b],rest:parseInt(f.rest.value,10)||60};
     }else{
-      ne={id:a.id,n:a.n,rm:a.rm,mus:a.mus,rest:parseInt(f.rest.value,10)||90};
+      ne={id:a.id,n:a.n,rm:a.rm,mus:a.mus,bw:a.bw,rest:parseInt(f.rest.value,10)||90};
     }
     const note=f.note.value.trim();if(note)ne.note=note;
     if(e)d.ex[ei]=ne;else d.ex.push(ne);
@@ -829,7 +851,7 @@ document.getElementById('finish').onclick=()=>{
     const ef=effective(it,wk);const rs=rows(wk);
     const dn=[];rs.forEach((r,i)=>{if(r.done)dn.push({w:eff(rs,i,'w'),r:eff(rs,i,'r')})});
     total+=rs.length;done+=dn.length;
-    if(dn.length)items.push({n:ef.n,orig:ef.orig,rm:ef.rm,sets:dn.length,w:dn[0].w,log:dn});
+    if(dn.length)items.push(Object.assign({n:ef.n,orig:ef.orig,rm:ef.rm,sets:dn.length,w:dn[0].w,log:dn},ef.bw?{bw:true}:{}));
   });
   if(done===0){fmsg.textContent='今天還沒打勾，先做完再存。';return}
   const when=isoFromDateStr(fdateEl.value);
@@ -846,23 +868,71 @@ document.getElementById('reset').onclick=()=>{
   build();fmsg.textContent='';
 };
 
+// 歷史紀錄：展開狀態和正在編輯的那筆，重畫時保留
+const hOpen=new Set();let hEditId=null,hDraft=null;
+function draftOf(r){
+  return (r.items||[]).map(it=>Object.assign({},it,{
+    log:it.log&&it.log.length?it.log.map(x=>({w:x.w,r:x.r})):Array.from({length:it.sets||0},()=>({w:it.w!=null?it.w:null,r:null}))
+  }));
+}
+function fillHEdit(box){
+  box.innerHTML='';
+  hDraft.forEach(it=>{
+    const w=document.createElement('div');w.className='hitem';
+    w.innerHTML=`<b>${it.n}</b><div class="hes hd"><span></span><span>kg</span><span>次數</span><span></span></div>`;
+    it.log.forEach((st,i)=>{
+      const rw=document.createElement('div');rw.className='hes';
+      rw.innerHTML=`<span class="sn num">${i+1}</span>`
+        +`<input type="number" inputmode="decimal" step="0.5" min="0" placeholder="${isBw(it)?'自體':'kg'}" value="${st.w!=null?st.w:''}" aria-label="${it.n} 第 ${i+1} 組重量">`
+        +`<input type="number" inputmode="numeric" step="1" min="0" placeholder="次" value="${st.r!=null?st.r:''}" aria-label="${it.n} 第 ${i+1} 組次數">`
+        +`<button type="button" aria-label="移除這一組">×</button>`;
+      const [iw,ir]=rw.querySelectorAll('input');
+      iw.oninput=()=>{const v=parseFloat(iw.value);st.w=isNaN(v)?null:v};
+      ir.oninput=()=>{const v=parseInt(ir.value,10);st.r=isNaN(v)?null:v};
+      rw.querySelector('button').onclick=()=>{it.log.splice(i,1);fillHEdit(box)};
+      w.appendChild(rw);
+    });
+    const add=document.createElement('button');add.type='button';add.className='hadd';add.textContent='＋ 加一組';
+    add.onclick=()=>{const pv=it.log[it.log.length-1];it.log.push({w:pv?pv.w:null,r:pv?pv.r:null});fillHEdit(box)};
+    w.appendChild(add);
+    box.appendChild(w);
+  });
+}
 function renderHistory(){
   const list=document.getElementById('hlist');list.innerHTML='';
   if(!history.length){list.innerHTML='<p class="empty">還沒有紀錄。練完在課表頁按「完成訓練，存入紀錄」，這裡就會出現。</p>';return}
   history.slice().sort((a,b)=>b.t<a.t?-1:1).forEach(r=>{
     const el=document.createElement('div');el.className='hrec';
+    const editing=hEditId===r.id;
     const rows=(r.items||[]).map(it=>`<div class="hrow"><span>${it.n}${it.orig?`<small style="color:var(--muted)">（代替${it.orig}）</small>`:''}</span><span>${fmtLog(it)}</span></div>`).join('');
     el.innerHTML=`<button class="hhead" type="button"><div><div class="d num">${fdate(r.t)}</div><div class="w">${PNAME[r.prog]||r.prog}，第 ${r.day+1} 天 ${r.name}</div></div><span class="hc num">${r.done}<small> / ${r.total} 組</small></span></button>`
-      +`<div class="hbody" hidden>${rows}<label class="hdate">改日期<input type="date" value="${dateStrOf(r.t)}" max="${todayStr()}"></label><button class="hdel" type="button">刪除這筆</button></div>`;
+      +`<div class="hbody" ${hOpen.has(r.id)?'':'hidden'}>${editing?'<div class="hedit"></div>':rows}<label class="hdate">改日期<input type="date" value="${dateStrOf(r.t)}" max="${todayStr()}"></label>`
+      +(editing
+        ?`<div class="msg herr"></div><div class="hacts"><button class="hedbtn cancel" type="button">取消</button><button class="hedbtn save" type="button">儲存修改</button></div>`
+        :`<div class="hacts"><button class="hedbtn edit" type="button">編輯重量／次數</button><button class="hdel" type="button">刪除這筆</button></div>`)
+      +`</div>`;
     const body=el.querySelector('.hbody');
-    el.querySelector('.hhead').onclick=()=>{body.hidden=!body.hidden};
+    el.querySelector('.hhead').onclick=()=>{body.hidden=!body.hidden;if(body.hidden)hOpen.delete(r.id);else hOpen.add(r.id)};
     const di=el.querySelector('.hdate input');
     di.onchange=()=>{if(!di.value)return;r.t=isoFromDateStr(di.value);saveHistory();pushSession(r);renderHistory();build()};
-    const del=el.querySelector('.hdel');let armed=false;
-    del.onclick=()=>{
-      if(!armed){armed=true;del.textContent='再按一次確認刪除';return}
-      history=history.filter(x=>x.id!==r.id);saveHistory();renderHistory();deleteSessionRemote(r.id);build();
-    };
+    if(editing){
+      fillHEdit(el.querySelector('.hedit'));
+      el.querySelector('.cancel').onclick=()=>{hEditId=null;hDraft=null;renderHistory()};
+      el.querySelector('.save').onclick=()=>{
+        // 重量和次數都空的組不算；某個動作一組都不剩就整個拿掉
+        const items=hDraft.map(it=>{const log=it.log.filter(x=>x.w!=null||x.r!=null);return log.length?Object.assign({},it,{log,sets:log.length,w:log[0].w}):null}).filter(Boolean);
+        if(!items.length){el.querySelector('.herr').textContent='至少要留一組。整筆不要了，取消後按「刪除這筆」。';return}
+        r.items=items;r.done=items.reduce((a,x)=>a+x.sets,0);r.total=Math.max(r.total||0,r.done);
+        hEditId=null;hDraft=null;saveHistory();pushSession(r);renderHistory();build();
+      };
+    }else{
+      el.querySelector('.edit').onclick=()=>{hEditId=r.id;hDraft=draftOf(r);hOpen.add(r.id);renderHistory()};
+      const del=el.querySelector('.hdel');let armed=false;
+      del.onclick=()=>{
+        if(!armed){armed=true;del.textContent='再按一次確認刪除';return}
+        history=history.filter(x=>x.id!==r.id);saveHistory();renderHistory();deleteSessionRemote(r.id);build();
+      };
+    }
     list.appendChild(el);
   });
 }
