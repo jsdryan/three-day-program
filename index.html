@@ -201,6 +201,21 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .dayact button{flex:1;height:40px;border-radius:10px;border:1px dashed var(--line);background:none;color:var(--ink2);font-weight:600;font-size:13px}
 .dayact .delday{color:var(--danger)}
 .sheetbox form{display:flex;flex-direction:column;gap:10px}
+#exform .sheetbox{max-height:92vh;overflow:auto}
+.sheetbox .libpick{height:44px;background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent)}
+#libsheet{z-index:21}
+#libsheet .sheetbox{height:88vh;display:flex;flex-direction:column}
+#libq{height:42px;border:1px solid var(--line);border-radius:10px;background:var(--input);color:var(--ink);font:inherit;font-size:16px;padding:0 12px;width:100%}
+.libeq{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;margin:10px 0 4px;flex:none}
+.libeq::-webkit-scrollbar{display:none}
+.sheetbox .libeq button{width:auto;flex:none;height:34px;padding:0 14px;border-radius:999px;background:var(--card2);color:var(--ink2);font-size:13px;font-weight:600}
+.sheetbox .libeq button[aria-pressed="true"]{background:var(--accent);color:#fff}
+#liblist{flex:1;overflow:auto;margin:0 -4px 10px;padding:0 4px}
+#liblist h4{margin:14px 0 2px;font-size:13px;color:var(--accent);letter-spacing:.04em}
+.sheetbox .libit{width:100%;height:auto;display:block;text-align:left;padding:10px 0;border-radius:0;background:none;color:var(--ink);border-top:1px solid var(--line)}
+.libit b{display:block;font-size:15px}
+.libit span{display:block;font-size:12px;color:var(--muted);font-weight:400;margin-top:1px}
+.libit .eq{font-style:normal;display:inline-block;font-size:11px;font-weight:700;color:var(--ink2);background:var(--card2);border-radius:4px;padding:0 6px;margin-right:6px}
 .sheetbox form label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);font-weight:600}
 .sheetbox form .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .sheetbox form .chk{flex-direction:row;align-items:center;gap:8px;color:var(--ink2)}
@@ -293,12 +308,14 @@ html{color-scheme:dark}
       <div class="sheetbox">
         <h3>新增動作</h3>
         <form>
+          <button type="button" class="libpick" data-t="1">從動作庫挑選</button>
           <label>動作名稱<input name="n1" type="text" required maxlength="30" placeholder="例如：啞鈴臥推"></label>
           <div class="two"><label>RM（次數範圍）<input name="rm1" type="text" maxlength="10" placeholder="8–12"></label><label>休息<select name="rest"><option value="60">60 秒</option><option value="90">90 秒</option><option value="120">2 分鐘</option><option value="150">2 分半</option><option value="180">3 分鐘</option></select></label></div>
           <label>肌群（選填）<input name="mus1" type="text" maxlength="40" placeholder="例如：胸大肌、肱三頭肌"></label>
           <label class="chk"><input name="bw1" type="checkbox">自體重量（不掛重量，kg 可以不填）</label>
           <label class="chk"><input name="sup" type="checkbox">超級組：和另一個動作交替做</label>
           <div class="second" hidden>
+            <button type="button" class="libpick" data-t="2">第二個動作從動作庫挑選</button>
             <label>第二個動作<input name="n2" type="text" maxlength="30"></label>
             <div class="two"><label>RM<input name="rm2" type="text" maxlength="10" placeholder="12–15"></label><label>肌群（選填）<input name="mus2" type="text" maxlength="40"></label></div>
             <label class="chk"><input name="bw2" type="checkbox">自體重量</label>
@@ -315,6 +332,15 @@ html{color-scheme:dark}
         <div id="plist"></div>
         <div class="pnew"><button type="button" id="pcopy">＋ 複製目前課表</button><button type="button" id="pblank">＋ 空白課表</button></div>
         <button type="button" id="pclose">完成</button>
+      </div>
+    </div>
+    <div class="sheet" id="libsheet" hidden>
+      <div class="sheetbox">
+        <h3>動作庫</h3>
+        <input type="search" id="libq" placeholder="搜尋，例如：臥推、划船" aria-label="搜尋動作">
+        <div class="libeq" id="libeq"></div>
+        <div id="liblist"></div>
+        <button type="button" id="libclose">關閉</button>
       </div>
     </div>
     <div class="sheet" id="iosguide" hidden>
@@ -560,6 +586,103 @@ const ALTS={
 
 
 // 課表 profile：使用者自己新增、改名、刪除。full／ppl 是舊版內建的兩套，id 沿用才讀得到原本的資料
+// 動作庫：新增動作時可以直接挑。名稱跟「器材被佔？」的替代表一致的，換器材功能也能用
+const LIB=[
+ // 胸
+ ['胸','槓鈴','平胸推','8–10','胸大肌（中胸）、前三角肌、肱三頭肌',0,'槓鈴臥推'],
+ ['胸','槓鈴','上斜槓鈴臥推','8–10','上胸、前三角肌、肱三頭肌'],
+ ['胸','啞鈴','啞鈴臥推','8–12','胸大肌、前三角肌、肱三頭肌'],
+ ['胸','啞鈴','上斜啞鈴臥推','8–12','上胸、前三角肌'],
+ ['胸','啞鈴','下斜啞鈴臥推','10–12','下胸、肱三頭肌'],
+ ['胸','啞鈴','啞鈴飛鳥','10–15','胸大肌'],
+ ['胸','器械','上胸推','10–15','上胸（胸大肌鎖骨部）、前三角肌、肱三頭肌',0,'器械上斜胸推'],
+ ['胸','器械','器械胸推','10–12','胸大肌、前三角肌、肱三頭肌'],
+ ['胸','器械','史密斯臥推','8–10','胸大肌、前三角肌、肱三頭肌'],
+ ['胸','器械','夾胸','12–15','胸大肌（內側收縮）',0,'蝴蝶機'],
+ ['胸','器械','下胸推或雙槓撐體','10–12','下胸、肱三頭肌、前三角肌'],
+ ['胸','滑輪','繩索夾胸','12–15','胸大肌'],
+ ['胸','徒手','雙槓撐體','8–12','下胸、肱三頭肌',1],
+ ['胸','徒手','伏地挺身','10–20','胸大肌、肱三頭肌、核心',1],
+ // 背
+ ['背','槓鈴','槓鈴硬舉','5–8','臀大肌、腿後肌群、豎脊肌、背部'],
+ ['背','槓鈴','槓鈴划船','8–10','闊背肌、中背、後三角肌'],
+ ['背','槓鈴','T 槓划船','8–12','闊背肌、中背'],
+ ['背','啞鈴','單臂啞鈴划船','10–12','闊背肌、中背'],
+ ['背','啞鈴','啞鈴拉舉','10–15','闊背肌、胸大肌'],
+ ['背','滑輪','滑輪下拉','10–12','闊背肌、大圓肌、肱二頭肌'],
+ ['背','滑輪','窄握下拉','10–12','闊背肌下段、肱二頭肌'],
+ ['背','滑輪','窄握划船','8–10','闊背肌、斜方肌、後三角肌',0,'坐姿划船'],
+ ['背','滑輪','寬握划船','12–15','後三角肌、菱形肌、斜方肌中部'],
+ ['背','滑輪','直臂下壓','12–15','闊背肌、大圓肌'],
+ ['背','器械','大剪刀下拉','8–12','闊背肌、中背、肱二頭肌'],
+ ['背','器械','高位划船','10–12','上背、闊背肌、肱二頭肌'],
+ ['背','器械','胸靠式器械划船','10–12','闊背肌、中背'],
+ ['背','器械','輔助引體向上機','8–12','闊背肌、肱二頭肌'],
+ ['背','徒手','引體向上','6–12','闊背肌、肱二頭肌',1],
+ ['背','徒手','反握引體向上','6–12','闊背肌、肱二頭肌',1],
+ ['背','徒手','背伸展（羅馬椅）','12–15','豎脊肌、臀大肌',1],
+ // 肩
+ ['肩','槓鈴','槓鈴肩推','6–10','前三角肌、三角肌中束、肱三頭肌'],
+ ['肩','槓鈴','槓鈴聳肩','8–12','斜方肌上部'],
+ ['肩','啞鈴','坐姿啞鈴肩推','8–12','前三角肌、三角肌中束、肱三頭肌'],
+ ['肩','啞鈴','側平舉','12–15','三角肌中束'],
+ ['肩','啞鈴','啞鈴前平舉','12–15','前三角肌'],
+ ['肩','啞鈴','啞鈴俯身反向飛鳥','12–15','後三角肌、菱形肌'],
+ ['肩','啞鈴','啞鈴聳肩','10–15','斜方肌上部'],
+ ['肩','器械','肩推','8–12','前三角肌、三角肌中束、肱三頭肌',0,'器械肩推'],
+ ['肩','器械','側平舉機','12–15','三角肌中束'],
+ ['肩','器械','反向飛鳥','12–15','後三角肌、菱形肌、斜方肌中部',0,'反向蝴蝶機'],
+ ['肩','滑輪','繩索側平舉','12–15','三角肌中束'],
+ ['肩','滑輪','面拉','12–15','後三角肌、斜方肌中部'],
+ // 手臂
+ ['手臂','槓鈴','槓鈴彎舉','8–12','肱二頭肌'],
+ ['手臂','槓鈴','仰臥三頭伸展','10–12','肱三頭肌'],
+ ['手臂','槓鈴','窄握臥推','8–10','肱三頭肌、胸大肌'],
+ ['手臂','啞鈴','啞鈴彎舉','10–12','肱二頭肌'],
+ ['手臂','啞鈴','錘式彎舉','10–12','肱肌、肱橈肌'],
+ ['手臂','啞鈴','上斜啞鈴彎舉','10–12','肱二頭肌長頭'],
+ ['手臂','啞鈴','啞鈴過頭三頭伸展','10–12','肱三頭肌長頭'],
+ ['手臂','器械','二頭彎舉','12–15','肱二頭肌、肱肌',0,'二頭彎舉機'],
+ ['手臂','器械','牧師椅彎舉','10–12','肱二頭肌'],
+ ['手臂','器械','三頭伸展機','12–15','肱三頭肌'],
+ ['手臂','滑輪','繩索彎舉','12–15','肱二頭肌'],
+ ['手臂','滑輪','滑輪三頭下壓','12–15','肱三頭肌'],
+ ['手臂','滑輪','繩索過頭三頭伸展','12–15','肱三頭肌長頭'],
+ // 腿臀
+ ['腿臀','槓鈴','槓鈴深蹲','6–10','股四頭肌、臀大肌、內收肌群'],
+ ['腿臀','槓鈴','前蹲','6–10','股四頭肌、臀大肌'],
+ ['腿臀','槓鈴','羅馬尼亞硬舉','8–10','腿後肌群、臀大肌'],
+ ['腿臀','槓鈴','槓鈴臀推','8–12','臀大肌、腿後肌群'],
+ ['腿臀','啞鈴','高腳杯深蹲','10–15','股四頭肌、臀大肌'],
+ ['腿臀','啞鈴','啞鈴羅馬尼亞硬舉','10–12','腿後肌群、臀大肌'],
+ ['腿臀','啞鈴','保加利亞分腿蹲','8–12','股四頭肌、臀大肌（每腳）'],
+ ['腿臀','啞鈴','分腿蹲','10–15','股四頭肌、臀大肌、內收肌'],
+ ['腿臀','啞鈴','啞鈴弓步走','10–12','股四頭肌、臀大肌（每腳）'],
+ ['腿臀','啞鈴','登階','10–12','股四頭肌、臀大肌（每腳）'],
+ ['腿臀','器械','哈克或史密斯深蹲','8–12','股四頭肌、臀大肌、內收肌群',0,'哈克深蹲、史密斯深蹲'],
+ ['腿臀','器械','腿推機','10–15','股四頭肌、臀大肌'],
+ ['腿臀','器械','腿前伸','12–15','股四頭肌'],
+ ['腿臀','器械','腿後勾','10–15','腿後肌群'],
+ ['腿臀','器械','臀推機','8–12','臀大肌、腿後肌群'],
+ ['腿臀','器械','髖內收','12–15','內收肌群'],
+ ['腿臀','器械','髖外展','12–15','臀中肌、臀小肌'],
+ ['腿臀','器械','站姿提踵','10–15','小腿（腓腸肌）'],
+ ['腿臀','器械','坐姿提踵','12–20','小腿（比目魚肌）'],
+ ['腿臀','滑輪','繩索後踢','12–15','臀大肌'],
+ // 核心
+ ['核心','徒手','下腹','12–15','腹直肌（下段）、髖屈肌',1,'器械抬腿／下腹機'],
+ ['核心','徒手','反向捲腹','12–15','腹直肌（下段）',1],
+ ['核心','徒手','懸吊抬腿','10–15','腹直肌（下段）、髖屈肌',1],
+ ['核心','徒手','羅馬椅抬腿','10–15','腹直肌（下段）、髖屈肌',1],
+ ['核心','徒手','棒式','30–60 秒','腹橫肌、核心',1],
+ ['核心','徒手','側棒式','30–45 秒','腹斜肌',1],
+ ['核心','徒手','健腹輪','8–12','腹直肌、核心',1],
+ ['核心','徒手','死蟲','10–12','腹橫肌、核心',1],
+ ['核心','滑輪','繩索捲腹','12–15','腹直肌'],
+ ['核心','器械','捲腹機','12–15','腹直肌'],
+ ['核心','啞鈴','俄羅斯轉體','12–20','腹斜肌'],
+].map(([part,eq,n,rm,mus,bw,kw])=>({part,eq,n,rm,mus,bw:!!bw,kw:kw||''}));
+
 let prog='ppl';
 try{prog=localStorage.getItem('w3-prog')||'ppl'}catch(e){}
 let profiles=null;
@@ -884,7 +1007,7 @@ function openExForm(di,ei){
     saveCustom(prog);exForm.hidden=true;build();
   };
   exForm.querySelector('.cancel').onclick=()=>{exForm.hidden=true};
-  setTimeout(()=>f.n1.focus(),50);
+  if(e)setTimeout(()=>f.n1.focus(),50);
 }
 exForm.onclick=ev=>{if(ev.target===exForm)exForm.hidden=true};
 function show(di){
@@ -1008,6 +1131,39 @@ document.getElementById('himport').onchange=ev=>{
   };
   rd.readAsText(f);
 };
+
+// ---- 動作庫挑選 ----
+const libSheet=document.getElementById('libsheet'),libQ=document.getElementById('libq'),libEq=document.getElementById('libeq'),libList=document.getElementById('liblist');
+let libTarget='1',libEqSel='全部';
+['全部','器械','滑輪','啞鈴','槓鈴','徒手'].forEach(k=>{
+  const b=document.createElement('button');b.type='button';b.textContent=k;
+  b.onclick=()=>{libEqSel=k;renderLib()};libEq.appendChild(b);
+});
+function renderLib(){
+  libEq.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.textContent===libEqSel));
+  const q=libQ.value.trim();
+  const hit=LIB.filter(x=>(libEqSel==='全部'||x.eq===libEqSel)&&(!q||[x.n,x.kw,x.mus,x.part].some(v=>v.includes(q))));
+  libList.innerHTML='';
+  if(!hit.length){libList.innerHTML='<p>找不到。關掉這個視窗，直接在「動作名稱」打字也可以。</p>';return}
+  let part='';
+  hit.forEach(x=>{
+    if(x.part!==part){part=x.part;const h=document.createElement('h4');h.textContent=part;libList.appendChild(h)}
+    const b=document.createElement('button');b.type='button';b.className='libit';
+    b.innerHTML=`<b>${x.n}${x.kw?`<small style="font-weight:400;color:var(--muted)">（${x.kw}）</small>`:''}</b><span><i class="eq">${x.eq}</i>${x.rm} RM · ${x.mus}</span>`;
+    b.onclick=()=>pickLib(x);libList.appendChild(b);
+  });
+}
+function pickLib(x){
+  const f=exForm.querySelector('form'),t=libTarget;
+  f['n'+t].value=x.n;f['rm'+t].value=x.rm;f['mus'+t].value=x.mus;f['bw'+t].checked=x.bw;
+  // 休息時間照次數粗估：低次數的複合動作休久一點
+  if(t==='1'){const lo=parseInt(x.rm,10);f.rest.value=String(lo<=6?180:lo<=8?120:lo<=10?90:60)}
+  libSheet.hidden=true;
+}
+exForm.querySelectorAll('.libpick').forEach(b=>b.onclick=()=>{libTarget=b.dataset.t;libQ.value='';renderLib();libSheet.hidden=false;libList.scrollTop=0});
+libQ.oninput=renderLib;
+document.getElementById('libclose').onclick=()=>{libSheet.hidden=true};
+libSheet.onclick=e=>{if(e.target===libSheet)libSheet.hidden=true};
 
 // ---- 課表 profile：切換、新增、改名、刪除 ----
 const psheet=document.getElementById('psheet'),plist=document.getElementById('plist');
