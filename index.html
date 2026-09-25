@@ -285,6 +285,11 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .timer button{height:40px;padding:0 14px;border-radius:999px;border:0;background:rgba(255,255,255,.22);color:#fff;font-weight:700}
 .timer button.stop{background:#fff;color:var(--accent)}
 .timer .bar{position:absolute;left:0;bottom:0;height:3px;background:rgba(255,255,255,.85);width:100%;transform-origin:left;transition:transform 1s linear}
+.restdone{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;text-align:center;background:var(--accent);color:#fff;animation:rdflash .5s steps(2) 6}
+.restdone .big{font-size:56px;font-weight:900;font-style:italic;letter-spacing:.02em;line-height:1.1}
+.restdone .sm{font-size:20px;font-weight:700;margin-top:8px;opacity:.9}
+.restdone button{margin-top:28px;height:56px;min-width:160px;padding:0 28px;border-radius:14px;border:0;background:#fff;color:var(--accent);font-size:20px;font-weight:900}
+@keyframes rdflash{50%{background:#000}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 <style id="variant">
@@ -402,6 +407,9 @@ html{color-scheme:dark}
   </section>
 </div>
 
+<div class="restdone" id="restdone" hidden role="alert"><div><div class="big">休息結束</div><div class="sm">開始下一組</div><button type="button" id="restok">好</button></div></div>
+<!-- iOS 18 起，點 switch 樣式的 checkbox 會觸發震動回饋；iPhone 網頁沒有 vibrate()，用這個代替 -->
+<label id="hapl" aria-hidden="true" style="position:fixed;left:-200px;top:0;opacity:0;pointer-events:none"><input type="checkbox" switch tabindex="-1"></label>
 <div class="timer" id="timer" aria-live="polite">
   <div class="bar" id="bar"></div>
   <div><div class="t num" id="tt">1:30</div><div class="l">組間休息</div></div>
@@ -1495,10 +1503,48 @@ async function keepAwake(on){
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&iv){keepAwake(true);tick()}});
 function tick(){
   left=Math.max(0,Math.ceil((endAt-Date.now())/1000));
-  if(left<=0){stopTimer();vibrate([300,120,300,120,500]);notify()}else render();
+  if(left<=0){stopTimer();restEnded()}else render();
+}
+// ---- 休息結束提醒：嗶聲＋震動＋全螢幕閃 ----
+// iPhone 網頁不能用 vibrate()、背景也不能準時叫，所以前景時用聲音和畫面補強
+let actx=null;
+function unlockAudio(){
+  // 要在使用者點擊的當下建立／喚醒，iOS 之後才准播放
+  try{
+    if(!actx){const C=window.AudioContext||window.webkitAudioContext;if(!C)return;actx=new C()}
+    if(actx.state==='suspended')actx.resume();
+    const b=actx.createBuffer(1,1,22050),src=actx.createBufferSource();src.buffer=b;src.connect(actx.destination);src.start(0);
+  }catch(e){}
+}
+function beep(){
+  if(!actx)return;
+  try{
+    // 短提示音：蓋在音樂上、不中斷音樂（支援的 Safari 才有 audioSession）
+    if(navigator.audioSession)navigator.audioSession.type='transient';
+    if(actx.state==='suspended')actx.resume();
+    const t0=actx.currentTime+.05;
+    [0,.25,.5,1.1,1.35,1.6].forEach(d=>{
+      const o=actx.createOscillator(),g=actx.createGain();
+      o.type='square';o.frequency.value=d<1?880:1175;
+      g.gain.setValueAtTime(0,t0+d);g.gain.linearRampToValueAtTime(.35,t0+d+.01);g.gain.setValueAtTime(.35,t0+d+.16);g.gain.linearRampToValueAtTime(0,t0+d+.19);
+      o.connect(g);g.connect(actx.destination);o.start(t0+d);o.stop(t0+d+.2);
+    });
+    setTimeout(()=>{try{if(navigator.audioSession)navigator.audioSession.type='auto'}catch(e){}},2200);
+  }catch(e){}
+}
+const hapl=document.getElementById('hapl');
+function haptic(times){for(let i=0;i<times;i++)setTimeout(()=>{try{hapl.click()}catch(e){}},i*180)}
+const restDone=document.getElementById('restdone');
+let rdTimer=null;
+function hideRestDone(){restDone.hidden=true;clearTimeout(rdTimer)}
+document.getElementById('restok').onclick=hideRestDone;
+restDone.onclick=e=>{if(e.target===restDone)hideRestDone()};
+function restEnded(){
+  vibrate([300,120,300,120,500]);haptic(6);beep();notify();
+  restDone.hidden=false;clearTimeout(rdTimer);rdTimer=setTimeout(hideRestDone,15000);
 }
 function startTimer(sec){
-  clearInterval(iv);keepAwake(true);
+  clearInterval(iv);keepAwake(true);unlockAudio();hideRestDone();
   if(notifState()==='default'&&!notifAsked){notifAsked=true;Notification.requestPermission().then(renderNotif).catch(()=>{})}
   left=sec;total=sec;endAt=Date.now()+sec*1000;timer.classList.add('on');render();
   iv=setInterval(tick,250);
