@@ -1626,8 +1626,9 @@ function renderAuth(){
     authEl.querySelectorAll('button[data-p]').forEach(b=>b.onclick=()=>signIn(b.dataset.p));
   }else{
     const label={off:'',busy:'同步中',ok:'已同步',err:'同步失敗，稍後再試'}[syncState]||'';
-    authEl.innerHTML=`<span class="dot ${syncState}"></span><span class="who"><b>${user.email||'已登入'}</b>${label?' · '+label:''}</span><button type="button" class="lnk" id="signout">登出</button>`;
+    authEl.innerHTML=`<span class="dot ${syncState}"></span><span class="who"><b>${user.email||'已登入'}</b>${label?' · '+label:''}</span><button type="button" id="watchpair">連結 Apple Watch</button><button type="button" class="lnk" id="signout">登出</button>`;
     document.getElementById('signout').onclick=signOut;
+    document.getElementById('watchpair').onclick=startWatchPair;
   }
 }
 function setSync(s){syncState=s;renderAuth()}
@@ -1734,10 +1735,36 @@ let authErr='';
   const d=q.get('error_description')||h.get('error_description')||q.get('error')||h.get('error');
   if(d)authErr=/expired/i.test(d)?'登入逾時了，請再按一次登入，並在幾分鐘內完成。':'登入失敗：'+d;
 })();
+// ---- 連結 Apple Watch：再用 Google 登入一次，把「舊的那組登入」交給手錶，兩邊各用各的不互相登出 ----
+async function startWatchPair(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session)return;
+  try{sessionStorage.setItem('w3-watch-pair',JSON.stringify({rt:session.refresh_token,uid:session.user.id,email:session.user.email}))}catch(e){}
+  signIn('google');
+}
+async function finishWatchPair(session){
+  let p=null;try{p=JSON.parse(sessionStorage.getItem('w3-watch-pair')||'null');sessionStorage.removeItem('w3-watch-pair')}catch(e){}
+  if(!p)return;
+  if(!session||session.user.id!==p.uid||session.refresh_token===p.rt){showPairCode(null,'配對失敗：Google 登入的帳號不一樣，或沒有完成登入。再按一次「連結 Apple Watch」。');return}
+  const a=new Uint32Array(1);crypto.getRandomValues(a);
+  const code=String(a[0]%100000000).padStart(8,'0');
+  const {error}=await sb.from('watch_link').insert({code,user_id:p.uid,refresh_token:p.rt,email:p.email});
+  if(error){showPairCode(null,'配對碼存不進雲端：'+error.message);return}
+  showPairCode(code);
+}
+function showPairCode(code,err){
+  const el=document.createElement('div');el.className='sheet';
+  el.innerHTML=`<div class="sheetbox"><h3>${code?'Apple Watch 配對碼':'配對沒有成功'}</h3>`
+    +(code?`<div style="font-size:44px;font-weight:900;letter-spacing:.08em;text-align:center;margin:8px 0" class="num">${code.slice(0,4)} ${code.slice(4)}</div><p>打開手錶上的「健身課表」，輸入這 8 個數字。10 分鐘內有效，只能用一次。</p>`:`<p>${err}</p>`)
+    +`<button type="button">好</button></div>`;
+  el.querySelector('button').onclick=()=>el.remove();
+  document.body.appendChild(el);
+}
 async function initAuth(){
   if(!sb){renderAuth();return}
   const {data:{session}}=await sb.auth.getSession();
   user=session?session.user:null;renderAuth();
+  finishWatchPair(session);
   if(!user&&authErr){const t=authEl.querySelector('.authtip');if(t){t.textContent=authErr;t.style.color='var(--danger)'}}
   if(user)pullAll();
   sb.auth.onAuthStateChange((ev,s)=>{

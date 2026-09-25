@@ -43,15 +43,16 @@ final class Supa {
         return data
     }
 
-    // 寄驗證碼到信箱（只給已經在網頁登入過的帳號，不會新開帳號）
-    func sendCode(email: String) async throws {
-        _ = try await request("/auth/v1/otp", method: "POST", body: ["email": email, "create_user": false])
-    }
-
-    func verify(email: String, code: String) async throws -> AuthSession {
-        let data = try await request("/auth/v1/verify", method: "POST",
-                                     body: ["type": "email", "email": email, "token": code])
-        return try Supa.parseSession(data, email: email)
+    // 用手機網頁產生的 8 位數配對碼，換到一組手錶自己的登入
+    func pair(code: String) async throws -> AuthSession {
+        let data = try await request("/rest/v1/rpc/claim_watch_link", method: "POST", body: ["p_code": code])
+        guard let rows = try JSONSerialization.jsonObject(with: data) as? [[String: Any]],
+              let row = rows.first, let rt = row["r_token"] as? String else {
+            throw SupaError.http(0, "配對碼不對，或已經超過 10 分鐘")
+        }
+        let email = (row["r_email"] as? String) ?? ""
+        let d2 = try await request("/auth/v1/token?grant_type=refresh_token", method: "POST", body: ["refresh_token": rt])
+        return try Supa.parseSession(d2, email: email)
     }
 
     func refreshed(_ s: AuthSession) async throws -> AuthSession {

@@ -37,20 +37,14 @@ final class Store: ObservableObject {
         return try? JSONDecoder().decode(T.self, from: data)
     }
 
-    // ---- 登入 ----
-    func sendCode(email: String) async -> Bool {
-        loading = true; defer { loading = false }
-        do { try await Supa.shared.sendCode(email: email); message = nil; return true }
-        catch { message = "寄不出去：\(error.localizedDescription)"; return false }
-    }
-
-    func verify(email: String, code: String) async {
+    // ---- 登入：輸入手機網頁上的配對碼 ----
+    func pair(code: String) async {
         loading = true; defer { loading = false }
         do {
-            auth = try await Supa.shared.verify(email: email, code: code)
+            auth = try await Supa.shared.pair(code: code)
             message = nil
             await refresh()
-        } catch { message = "驗證碼不對或過期了：\(error.localizedDescription)" }
+        } catch { message = error.localizedDescription }
     }
 
     func logout() { auth = nil; snapshot = nil; workout = nil; restEnd = nil }

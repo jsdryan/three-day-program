@@ -32,38 +32,23 @@ struct RootView: View {
     }
 }
 
-// ---- 登入：輸入 Email → 收 6 位數驗證碼 ----
+// ---- 登入：輸入手機網頁上「連結 Apple Watch」給的 8 位數配對碼 ----
 struct LoginView: View {
     @EnvironmentObject var store: Store
-    @State private var email = ""
     @State private var code = ""
-    @State private var sent = false
 
     var body: some View {
         ScrollView {
             VStack(spacing: 8) {
                 Text("健身課表").font(.headline.italic())
-                if !sent {
-                    Text("輸入網頁版登入用的 Gmail").font(.caption2).foregroundStyle(.secondary)
-                    TextField("Email", text: $email)
-                        .textContentType(.emailAddress)
-                        .textInputAutocapitalization(.never)
-                    Button("寄驗證碼") {
-                        Task { sent = await store.sendCode(email: email.trimmingCharacters(in: .whitespaces).lowercased()) }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(!email.contains("@") || store.loading)
-                } else {
-                    Text("驗證碼寄到 \(email)").font(.caption2).foregroundStyle(.secondary)
-                    TextField("驗證碼", text: $code)
-                    Button("登入") {
-                        Task { await store.verify(email: email.trimmingCharacters(in: .whitespaces).lowercased(),
-                                                  code: code.filter(\.isNumber)) }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(code.filter(\.isNumber).count < 6 || store.loading)
-                    Button("重寄") { sent = false; code = "" }.font(.caption2)
+                Text("在手機網頁按「連結 Apple Watch」，把 8 位數配對碼輸入這裡")
+                    .font(.caption2).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                TextField("配對碼", text: $code)
+                Button("登入") {
+                    Task { await store.pair(code: code.filter(\.isNumber)) }
                 }
+                .buttonStyle(.borderedProminent)
+                .disabled(code.filter(\.isNumber).count != 8 || store.loading)
                 if store.loading { ProgressView() }
                 if let m = store.message { Text(m).font(.caption2).foregroundStyle(.red) }
             }
