@@ -1639,8 +1639,18 @@ async function signIn(provider){
 async function signOut(){await sb.auth.signOut();user=null;renderAuth()}
 
 // 兩套課表的重量與替代動作，打包成一份 prefs
+// 給 Apple Watch 讀的課表：已經套好替代動作、器材、上次紀錄，手錶不用重寫網頁的邏輯
+function watchSnap(){
+  return {v:1,prog,pname:pname(prog),updated:Date.now(),days:DAYS.map(d=>({did:d.did,name:d.name,ex:d.ex.map(e=>({
+    sup:!!e.sup,rest:e.rest||90,note:e.note||'',
+    items:(e.sup||[e]).map(it=>{
+      const ef=effective(it,it.id),last=lastOf(ef.n);
+      return {id:it.id,n:ef.n,orig:ef.orig||null,rm:ef.rm||'',bw:!!ef.bw,mc:ef.mc?mcLabel(ef.mc):null,
+        last:last?(last.log&&last.log.length?last.log.map(x=>({w:x.w,r:x.r})):Array.from({length:last.sets||0},()=>({w:last.w,r:null}))):[],lastT:last?last.t:null};
+    })}))}))};
+}
 function allPrefs(){
-  const o={prog,profiles};
+  const o={prog,profiles,watch:watchSnap()};
   for(const {id:p} of profiles.list){
     const k=keyOf(p);let lg={},sw={};
     try{lg=JSON.parse(localStorage.getItem(k+'-log')||'{}')||{}}catch(e){}
