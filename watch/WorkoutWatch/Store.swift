@@ -12,6 +12,7 @@ final class Store: ObservableObject {
     @Published var restEnd: Date? { didSet { save(restEnd, "restEnd") } }
     @Published var alarming = false   // 休息結束、還沒按「開始下一組」
     private var alarmTask: Task<Void, Never>?
+    @Published var showEnd = false    // 「結束訓練」的選項畫面
     @Published var loading = false
     @Published var message: String?
 
@@ -227,7 +228,8 @@ final class Store: ObservableObject {
     }
 
     // ---- 練完存檔：格式跟網頁版的歷史紀錄一樣 ----
-    func finish() async -> Bool {
+    // saveHealth：使用者在結束畫面選「存入 Apple 健身與健康」才存，不會自動存
+    func finish(saveHealth: Bool) async -> Bool {
         guard let w = workout else { return false }
         skipRest(); dismissAlarm()
         var items: [[String: Any]] = []
@@ -255,13 +257,12 @@ final class Store: ObservableObject {
         if let p = w.pname { rec["pname"] = p }
         let data = (try? JSONSerialization.data(withJSONObject: rec)) ?? Data()
         workout = nil
-        // 不到 1 分鐘多半是誤按或測試，不存進 Apple 健身，免得留下 0:01 這種紀錄
-        await HealthWorkout.shared.end(save: Date().timeIntervalSince(w.started) >= 60)
+        await HealthWorkout.shared.end(save: saveHealth)
         loading = true; defer { loading = false }
         do {
             let a = try await validAuth()
             try await Supa.shared.saveSession(a, record: rec)
-            message = "已存檔：\(done) 組。手機歷史紀錄打開就會看到。"
+            message = "已存檔：\(done) 組\(saveHealth ? "，也存進 Apple 健身" : "")。手機歷史紀錄打開就會看到。"
         } catch {
             pending.append(data)
             message = "先存在手錶上，連上網路後會自動上傳。"
