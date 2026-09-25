@@ -76,11 +76,12 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
   margin:14px -16px 0;padding:8px 16px 10px;background:var(--bg);
 }
 .tabs::-webkit-scrollbar{display:none}
-.tab{flex:1 0 108px;border:1px solid var(--line);background:var(--card);border-radius:var(--r-s);padding:9px 10px;text-align:left;color:var(--muted);display:flex;gap:8px;align-items:center;min-width:0}
-.tab .n{font-size:22px;line-height:1;color:var(--ink2)}
+.tab{flex:1 0 96px;border:1px solid var(--line);background:var(--card);border-radius:var(--r-s);padding:9px 8px;text-align:left;color:var(--muted);display:flex;gap:8px;align-items:center;min-width:0}
+.tab .n{font-size:17px;line-height:1;color:var(--ink2);margin-right:5px}
+.tab.addtab{flex:0 0 48px;justify-content:center;padding:0;font-size:24px;font-weight:700;color:var(--accent);border-style:dashed;background:none}
 .tab .t{display:block;font-size:13px;line-height:1.3;min-width:0;overflow:hidden}
 /* 天的名稱最多兩行，不要只剩「推：胸、肩…」 */
-.tab .t b{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;color:var(--ink);font-weight:700;overflow:hidden;word-break:break-all}
+.tab .t b{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;color:var(--ink);font-weight:700;overflow:hidden;word-break:break-all}
 .tab .t small{display:block;font-size:11px;color:var(--muted)}
 .tab[aria-selected="true"]{background:var(--accent-soft);border-color:var(--accent)}
 .tab[aria-selected="true"] .n,.tab[aria-selected="true"] .t b{color:var(--ink)}
@@ -680,7 +681,7 @@ function build(){
   DAYS.forEach((d,di)=>{
     const tb=document.createElement('button');
     tb.className='tab';tb.setAttribute('role','tab');tb.id='tab'+di;
-    tb.innerHTML=`<span class="n num">${di+1}</span><span class="t"><b>${d.name}</b><small id="p${di}"></small></span>`;
+    tb.innerHTML=`<span class="t"><b><span class="n num">${di+1}</span>${d.name}</b><small id="p${di}"></small></span>`;
     tb.onclick=()=>show(di);
     tabs.appendChild(tb);
 
@@ -706,6 +707,8 @@ function build(){
     daysEl.appendChild(sec);
     progress(di);
   });
+  const at=document.createElement('button');at.type='button';at.className='tab addtab';at.setAttribute('aria-label','加一天');at.textContent='＋';
+  at.onclick=addDay;tabs.appendChild(at);
   show(Math.min(cur,DAYS.length-1));
 }
 
@@ -801,6 +804,13 @@ function progress(di){
 }
 let editing=null;
 function restLabel(sec){return sec>=60?(sec%60?Math.floor(sec/60)+'分'+(sec%60)+'秒':(sec/60)+' 分鐘'):sec+' 秒'}
+// 加一天：直接進入那一天的編輯畫面
+function addDay(){
+  const c=ensureCustom(prog);
+  c.days.push({name:'第 '+(c.days.length+1)+' 天',ex:[]});saveCustom(prog);
+  editing=cur=c.days.length-1;try{localStorage.setItem('w3-day-'+prog,cur)}catch(e){}build();
+  const t=document.getElementById('tab'+cur);if(t)t.scrollIntoView({inline:'end',block:'nearest'});
+}
 function renderEditor(di){
   const c=ensureCustom(prog);const d=c.days[di];
   const box=document.createElement('div');box.className='edit';
@@ -825,11 +835,7 @@ function renderEditor(di){
     list.appendChild(row);
   });
   box.querySelector('.addex').onclick=()=>openExForm(di,null);
-  box.querySelector('.addday').onclick=()=>{
-    c.days.push({name:'第 '+(c.days.length+1)+' 天',ex:[]});saveCustom(prog);
-    editing=cur=c.days.length-1;try{localStorage.setItem('w3-day-'+prog,cur)}catch(e){}build();
-    const t=document.getElementById('tab'+cur);if(t)t.scrollIntoView({inline:'end',block:'nearest'});
-  };
+  box.querySelector('.addday').onclick=addDay;
   const dd=box.querySelector('.delday');let ddArmed=false;
   if(dd)dd.onclick=()=>{
     if(!ddArmed){ddArmed=true;dd.textContent='再按一次確認刪除';return}
