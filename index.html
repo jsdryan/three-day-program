@@ -269,6 +269,12 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .hes input::-webkit-outer-spin-button,.hes input::-webkit-inner-spin-button{-webkit-appearance:none}
 .hes input::placeholder{color:var(--muted);font-weight:500;opacity:.6}
 .hes button{height:38px;border:0;background:none;color:var(--muted);font-size:20px;padding:0;line-height:1}
+.hname{display:flex;gap:6px;align-items:center;margin-bottom:4px}
+.hname input{flex:1;min-width:0;height:38px;border:1px solid var(--line);border-radius:8px;background:var(--input);color:var(--ink);font:inherit;font-weight:700;font-size:16px;padding:0 10px}
+.hname button{flex:none;height:38px;padding:0 10px;border-radius:8px;border:0;background:var(--card2);color:var(--ink2);font-weight:600;font-size:13px}
+.hname .hrm{background:none;color:var(--danger)}
+.horig{display:block;font-size:12px;color:var(--muted);margin:0 0 4px}
+.hadde{height:40px;margin-top:10px;color:var(--accent);border-color:var(--accent)}
 .hadd{margin-top:4px;width:100%;height:34px;border-radius:8px;border:1px dashed var(--line);background:none;color:var(--ink2);font-weight:600;font-size:13px}
 .herr{color:var(--danger)}
 
@@ -1298,7 +1304,7 @@ document.getElementById('reset').onclick=()=>{
 // 歷史紀錄：展開狀態和正在編輯的那筆，重畫時保留
 const hOpen=new Set();let hEditId=null,hDraft=null;
 function draftOf(r){
-  return (r.items||[]).map(it=>Object.assign({},it,{
+  return (r.items||[]).map(it=>Object.assign({},it,{_n0:it.n,
     log:it.log&&it.log.length?it.log.map(x=>({w:x.w,r:x.r})):Array.from({length:it.sets||0},()=>({w:it.w!=null?it.w:null,r:null}))
   }));
 }
@@ -1306,7 +1312,14 @@ function fillHEdit(box){
   box.innerHTML='';
   hDraft.forEach(it=>{
     const w=document.createElement('div');w.className='hitem';
-    w.innerHTML=`<b>${it.n}</b><div class="hes hd"><span></span><span>kg</span><span>次數</span><span></span></div>`;
+    w.innerHTML=`<div class="hname"><input type="text" maxlength="40" placeholder="動作名稱" aria-label="動作名稱"><button type="button" class="hpick">換動作</button><button type="button" class="hrm" aria-label="移除這個動作">移除</button></div>`
+      +(it.orig?`<small class="horig">代替「${it.orig}」</small>`:'')
+      +`<div class="hes hd"><span></span><span>kg</span><span>次數</span><span></span></div>`;
+    const ni=w.querySelector('.hname input');ni.value=it.n;
+    ni.oninput=()=>{it.n=ni.value};
+    w.querySelector('.hpick').onclick=()=>openLib(x=>{it.n=x.n;it.bw=x.bw;if(x.mc)it.mc=mcLabel(mcById(x.mc));else delete it.mc;fillHEdit(box)});
+    const rm=w.querySelector('.hrm');let armed=false;
+    rm.onclick=()=>{if(!armed){armed=true;rm.textContent='確定？';return}hDraft.splice(hDraft.indexOf(it),1);fillHEdit(box)};
     it.log.forEach((st,i)=>{
       const rw=document.createElement('div');rw.className='hes';
       rw.innerHTML=`<span class="sn num">${i+1}</span>`
@@ -1324,6 +1337,9 @@ function fillHEdit(box){
     w.appendChild(add);
     box.appendChild(w);
   });
+  const addEx=document.createElement('button');addEx.type='button';addEx.className='hadd hadde';addEx.textContent='＋ 新增動作';
+  addEx.onclick=()=>openLib(x=>{hDraft.push({n:x.n,rm:x.rm,bw:x.bw,...(x.mc?{mc:mcLabel(mcById(x.mc))}:{}),log:[{w:null,r:null},{w:null,r:null},{w:null,r:null}]});fillHEdit(box)});
+  box.appendChild(addEx);
 }
 function renderHistory(){
   const list=document.getElementById('hlist');list.innerHTML='';
@@ -1336,7 +1352,7 @@ function renderHistory(){
       +`<div class="hbody" ${hOpen.has(r.id)?'':'hidden'}>${editing?'<div class="hedit"></div>':rows}<label class="hdate">改日期<input type="date" value="${dateStrOf(r.t)}" max="${todayStr()}"></label>`
       +(editing
         ?`<div class="msg herr"></div><div class="hacts"><button class="hedbtn cancel" type="button">取消</button><button class="hedbtn save" type="button">儲存修改</button></div>`
-        :`<div class="hacts"><button class="hedbtn edit" type="button">編輯重量／次數</button><button class="hdel" type="button">刪除這筆</button></div>`)
+        :`<div class="hacts"><button class="hedbtn edit" type="button">編輯紀錄</button><button class="hdel" type="button">刪除這筆</button></div>`)
       +`</div>`;
     const body=el.querySelector('.hbody');
     el.querySelector('.hhead').onclick=()=>{body.hidden=!body.hidden;if(body.hidden)hOpen.delete(r.id);else hOpen.add(r.id)};
@@ -1347,7 +1363,9 @@ function renderHistory(){
       el.querySelector('.cancel').onclick=()=>{hEditId=null;hDraft=null;renderHistory()};
       el.querySelector('.save').onclick=()=>{
         // 重量和次數都空的組不算；某個動作一組都不剩就整個拿掉
-        const items=hDraft.map(it=>{const log=it.log.filter(x=>x.w!=null||x.r!=null);return log.length?Object.assign({},it,{log,sets:log.length,w:log[0].w}):null}).filter(Boolean);
+        // 名稱空白或一組都沒填的動作不存；改了名稱就不再是「代替某動作」
+        const items=hDraft.map(it=>{const n=(it.n||'').trim(),log=it.log.filter(x=>x.w!=null||x.r!=null);if(!n||!log.length)return null;
+          const o=Object.assign({},it,{n,log,sets:log.length,w:log[0].w});if(n!==it._n0)delete o.orig;delete o._n0;return o}).filter(Boolean);
         if(!items.length){el.querySelector('.herr').textContent='至少要留一組。整筆不要了，取消後按「刪除這筆」。';return}
         r.items=items;r.done=items.reduce((a,x)=>a+x.sets,0);r.total=Math.max(r.total||0,r.done);
         hEditId=null;hDraft=null;saveHistory();pushSession(r);renderHistory();build();
@@ -1409,7 +1427,11 @@ function renderLib(){
     b.onclick=()=>pickLib(x);libList.appendChild(b);
   });
 }
+// 動作庫也給歷史紀錄用：有 libCb 就交給它，沒有就填進新增動作表單
+let libCb=null;
+function openLib(cb){libCb=cb;libQ.value='';renderLib();libSheet.hidden=false;libList.scrollTop=0}
 function pickLib(x){
+  if(libCb){const cb=libCb;libCb=null;libSheet.hidden=true;cb(x);return}
   const f=exForm.querySelector('form'),t=libTarget;
   f['n'+t].value=x.n;setRm(t,x.rm);f['mus'+t].value=x.mus;f['bw'+t].checked=x.bw;
   fillMcSelect(f['mc'+t],{n:x.n,mc:x.mc});
@@ -1417,10 +1439,10 @@ function pickLib(x){
   if(t==='1'){const lo=parseInt(x.rm,10);f.rest.value=String(lo<=6?180:lo<=8?120:lo<=10?90:60)}
   libSheet.hidden=true;
 }
-exForm.querySelectorAll('.libpick').forEach(b=>b.onclick=()=>{libTarget=b.dataset.t;libQ.value='';renderLib();libSheet.hidden=false;libList.scrollTop=0});
+exForm.querySelectorAll('.libpick').forEach(b=>b.onclick=()=>{libTarget=b.dataset.t;openLib(null)});
 libQ.oninput=renderLib;
-document.getElementById('libclose').onclick=()=>{libSheet.hidden=true};
-libSheet.onclick=e=>{if(e.target===libSheet)libSheet.hidden=true};
+document.getElementById('libclose').onclick=()=>{libSheet.hidden=true;libCb=null};
+libSheet.onclick=e=>{if(e.target===libSheet){libSheet.hidden=true;libCb=null}};
 
 // ---- 課表 profile：切換、新增、改名、刪除 ----
 const psheet=document.getElementById('psheet'),plist=document.getElementById('plist');
