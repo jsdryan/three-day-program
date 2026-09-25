@@ -241,6 +241,34 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .msg{font-size:13px;color:var(--done);margin:8px 2px 0;min-height:1.2em}
 .reset{margin-top:8px;width:100%;height:44px;border-radius:14px;border:0;background:var(--card);color:var(--muted);font-weight:600}
 
+/* progress charts */
+.hseg{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:4px;border-radius:12px;background:var(--card);border:1px solid var(--line);margin-bottom:12px}
+.hseg button{height:38px;border:0;border-radius:9px;background:none;color:var(--muted);font-weight:700;font-size:15px}
+.hseg button[aria-selected="true"]{background:var(--accent);color:#fff}
+.pgpick{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted);font-weight:600;margin-bottom:12px}
+.pgpick select{height:44px;border:1px solid var(--line);border-radius:10px;background:var(--input);color:var(--ink);font:inherit;font-size:16px;font-weight:700;padding:0 10px}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:10px 10px 9px;min-width:0}
+.tile small{display:block;font-size:11px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile b{display:block;font-size:22px;font-weight:900;line-height:1.2;margin-top:2px;white-space:nowrap}
+.tile b span{font-size:12px;font-weight:600;color:var(--muted);margin-left:2px}
+.tile i{display:block;font-style:normal;font-size:11px;color:var(--muted);margin-top:1px;white-space:nowrap}
+.tile i.up{color:var(--done)}.tile i.down{color:var(--danger)}
+.chart{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 12px 8px;margin-bottom:12px;position:relative}
+.chart h4{margin:0;font-size:14px;font-weight:800}
+.chart .cs{font-size:11px;color:var(--muted);margin:1px 0 6px}
+.chart svg{display:block;width:100%;height:auto;overflow:visible;touch-action:pan-y}
+.chart svg text{font-size:11px;fill:var(--muted);font-family:inherit}
+.chart svg .lbl{fill:var(--ink);font-weight:800;font-size:12px}
+.ctip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;font-weight:700;border-radius:8px;padding:5px 8px;white-space:nowrap;transform:translate(-50%,-100%);margin-top:-8px;z-index:2}
+.ctip small{display:block;font-weight:500;opacity:.75;font-size:11px}
+.pgtbl{margin:0 0 12px;font-size:13px;color:var(--ink2)}
+.pgtbl summary{cursor:pointer;color:var(--muted);font-weight:600;padding:4px 2px}
+.pgtbl table{width:100%;border-collapse:collapse;margin-top:6px}
+.pgtbl th,.pgtbl td{text-align:right;padding:6px 4px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.pgtbl th:first-child,.pgtbl td:first-child{text-align:left}
+.pgtbl th{color:var(--muted);font-weight:600;font-size:12px}
+
 /* history */
 .hist{padding-top:14px}
 .hbar{display:flex;gap:8px}
@@ -403,6 +431,9 @@ html{color-scheme:dark}
   </div>
 
   <section id="hist" class="hist" hidden>
+    <div class="hseg" role="tablist"><button type="button" role="tab" data-hv="list">紀錄</button><button type="button" role="tab" data-hv="prog">進步</button></div>
+    <div id="hprog" hidden></div>
+    <div id="hlistwrap">
     <div class="hbar">
       <button type="button" id="hexport">匯出備份</button>
       <label>匯入備份<input type="file" id="himport" accept="application/json,.json" hidden></label>
@@ -410,6 +441,7 @@ html{color-scheme:dark}
     <div class="msg" id="hmsg"></div>
     <div id="hlist"></div>
     <p class="empty">沒登入時，紀錄只存在這支手機的瀏覽器裡；用 Google 或 Apple 登入後會同步到雲端，換手機登入同一個帳號就會看到。「匯出備份」仍可當離線備份。</p>
+    </div>
   </section>
 </div>
 
@@ -1014,7 +1046,7 @@ function renderView(){
   trainEl.hidden=view!=='train';histEl.hidden=view!=='hist';
   document.getElementById('sub').hidden=view!=='train';
   hbtn.textContent=view==='train'?'歷史紀錄'+(history.length?' '+history.length:''):'回課表';
-  if(view==='hist')renderHistory();
+  if(view==='hist')renderHist();
   window.scrollTo(0,0);
 }
 
@@ -1389,6 +1421,127 @@ function renderHistory(){
     list.appendChild(el);
   });
 }
+
+// ---------- 進步圖表 ----------
+let hv='list';try{hv=localStorage.getItem('w3-hv')||'list'}catch(e){}
+document.querySelectorAll('.hseg button').forEach(b=>b.onclick=()=>{hv=b.dataset.hv;try{localStorage.setItem('w3-hv',hv)}catch(e){};renderHist()});
+function renderHist(){
+  document.querySelectorAll('.hseg button').forEach(b=>b.setAttribute('aria-selected',b.dataset.hv===hv));
+  document.getElementById('hlistwrap').hidden=hv!=='list';
+  document.getElementById('hprog').hidden=hv!=='prog';
+  if(hv==='prog')renderProgress();else renderHistory();
+}
+// 每次訓練裡某個動作的數字：最重一組、訓練量（重量×次數）、最多次數、預估 1RM（Epley）
+function exSessions(name){
+  const out=[];
+  history.slice().sort((a,b)=>a.t<b.t?-1:1).forEach(r=>{
+    const its=(r.items||[]).filter(x=>canon(x.n)===name);if(!its.length)return;
+    let top=null,vol=0,maxR=null,e1=null,sets=0;const log=[];
+    its.forEach(it=>{
+      const L=it.log&&it.log.length?it.log:Array.from({length:it.sets||0},()=>({w:it.w,r:null}));
+      L.forEach(x=>{sets++;log.push(x);
+        if(x.w!=null&&(top==null||x.w>top))top=x.w;
+        if(x.r!=null&&(maxR==null||x.r>maxR))maxR=x.r;
+        if(x.w!=null&&x.r!=null){vol+=x.w*x.r;const e=x.w*(1+x.r/30);if(e1==null||e>e1)e1=e}});
+    });
+    out.push({t:new Date(r.t),top,vol,maxR,e1,sets,log});
+  });
+  return out;
+}
+function exNames(){
+  const c={},last={};
+  history.forEach(r=>(r.items||[]).forEach(it=>{const n=canon(it.n);c[n]=(c[n]||0)+1;if(!last[n]||r.t>last[n])last[n]=r.t}));
+  const hw={};history.forEach(r=>(r.items||[]).forEach(it=>{if((it.log||[]).some(x=>x.w!=null)||it.w!=null)hw[canon(it.n)]=1}));
+  return Object.keys(c).sort((a,b)=>c[b]-c[a]||(hw[b]||0)-(hw[a]||0)||(last[b]>last[a]?1:-1)).map(n=>({n,c:c[n]}));
+}
+function fmtNum(v){return v==null?'–':(Math.round(v*10)/10).toLocaleString('zh-TW')}
+function niceTicks(lo,hi,n,int){
+  if(lo===hi){lo-=1;hi+=1}
+  const span=hi-lo,step0=span/n,mag=Math.pow(10,Math.floor(Math.log10(step0))),f=step0/mag;
+  let step=(f<=1?1:f<=2?2:f<=2.5&&!int?2.5:f<=5?5:10)*mag;
+  if(int)step=Math.max(1,Math.round(step));
+  const a=Math.floor(lo/step)*step,b=Math.ceil(hi/step)*step,t=[];
+  for(let v=a;v<=b+step/2;v+=step)t.push(Math.round(v*100)/100);
+  return t;
+}
+function shortDate(d){return (d.getMonth()+1)+'/'+d.getDate()}
+// 單一系列圖（折線或長條），紅色標記、淡格線、點一下看數字
+function drawChart(box,pts,opt){
+  const W=Math.max(280,box.clientWidth||320),H=170,L=38,R=14,T=16,B=24,pw=W-L-R,ph=H-T-B;
+  const ys=pts.map(p=>p.y);
+  let lo=opt.bar?0:Math.min(...ys),hi=Math.max(...ys);
+  if(!opt.bar){const pad=(hi-lo)*0.15||Math.max(1,hi*0.05);lo=Math.max(0,lo-pad);hi=hi+pad}
+  const ticks=niceTicks(lo,hi,3,opt.int),y0=ticks[0],y1=ticks[ticks.length-1];
+  const Y=v=>T+ph-(v-y0)/(y1-y0||1)*ph;
+  const n=pts.length,band=pw/n,X=i=>L+band*i+band/2;
+  let g='';
+  ticks.forEach(t=>{g+=`<line x1="${L}" x2="${W-R}" y1="${Y(t)}" y2="${Y(t)}" stroke="var(--line)" stroke-width="1"/><text x="${L-6}" y="${Y(t)+4}" text-anchor="end">${fmtNum(t)}</text>`});
+  // x 軸標籤：最多放 5 個，避免擠在一起
+  const every=Math.ceil(n/5);
+  pts.forEach((p,i)=>{if(i===n-1||(i%every===0&&n-1-i>=every))g+=`<text x="${X(i)}" y="${H-6}" text-anchor="middle">${p.x}</text>`});
+  if(opt.bar){
+    const bw=Math.min(26,band*0.62);
+    pts.forEach((p,i)=>{const x=X(i)-bw/2,y=Y(p.y),h=Y(y0)-y,r=Math.min(4,h/2,bw/2);
+      g+=h>0?`<path d="M${x},${Y(y0)} V${y+r} Q${x},${y} ${x+r},${y} H${x+bw-r} Q${x+bw},${y} ${x+bw},${y+r} V${Y(y0)} Z" fill="var(--accent)"/>`:''});
+  }else{
+    g+=`<polyline fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="${pts.map((p,i)=>X(i)+','+Y(p.y)).join(' ')}"/>`;
+    const rr=n>12?3.5:4.5;
+    pts.forEach((p,i)=>{g+=`<circle cx="${X(i)}" cy="${Y(p.y)}" r="${rr}" fill="var(--accent)" stroke="var(--card)" stroke-width="${n>12?1.5:2}"/>`});
+  }
+  // 只標最後一個值
+  const li=n-1;g+=`<text class="lbl" x="${Math.min(X(li),W-R)}" y="${Y(pts[li].y)-9}" text-anchor="${n>1?'end':'middle'}">${fmtNum(pts[li].y)}</text>`;
+  g+=`<line class="xh" x1="0" x2="0" y1="${T}" y2="${T+ph}" stroke="var(--muted)" stroke-width="1" stroke-dasharray="3 3" visibility="hidden"/>`;
+  g+=`<rect x="${L}" y="0" width="${pw}" height="${H}" fill="transparent"/>`;
+  box.innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${opt.aria}">${g}</svg><div class="ctip" hidden></div>`;
+  const svg=box.querySelector('svg'),tip=box.querySelector('.ctip'),xh=svg.querySelector('.xh');
+  const show=ev=>{
+    const r=svg.getBoundingClientRect(),sx=(ev.clientX-r.left)*W/r.width;
+    const i=Math.max(0,Math.min(n-1,Math.round((sx-L-band/2)/band)));
+    const px=X(i)*r.width/W,py=Y(pts[i].y)*r.height/H;
+    xh.setAttribute('x1',X(i));xh.setAttribute('x2',X(i));xh.setAttribute('visibility','visible');
+    tip.hidden=false;tip.style.left=Math.max(50,Math.min(r.width-50,px))+12+'px';tip.style.top=svg.getBoundingClientRect().top-box.closest('.chart').getBoundingClientRect().top+4+'px';
+    tip.innerHTML=`${fmtNum(pts[i].y)} ${opt.unit}<small>${pts[i].tip}</small>`;
+  };
+  svg.addEventListener('pointermove',show);svg.addEventListener('pointerdown',show);
+  svg.addEventListener('pointerleave',()=>{tip.hidden=true;xh.setAttribute('visibility','hidden')});
+}
+function renderProgress(){
+  const el=document.getElementById('hprog');
+  const names=exNames();
+  if(!names.length){el.innerHTML='<p class="empty">還沒有紀錄。練完存檔後，這裡會畫出每個動作的進步。</p>';return}
+  let sel='';try{sel=localStorage.getItem('w3-pgex')||''}catch(e){}
+  if(!names.some(x=>x.n===sel))sel=names[0].n;
+  const ss=exSessions(sel);
+  const hasW=ss.some(s=>s.top!=null),first=ss[0],lastS=ss[ss.length-1];
+  const key=hasW?'top':'maxR',unit=hasW?'kg':'下';
+  const firstV=ss.find(s=>s[key]!=null)?.[key],lastV=[...ss].reverse().find(s=>s[key]!=null)?.[key];
+  const best=Math.max(...ss.map(s=>s[key]??-Infinity));
+  const diff=firstV!=null&&lastV!=null?lastV-firstV:null;
+  const e1=lastS.e1;
+  el.innerHTML=`<label class="pgpick">動作<select>${names.map(x=>`<option value="${x.n}"${x.n===sel?' selected':''}>${x.n}（${x.c} 次）</option>`).join('')}</select></label>`
+    +`<div class="tiles">`
+    +`<div class="tile"><small>${hasW?'最近最重一組':'最近最多次數'}</small><b class="num">${fmtNum(lastV)}<span>${unit}</span></b><i>最佳 ${fmtNum(best)} ${unit}</i></div>`
+    +`<div class="tile"><small>比第一次</small><b class="num">${diff==null?'–':(diff>0?'+':'')+fmtNum(diff)}<span>${unit}</span></b><i class="${diff>0?'up':diff<0?'down':''}">${ss.length} 次訓練</i></div>`
+    +(hasW?`<div class="tile"><small>預估 1RM</small><b class="num">${e1==null?'–':fmtNum(Math.round(e1*2)/2)}<span>${e1==null?'':'kg'}</span></b><i>最多舉一下</i></div>`
+      :`<div class="tile"><small>最近總次數</small><b class="num">${fmtNum(lastS.log.reduce((a,x)=>a+(x.r||0),0))}<span>下</span></b><i>${lastS.sets} 組加總</i></div>`)
+    +`</div>`
+    +`<div class="chart" id="pc1"><h4>${hasW?'最重一組重量':'最多次數'}</h4><p class="cs">每次訓練一個點（${unit}）</p><div class="cbox"></div></div>`
+    +(hasW?`<div class="chart" id="pc2"><h4>每次訓練量</h4><p class="cs">每組重量 × 次數加總（kg）</p><div class="cbox"></div></div>`:'')
+    +`<details class="pgtbl"><summary>看數字</summary><table><thead><tr><th>日期</th><th>${hasW?'最重':'最多'}</th>${hasW?'<th>訓練量</th><th>1RM</th>':''}<th>組數</th></tr></thead><tbody>${ss.slice().reverse().map(s=>`<tr><td>${fdate(s.t.toISOString())}</td><td>${fmtNum(s[key])}</td>${hasW?`<td>${s.vol?fmtNum(s.vol):'–'}</td><td>${s.e1?fmtNum(Math.round(s.e1*2)/2):'–'}</td>`:''}<td>${s.sets}</td></tr>`).join('')}</tbody></table></details>`
+    +`<div class="chart" id="pc3"><h4>每週完成組數</h4><p class="cs">所有動作，最近 12 週</p><div class="cbox"></div></div>`;
+  el.querySelector('select').onchange=e=>{try{localStorage.setItem('w3-pgex',e.target.value)}catch(err){};renderProgress()};
+  const tipOf=s=>fdate(s.t.toISOString())+' · '+s.log.map(x=>(x.w!=null?x.w:'自體')+'×'+(x.r!=null?x.r:'–')).join('、');
+  const p1=ss.filter(s=>s[key]!=null).map(s=>({x:shortDate(s.t),y:s[key],tip:tipOf(s)}));
+  if(p1.length)drawChart(el.querySelector('#pc1 .cbox'),p1,{unit,int:!hasW,aria:`${sel}${hasW?'最重一組重量':'最多次數'}，從 ${fmtNum(p1[0].y)} 到 ${fmtNum(p1[p1.length-1].y)} ${unit}`});
+  if(hasW){const p2=ss.filter(s=>s.vol>0).map(s=>({x:shortDate(s.t),y:s.vol,tip:tipOf(s)}));
+    if(p2.length)drawChart(el.querySelector('#pc2 .cbox'),p2,{bar:true,unit:'kg',aria:`${sel}每次訓練量`});else el.querySelector('#pc2').remove()}
+  // 每週組數：週一開始，最近 12 週（沒練的週是 0）
+  const wk=d=>{const x=new Date(d);x.setHours(0,0,0,0);x.setDate(x.getDate()-((x.getDay()+6)%7));return x.getTime()};
+  const now=wk(new Date()),weeks=[];for(let i=11;i>=0;i--)weeks.push(now-i*7*864e5);
+  const cnt={};history.forEach(r=>{const k=wk(new Date(r.t));cnt[k]=(cnt[k]||0)+(r.done||0)});
+  const p3=weeks.map(k=>({x:shortDate(new Date(k)),y:cnt[k]||0,tip:shortDate(new Date(k))+' 那週'}));
+  drawChart(el.querySelector('#pc3 .cbox'),p3,{bar:true,int:true,unit:'組',aria:'每週完成組數，最近 12 週'});
+}
 document.getElementById('hexport').onclick=()=>{
   const blob=new Blob([JSON.stringify({app:'w3',v:1,history},null,1)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);
@@ -1725,7 +1878,7 @@ async function pullAll(){
     await sb.from('sessions').upsert(missing.map(rec=>({id:rec.id,user_id:user.id,t:rec.t,data:rec})));
   }
   applyPrefs(pref&&pref.data);
-  build();if(view==='hist')renderHistory();
+  build();if(view==="hist")renderHist();
   await sb.from('prefs').upsert({user_id:user.id,data:allPrefs(),updated_at:new Date().toISOString()});
   setSync('ok');
 }
