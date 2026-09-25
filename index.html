@@ -77,9 +77,10 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 }
 .tabs::-webkit-scrollbar{display:none}
 .tab{flex:1 0 108px;border:1px solid var(--line);background:var(--card);border-radius:var(--r-s);padding:9px 10px;text-align:left;color:var(--muted);display:flex;gap:8px;align-items:center;min-width:0}
-.tab .n{font-size:20px;line-height:1;color:var(--muted)}
-.tab .t{display:block;font-size:12px;line-height:1.25;min-width:0;overflow:hidden}
-.tab .t b{display:block;color:var(--ink2);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tab .n{font-size:22px;line-height:1;color:var(--ink2)}
+.tab .t{display:block;font-size:13px;line-height:1.3;min-width:0;overflow:hidden}
+/* 天的名稱最多兩行，不要只剩「推：胸、肩…」 */
+.tab .t b{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;color:var(--ink);font-weight:700;overflow:hidden;word-break:break-all}
 .tab .t small{display:block;font-size:11px;color:var(--muted)}
 .tab[aria-selected="true"]{background:var(--accent-soft);border-color:var(--accent)}
 .tab[aria-selected="true"] .n,.tab[aria-selected="true"] .t b{color:var(--ink)}
@@ -87,6 +88,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 
 /* exercise cards */
 .day{display:none}.day.on{display:block}
+.dayh{margin:12px 4px 0;font-size:22px;font-weight:900;line-height:1.3}
 .meta{display:flex;justify-content:space-between;align-items:baseline;padding:10px 4px 10px;font-size:13px;color:var(--muted)}
 .meta .num{font-size:16px;color:var(--ink)}
 .ex{background:var(--card);border-radius:var(--r);padding:14px 14px 12px;margin-bottom:10px}
@@ -685,7 +687,7 @@ function build(){
     const sec=document.createElement('section');sec.className='day';sec.id='day'+di;
     sec.setAttribute('role','tabpanel');
     const nm=d.ex.reduce((a,e)=>a+(e.sup?e.sup.length:1),0);
-    sec.innerHTML=`<div class="meta"><span>${nm} 個動作${custom[prog]?'（已自訂）':''}</span><span id="c${di}"></span><button type="button" class="editbtn">編輯課表</button></div>`;
+    sec.innerHTML=`<h2 class="dayh">${d.name}</h2><div class="meta"><span>${nm} 個動作${custom[prog]?'（已自訂）':''}</span><span id="c${di}"></span><button type="button" class="editbtn">編輯課表</button></div>`;
     sec.querySelector('.editbtn').onclick=()=>{editing=di;build()};
     if(editing===di){sec.appendChild(renderEditor(di));daysEl.appendChild(sec);progress(di);return}
     d.ex.forEach((e,ei)=>{
