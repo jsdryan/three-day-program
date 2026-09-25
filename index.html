@@ -8,9 +8,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="一週三練">
+<meta name="apple-mobile-web-app-title" content="健身課表">
 <link rel="apple-touch-icon" href="icon-180.png">
-<title>一週三練課表</title>
+<title>健身課表</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -62,10 +62,11 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 /* day tabs */
 .tabs{
   position:sticky;top:env(safe-area-inset-top,0px);z-index:5;
-  display:grid;grid-template-columns:repeat(3,1fr);gap:6px;
+  display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;
   margin:14px -16px 0;padding:8px 16px 10px;background:var(--bg);
 }
-.tab{border:1px solid var(--line);background:var(--card);border-radius:var(--r-s);padding:9px 10px;text-align:left;color:var(--muted);display:flex;gap:8px;align-items:center;min-width:0}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex:1 0 108px;border:1px solid var(--line);background:var(--card);border-radius:var(--r-s);padding:9px 10px;text-align:left;color:var(--muted);display:flex;gap:8px;align-items:center;min-width:0}
 .tab .n{font-size:20px;line-height:1;color:var(--muted)}
 .tab .t{display:block;font-size:12px;line-height:1.25;min-width:0;overflow:hidden}
 .tab .t b{display:block;color:var(--ink2);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -179,6 +180,9 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .edfoot button{flex:1;height:44px;border-radius:12px;border:0;font-weight:700;font-size:14px}
 .edfoot .restore{background:var(--card2);color:var(--ink2)}
 .edfoot .done{background:var(--accent);color:#fff}
+.dayact{display:flex;gap:8px;margin-top:8px}
+.dayact button{flex:1;height:40px;border-radius:10px;border:1px dashed var(--line);background:none;color:var(--ink2);font-weight:600;font-size:13px}
+.dayact .delday{color:var(--danger)}
 .sheetbox form{display:flex;flex-direction:column;gap:10px}
 .sheetbox form label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);font-weight:600}
 .sheetbox form .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -256,7 +260,7 @@ html{color-scheme:light}
 <body>
 <div class="wrap">
   <header class="top">
-    <div class="brand"><h1>一週三練</h1><button type="button" class="hbtn" id="hbtn">歷史紀錄</button></div>
+    <div class="brand"><h1>健身課表</h1><button type="button" class="hbtn" id="hbtn">歷史紀錄</button></div>
     <div class="prog" role="radiogroup" aria-label="課表" id="seg">
       <button type="button" role="radio" data-p="full">全身</button>
       <button type="button" role="radio" data-p="ppl">推拉腿（PPL）</button>
@@ -295,7 +299,7 @@ html{color-scheme:light}
           <li><b>2</b><span>往下找到「加入主畫面」</span></li>
           <li><b>3</b><span>右上角按「新增」</span></li>
         </ol>
-        <p>之後從主畫面的「一週三練」圖示打開，再按「開啟通知」。</p>
+        <p>之後從主畫面的「健身課表」圖示打開，再按「開啟通知」。</p>
         <button type="button" id="iosclose">知道了</button>
       </div>
     </div>
@@ -645,7 +649,7 @@ seg.querySelectorAll('button').forEach(b=>{
 function build(){
   load();
   seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-checked',b.dataset.p===prog));
-  document.getElementById('sub').textContent=PROGRAMS[prog].sub;
+  document.getElementById('sub').textContent=DAYS.length!==PROGRAMS[prog].days.length?`自訂課表：一週練 ${DAYS.length} 天。`:PROGRAMS[prog].sub;
   document.getElementById('tip').textContent=PROGRAMS[prog].tip;
   tabs.innerHTML='';daysEl.innerHTML='';
 
@@ -775,7 +779,8 @@ function renderEditor(di){
   const box=document.createElement('div');box.className='edit';
   box.innerHTML=`<label class="edname">這一天的名稱<input type="text" value="${d.name}" maxlength="20"></label><div class="edlist"></div>`
     +`<button type="button" class="addex">＋ 新增動作</button>`
-    +`<div class="edfoot"><button type="button" class="restore">還原這一天為預設</button><button type="button" class="done">完成編輯</button></div>`;
+    +`<div class="dayact"><button type="button" class="addday">＋ 新增一天</button>${c.days.length>1?'<button type="button" class="delday">刪除這一天</button>':''}</div>`
+    +`<div class="edfoot">${di<PROGRAMS[prog].days.length?'<button type="button" class="restore">還原這一天為預設</button>':''}<button type="button" class="done">完成編輯</button></div>`;
   const nameIn=box.querySelector('.edname input');
   nameIn.onchange=()=>{d.name=nameIn.value.trim()||d.name;saveCustom(prog)};
   const list=box.querySelector('.edlist');
@@ -793,11 +798,21 @@ function renderEditor(di){
     list.appendChild(row);
   });
   box.querySelector('.addex').onclick=()=>openExForm(di,null);
-  box.querySelector('.restore').onclick=()=>{
+  box.querySelector('.addday').onclick=()=>{
+    c.days.push({name:'第 '+(c.days.length+1)+' 天',ex:[]});saveCustom(prog);
+    editing=cur=c.days.length-1;try{localStorage.setItem('w3-day-'+prog,cur)}catch(e){}build();
+    const t=document.getElementById('tab'+cur);if(t)t.scrollIntoView({inline:'end',block:'nearest'});
+  };
+  const dd=box.querySelector('.delday');let ddArmed=false;
+  if(dd)dd.onclick=()=>{
+    if(!ddArmed){ddArmed=true;dd.textContent='再按一次確認刪除';return}
+    c.days.splice(di,1);saveCustom(prog);editing=null;cur=Math.max(0,di-1);try{localStorage.setItem('w3-day-'+prog,cur)}catch(e){}build();
+  };
+  const rs=box.querySelector('.restore');if(rs)rs.onclick=()=>{
     const def=withIds(cloneDays(PROGRAMS[prog].days))[di];c.days[di]=def;saveCustom(prog);build();
   };
   box.querySelector('.done').onclick=()=>{
-    // 全部三天都和預設一樣就不算自訂
+    // 每一天都和預設一樣（天數也一樣）就不算自訂
     const same=JSON.stringify(c.days.map(x=>({name:x.name,ex:x.ex})))===JSON.stringify(withIds(cloneDays(PROGRAMS[prog].days)).map(x=>({name:x.name,ex:x.ex})));
     if(same)custom[prog]=null;
     editing=null;saveCustom(prog);build();
@@ -982,7 +997,7 @@ function renderNotif(){
   if(st==='granted'){notifEl.hidden=true}
   else if(st==='ios-need-install'){notifTxt.textContent='想在休息結束時收到通知：用 Safari 的分享 → 「加入主畫面」，從主畫面開啟後再按開啟通知。'}
   else if(st==='default'){notifTxt.textContent='休息結束時彈通知提醒你';notifBtn.hidden=false}
-  else if(st==='denied'){notifTxt.textContent='通知被關閉了。到手機設定 → 通知 → 一週三練 重新打開。'}
+  else if(st==='denied'){notifTxt.textContent='通知被關閉了。到手機設定 → 通知 → 健身課表 重新打開。'}
   else notifEl.hidden=true;
 }
 notifBtn.onclick=async()=>{try{await Notification.requestPermission()}catch(e){};renderNotif()};

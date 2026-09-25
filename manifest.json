@@ -1,6 +1,6 @@
 {
-  "name": "一週三練",
-  "short_name": "一週三練",
+  "name": "健身課表",
+  "short_name": "健身課表",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
