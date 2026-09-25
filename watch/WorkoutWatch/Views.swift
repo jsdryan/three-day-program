@@ -416,6 +416,7 @@ struct AlarmView: View {
             if let w = store.workout {
                 Text("下一個：\(w.items[w.current].n)").font(.caption).lineLimit(2).multilineTextAlignment(.center)
             }
+            Text("點兩下手指也能關掉").font(.caption2).foregroundStyle(.white.opacity(0.8))
             Button {
                 store.dismissAlarm()
             } label: {
@@ -424,6 +425,8 @@ struct AlarmView: View {
                     .background(Capsule().fill(.white))
             }
             .buttonStyle(.plain)
+            // 雙指互點（食指拇指點兩下）也能按這顆，不用碰螢幕
+            .handGestureShortcut(.primaryAction)
             .padding(.horizontal, 8)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
