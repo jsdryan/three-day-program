@@ -671,7 +671,7 @@ function build(){
         sec.appendChild(holder);
       }
       items.forEach((it,ii)=>{
-        holder.appendChild(renderEx(it,e,it.id,di));
+        holder.appendChild(renderEx(it,e,it.id,di,!e.sup||ii===items.length-1));
       });
       if(!e.sup){/* rest line is inside renderEx */}
     });
@@ -681,7 +681,8 @@ function build(){
   show(Math.min(cur,DAYS.length-1));
 }
 
-function renderEx(it,e,wk,di){
+// rests=false：超級組前面的動作，做完直接接下一個，不休息也不顯示休息列
+function renderEx(it,e,wk,di,rests=true){
   const ef=effective(it,wk);
   const last=lastOf(ef.n);
   const lastTxt=last?('上次 '+fmtLog(last)+'，'+fdate(last.t)):'還沒有紀錄';
@@ -699,9 +700,9 @@ function renderEx(it,e,wk,di){
     `<div class="wrow"><span class="last">${lastTxt}</span><a class="demo" href="${demoUrl(ef.n)}" target="_blank" rel="noopener">示範影片</a>`+(ALTS[it.n]?`<button type="button" class="swapbtn" aria-expanded="false">器材被佔？</button>`:'')+`</div>`+
     `<div class="st"><div class="sth"><span>組</span><span>${ef.bw?'kg（選填）':'kg'}</span><span>次數</span><span>完成</span><span></span></div><div class="strs"></div>`+
     `<button type="button" class="addset">＋ 加一組</button></div>`+
-    `<div class="rest"><span>休息 ${fmt(e.rest)}</span><button type="button">手動計時</button></div>`;
+    (rests?`<div class="rest"><span>${e.sup?'兩個都做完再休息 ':'休息 '}${fmt(e.rest)}</span><button type="button">手動計時</button></div>`:'');
   const list=art.querySelector('.strs');
-  const rerender=()=>art.replaceWith(renderEx(it,e,wk,di));
+  const rerender=()=>art.replaceWith(renderEx(it,e,wk,di,rests));
   rs.forEach((row,i)=>{
     const el=document.createElement('div');el.className='str'+(row.done?' on':'');
     const pw=i>0?eff(rs,i-1,'w'):lastW, pr=i>0?eff(rs,i-1,'r'):lastR;
@@ -724,13 +725,13 @@ function renderEx(it,e,wk,di){
         if(row.r==null){const v=parseInt(ir.placeholder,10);if(!isNaN(v)){row.r=v;ir.value=v}}
       }
       el.classList.toggle('on',row.done);el.querySelector('.dn').setAttribute('aria-pressed',row.done);
-      saveLog();progress(di);if(row.done)startTimer(e.rest);
+      saveLog();progress(di);if(row.done&&rests)startTimer(e.rest);
     };
     el.querySelector('.rmrow').onclick=()=>{rs.splice(i,1);saveLog();progress(di);rerender()};
     list.appendChild(el);
   });
   art.querySelector('.addset').onclick=()=>{rs.push({w:null,r:null,done:false});saveLog();progress(di);rerender();};
-  art.querySelector('.rest button').onclick=()=>startTimer(e.rest);
+  const rb=art.querySelector('.rest button');if(rb)rb.onclick=()=>startTimer(e.rest);
   const un=art.querySelector('.unswap');
   if(un)un.onclick=()=>{delete swaps[wk];saveS();rerender()};
   const sb=art.querySelector('.swapbtn');
