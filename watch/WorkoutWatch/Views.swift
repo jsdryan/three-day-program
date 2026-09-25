@@ -243,8 +243,9 @@ struct SetView: View {
         self.item = item
         self.index = index
         let s = item.sets[item.nextSet ?? max(0, item.sets.count - 1)]
-        _crownW = State(initialValue: ((s.w ?? 0) * 2).rounded() / 2)
-        _crownR = State(initialValue: Double(min(60, max(0, s.r ?? 0))))
+        // 重量 0–200 kg、次數 0–30 下就夠用
+        _crownW = State(initialValue: min(200, ((s.w ?? 0) * 2).rounded() / 2))
+        _crownR = State(initialValue: Double(min(30, max(0, s.r ?? 0))))
     }
 
     private var si: Int { item.nextSet ?? max(0, item.sets.count - 1) }
@@ -271,14 +272,14 @@ struct SetView: View {
                 wheelBox(field: .w, unit: "kg") {
                     Wheel(value: crownW, step: 0.5) { v in weightRow(v) }
                 }
-                .digitalCrownRotation(detent: $crownW, from: 0, through: 300, by: 0.5,
+                .digitalCrownRotation(detent: $crownW, from: 0, through: 200, by: 0.5,
                                       sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
                 wheelBox(field: .r, unit: "次") {
                     Wheel(value: crownR, step: 1) { v in
                         Text(String(Int(v))).frame(maxWidth: .infinity)
                     }
                 }
-                .digitalCrownRotation(detent: $crownR, from: 0, through: 60, by: 1,
+                .digitalCrownRotation(detent: $crownR, from: 0, through: 30, by: 1,
                                       sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
                 .frame(width: 80)
             }
@@ -304,7 +305,7 @@ struct SetView: View {
             var v = new
             if fast && new != old {
                 let up = new > old
-                v = min(300, max(0, (up ? (old / 2.5).rounded(.down) + 1 : (old / 2.5).rounded(.up) - 1) * 2.5))
+                v = min(200, max(0, (up ? (old / 2.5).rounded(.down) + 1 : (old / 2.5).rounded(.up) - 1) * 2.5))
                 if v != new { skipNext = true; crownW = v }
             }
             let nv: Double? = (item.bw && v == 0) ? nil : v
