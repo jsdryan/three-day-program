@@ -10,6 +10,8 @@ final class Store: ObservableObject {
     @Published var snapshot: Snapshot? { didSet { save(snapshot, "snapshot") } }
     @Published var workout: Workout? { didSet { save(workout, "workout") } }
     @Published var restEnd: Date? { didSet { save(restEnd, "restEnd") } }
+    @Published var alarming = false   // 休息結束、還沒按「開始下一組」
+    private var alarmTask: Task<Void, Never>?
     @Published var loading = false
     @Published var message: String?
 
@@ -76,7 +78,15 @@ final class Store: ObservableObject {
         var w = Workout(snapshot: s, day: day, localLast: localLast)
         w.current = w.items.firstIndex { !$0.isDone } ?? 0
         workout = w
-        if askNotify { requestNotificationPermission() }
+        if askNotify {
+            requestNotificationPermission()
+            Task { await HealthWorkout.shared.start() }
+        }
+    }
+
+    // App 被系統關掉後重開、訓練還在：把體能訓練接回來，暗屏震動才有效
+    func resumeHealthIfNeeded() {
+        if workout != nil && !HealthWorkout.shared.isRunning { Task { await HealthWorkout.shared.start() } }
     }
 
     func jump(to i: Int) { workout?.current = i }
@@ -115,6 +125,7 @@ final class Store: ObservableObject {
     // 按「完成」：記這一組，決定下一步（超級組先換另一個動作，不休息）
     func completeSet() {
         guard var w = workout else { return }
+        dismissAlarm()
         let c = w.current
         guard let si = w.items[c].nextSet else { return }
         w.items[c].sets[si].done = true
@@ -139,7 +150,10 @@ final class Store: ObservableObject {
     }
 
     // ---- 休息倒數 ----
+    private static let restIDs = (0..<30).map { "rest-\($0)" }
+
     func startRest(_ sec: Int) {
+        dismissAlarm()
         let end = Date().addingTimeInterval(TimeInterval(sec))
         restEnd = end
         scheduleRestNotification(at: end)
@@ -154,42 +168,68 @@ final class Store: ObservableObject {
 
     func skipRest() {
         restEnd = nil
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["rest"])
+        clearRestNotifications()
     }
 
-    // 畫面上倒數到 0 時呼叫：手腕連震三下
+    // 倒數到 0：顯示「休息結束」並每 2 秒震一次，直到按「開始下一組」（最多 2 分鐘）
     func restFinished() {
         guard restEnd != nil else { return }
         restEnd = nil
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: ["rest"])
-        let dev = WKInterfaceDevice.current()
-        dev.play(.notification)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.7) { dev.play(.notification) }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) { dev.play(.stop) }
+        // 體能訓練進行中，App 暗屏也在跑，自己震就好；不然螢幕亮著才自己震，暗著靠通知
+        if HealthWorkout.shared.isRunning || WKApplication.shared().applicationState == .active { clearRestNotifications() }
+        alarming = true
+        alarmTask?.cancel()
+        alarmTask = Task { @MainActor in
+            let dev = WKInterfaceDevice.current()
+            for _ in 0..<60 {
+                guard !Task.isCancelled, self.alarming else { return }
+                dev.play(.notification)
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+            }
+            self.alarming = false
+        }
+    }
+
+    func dismissAlarm() {
+        alarming = false
+        alarmTask?.cancel()
+        alarmTask = nil
+        clearRestNotifications()
+    }
+
+    func clearRestNotifications() {
+        let c = UNUserNotificationCenter.current()
+        c.removePendingNotificationRequests(withIdentifiers: Store.restIDs)
+        c.removeDeliveredNotifications(withIdentifiers: Store.restIDs)
     }
 
     private func requestNotificationPermission() {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound]) { _, _ in }
     }
 
-    // 手放下、App 退到背景時，靠系統通知在時間到時震手腕
+    // 手放下、App 在背景時：時間到起每 4 秒一則通知（共 30 則），打開 App 或按「開始下一組」就全部取消
     private func scheduleRestNotification(at date: Date) {
         let c = UNUserNotificationCenter.current()
-        c.removePendingNotificationRequests(withIdentifiers: ["rest"])
-        let content = UNMutableNotificationContent()
-        content.title = "休息結束"
-        content.body = workout.map { $0.items[$0.current].n } ?? "開始下一組"
-        content.sound = .default
-        content.interruptionLevel = .timeSensitive
-        let t = max(1, date.timeIntervalSinceNow)
-        c.add(UNNotificationRequest(identifier: "rest", content: content,
-                                    trigger: UNTimeIntervalNotificationTrigger(timeInterval: t, repeats: false)))
+        clearRestNotifications()
+        // 備援：萬一體能訓練沒開成（例如沒給健康權限），才靠通知震
+        let body = workout.map { "下一個：" + $0.items[$0.current].n } ?? "開始下一組"
+        for (i, id) in Store.restIDs.enumerated() {
+            let content = UNMutableNotificationContent()
+            content.title = "休息結束"
+            content.body = body
+            content.sound = .default
+            content.interruptionLevel = .timeSensitive
+            content.threadIdentifier = "rest"
+            let t = max(1, date.timeIntervalSinceNow + Double(i * 4))
+            c.add(UNNotificationRequest(identifier: id, content: content,
+                                        trigger: UNTimeIntervalNotificationTrigger(timeInterval: t, repeats: false)))
+        }
     }
 
     // ---- 練完存檔：格式跟網頁版的歷史紀錄一樣 ----
     func finish() async -> Bool {
         guard let w = workout else { return false }
-        skipRest()
+        skipRest(); dismissAlarm()
         var items: [[String: Any]] = []
         var done = 0
         for it in w.items {
@@ -214,6 +254,7 @@ final class Store: ObservableObject {
         if let p = w.pname { rec["pname"] = p }
         let data = (try? JSONSerialization.data(withJSONObject: rec)) ?? Data()
         workout = nil
+        await HealthWorkout.shared.end(save: true)
         loading = true; defer { loading = false }
         do {
             let a = try await validAuth()
@@ -226,7 +267,10 @@ final class Store: ObservableObject {
         return true
     }
 
-    func discard() { skipRest(); workout = nil }
+    func discard() {
+        skipRest(); dismissAlarm(); workout = nil
+        Task { await HealthWorkout.shared.end(save: false) }
+    }
 
     private func flushPending(_ a: AuthSession) async {
         var left: [Data] = []

@@ -14,6 +14,7 @@ struct RootView: View {
                 DaysView()
             }
         }
+        .task { store.resumeHealthIfNeeded() }
         #if DEBUG
         // 模擬器測試用：-autostart 天數 -autocomplete 次數
         .task {
@@ -21,13 +22,15 @@ struct RootView: View {
             if let d = a.string(forKey: "autostart"), let day = Int(d) {
                 store.start(day: day, askNotify: false)
                 for _ in 0..<a.integer(forKey: "autocomplete") { store.completeSet(); store.skipRest() }
-                if a.bool(forKey: "autorest") { store.startRest(65) }
+                if a.bool(forKey: "autorest") { store.startRest(a.integer(forKey: "restsec") > 0 ? a.integer(forKey: "restsec") : 65) }
             }
         }
         #endif
         .onChange(of: phase) { _, p in
-            // 從背景回來時，倒數已經過了就直接收掉
-            if p == .active, let e = store.restEnd, e <= Date() { store.skipRest() }
+            // 從背景回來時，倒數已經過了：切到「休息結束」畫面繼續震，直到按掉
+            if p == .active, let e = store.restEnd, e <= Date() { store.restFinished() }
+            // 螢幕亮起來、已經在「休息結束」畫面：改由 App 自己震，收掉剩下的通知
+            if p == .active && store.alarming { store.clearRestNotifications() }
         }
     }
 }
@@ -120,7 +123,8 @@ struct WorkoutView: View {
         }
         .sheet(isPresented: $showList) { ExerciseList(showList: $showList) }
         .overlay {
-            if store.restEnd != nil { RestView() }
+            if store.alarming { AlarmView() }
+            else if store.restEnd != nil { RestView() }
         }
     }
 }
@@ -248,6 +252,32 @@ struct RestView: View {
                 .background(Capsule().fill(.white))
         }
         .buttonStyle(.plain)
+    }
+}
+
+// 休息結束：一直震到按「開始下一組」
+struct AlarmView: View {
+    @EnvironmentObject var store: Store
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Text("休息結束").font(.system(size: 34, weight: .heavy)).italic()
+            if let w = store.workout {
+                Text("下一個：\(w.items[w.current].n)").font(.caption).lineLimit(2).multilineTextAlignment(.center)
+            }
+            Button {
+                store.dismissAlarm()
+            } label: {
+                Text("開始下一組").font(.headline.weight(.heavy)).foregroundStyle(Color.brandRed)
+                    .frame(maxWidth: .infinity, minHeight: 50)
+                    .background(Capsule().fill(.white))
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 8)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.brandRed)
+        .ignoresSafeArea()
     }
 }
 

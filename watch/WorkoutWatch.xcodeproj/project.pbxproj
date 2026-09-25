@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3E7BD197F7AD83ADDDA0AA8C /* HealthWorkout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DCDBD8A0E68EF6A0732D7A /* HealthWorkout.swift */; };
 		50D63530C869FDF727A6F63A /* Supa.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97293078C6FDC1FF156351DC /* Supa.swift */; };
 		597FAC9954AEAE28096D1A11 /* WorkoutWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39DBC0A26013E59AFB35B07B /* WorkoutWatchApp.swift */; };
 		69126126D238A11E392EAEBD /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A339EDA9CC59C0D9889181D /* Store.swift */; };
@@ -21,7 +22,10 @@
 		0F3B39F80BD3CC2EF871778F /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		3432A5BF29E02880190E6027 /* WorkoutWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WorkoutWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		39DBC0A26013E59AFB35B07B /* WorkoutWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutWatchApp.swift; sourceTree = "<group>"; };
+		67DCDBD8A0E68EF6A0732D7A /* HealthWorkout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthWorkout.swift; sourceTree = "<group>"; };
 		97293078C6FDC1FF156351DC /* Supa.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Supa.swift; sourceTree = "<group>"; };
+		B049D71FDAFC4906E8E81928 /* WorkoutWatch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WorkoutWatch.entitlements; sourceTree = "<group>"; };
+		B9FAF62D3827685C96D3BAAE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		C787D967024E1703E1CA61BE /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		DA2105FBBB02C110A6299617 /* Views.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Views.swift; sourceTree = "<group>"; };
 		EFD8D10FF47452271401E74B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -41,10 +45,13 @@
 			children = (
 				EFD8D10FF47452271401E74B /* Assets.xcassets */,
 				C787D967024E1703E1CA61BE /* Config.swift */,
+				67DCDBD8A0E68EF6A0732D7A /* HealthWorkout.swift */,
+				B9FAF62D3827685C96D3BAAE /* Info.plist */,
 				0F3B39F80BD3CC2EF871778F /* Models.swift */,
 				0A339EDA9CC59C0D9889181D /* Store.swift */,
 				97293078C6FDC1FF156351DC /* Supa.swift */,
 				DA2105FBBB02C110A6299617 /* Views.swift */,
+				B049D71FDAFC4906E8E81928 /* WorkoutWatch.entitlements */,
 				39DBC0A26013E59AFB35B07B /* WorkoutWatchApp.swift */,
 			);
 			path = WorkoutWatch;
@@ -130,6 +137,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				87F9D0D3A8A6355D8B86568C /* Config.swift in Sources */,
+				3E7BD197F7AD83ADDDA0AA8C /* HealthWorkout.swift in Sources */,
 				FE28CE690E302BD1145B68D9 /* Models.swift in Sources */,
 				69126126D238A11E392EAEBD /* Store.swift in Sources */,
 				50D63530C869FDF727A6F63A /* Supa.swift in Sources */,
@@ -145,8 +153,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = WorkoutWatch/WorkoutWatch.entitlements;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = WorkoutWatch/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "健身課表";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "讀取心率與消耗熱量，顯示在體能訓練紀錄裡。";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "把每次重訓存成 Apple「體能訓練」，並讓 App 在螢幕變暗時也能震動提醒休息結束。";
 				INFOPLIST_KEY_WKApplication = YES;
 				INFOPLIST_KEY_WKWatchOnly = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jsdryan.gymplan.watch;
@@ -228,8 +240,12 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = WorkoutWatch/WorkoutWatch.entitlements;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = WorkoutWatch/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "健身課表";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "讀取心率與消耗熱量，顯示在體能訓練紀錄裡。";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "把每次重訓存成 Apple「體能訓練」，並讓 App 在螢幕變暗時也能震動提醒休息結束。";
 				INFOPLIST_KEY_WKApplication = YES;
 				INFOPLIST_KEY_WKWatchOnly = YES;
 				PRODUCT_BUNDLE_IDENTIFIER = com.jsdryan.gymplan.watch;
