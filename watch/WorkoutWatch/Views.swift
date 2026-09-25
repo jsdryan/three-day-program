@@ -203,7 +203,7 @@ struct WorkoutView: View {
                         FinishView()
                     } else {
                         SetView(item: w.items[w.current], index: w.current)
-                            .id(w.current)
+                            .id("\(w.current)-\(w.items[w.current].nextSet ?? -1)")
                     }
                 }
             }
@@ -231,19 +231,27 @@ struct SetView: View {
     let item: WItem
     let index: Int
 
-    enum Field { case w, r }
-    @FocusState private var focus: Field?
-    @State private var crownW = 0.0
-    @State private var crownR = 0.0
-    @State private var lastTurn = Date.distantPast
-    @State private var skipNext = false
+    // Apple 原生滾輪：錶冠滾動、震動回饋、快轉加速都交給系統，動畫最順
+    @State private var selW: Double
+    @State private var selR: Int
+
+    // 一開始就用正確的值建立滾輪；先建在 0 再滾過去，滾輪會停錯格（實測 62.5 變 68）
+    init(item: WItem, index: Int) {
+        self.item = item
+        self.index = index
+        let s = item.sets[item.nextSet ?? max(0, item.sets.count - 1)]
+        _selW = State(initialValue: ((s.w ?? 0) * 2).rounded() / 2)
+        _selR = State(initialValue: min(60, max(0, s.r ?? 0)))
+    }
+    private static let weights: [Double] = stride(from: 0.0, through: 300.0, by: 0.5).map { $0 }
+    private static let reps: [Int] = Array(0...60)
 
     private var si: Int { item.nextSet ?? max(0, item.sets.count - 1) }
     private var cur: WSet { item.sets[si] }
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 6) {
+            VStack(spacing: 4) {
                 ElapsedLine()
                 if let mc = item.mc {
                     Text(mc).font(.caption2.weight(.semibold)).foregroundStyle(Color.brandRed).lineLimit(1)
@@ -253,14 +261,18 @@ struct SetView: View {
                     .font(.caption2).foregroundStyle(.secondary)
 
                 HStack(spacing: 6) {
-                    // detent：只在整格（0.5 kg／1 次）時更新，轉的途中不會出現 62.3 這種中間值
-                    valueBox(title: "kg", text: weightInt, frac: weightFrac, value: cur.w ?? 0, field: .w)
-                        .digitalCrownRotation(detent: $crownW, from: 0, through: 500, by: 0.5,
-                                              sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
-                    valueBox(title: "次", text: cur.r.map(String.init) ?? "–", frac: nil, value: Double(cur.r ?? 0), field: .r)
-                        .digitalCrownRotation(detent: $crownR, from: 0, through: 100, by: 1,
-                                              sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
+                    Picker(selection: $selW) {
+                        ForEach(SetView.weights, id: \.self) { v in weightRow(v).tag(v) }
+                    } label: { Text("kg") }
+                    Picker(selection: $selR) {
+                        ForEach(SetView.reps, id: \.self) { r in
+                            Text(String(r)).font(.system(size: 24, weight: .heavy, design: .rounded)).monospacedDigit().tag(r)
+                        }
+                    } label: { Text("次") }
+                    .frame(width: 62)
                 }
+                .pickerStyle(.wheel)
+                .frame(height: 78)
 
                 Button {
                     store.completeSet()
@@ -277,74 +289,30 @@ struct SetView: View {
                 }
             }
         }
-        .onAppear {
-            crownW = cur.w ?? 0
-            crownR = Double(cur.r ?? 0)
-            focus = .w
-        }
-        .onChange(of: crownW) { old, new in
-            if skipNext { skipNext = false; return }
-            // 快轉（兩格間隔不到 0.1 秒）直接跳到下一個 2.5 kg；慢轉維持 0.5 kg 微調
-            let now = Date()
-            let fast = now.timeIntervalSince(lastTurn) < 0.1
-            lastTurn = now
-            var v = new
-            if fast && new != old {
-                let up = new > old
-                v = max(0, (up ? (old / 2.5).rounded(.down) + 1 : (old / 2.5).rounded(.up) - 1) * 2.5)
-                if v != new { skipNext = true; crownW = v }
-            }
+        .onChange(of: selW) { _, v in
             let nv: Double? = (item.bw && v == 0) ? nil : v
             if nv != cur.w { store.setWeight(nv) }
         }
-        .onChange(of: crownR) { _, v in
-            if Int(v) != cur.r { store.setReps(Int(v)) }
-        }
-        .onChange(of: si) { _, _ in
-            crownW = cur.w ?? 0
-            crownR = Double(cur.r ?? 0)
+        .onChange(of: selR) { _, v in
+            if v != cur.r { store.setReps(v) }
         }
     }
 
-    // 重量拆成整數和小數：小數那格永遠留位置，53 和 53.5 的「53」停在同一個地方
-    private var weightInt: String {
-        if let w = cur.w, w > 0 { return String(Int(w.rounded(.down))) }
-        return item.bw ? "自體" : "–"
-    }
-    private var weightFrac: String? {
-        guard let w = cur.w, w > 0 else { return nil }
-        let f = w - w.rounded(.down)
-        return f == 0 ? "" : "." + String(Int((f * 10).rounded()))
-    }
-
-    @ViewBuilder
-    // frac：nil＝沒有小數格；""＝有小數格但這次是整數（留白佔位）
-    private func valueBox(title: String, text: String, frac: String?, value: Double, field: Field) -> some View {
-        // 單位固定在右邊、數字靠右：57 變 57.5 時只有數字往左長，「kg」不會跟著跑
-        HStack(alignment: .firstTextBaseline, spacing: 3) {
-            // 數字變化時每一位像計分板一樣滾動，不是硬跳
-            Text(text).font(.system(size: 26, weight: .heavy, design: .rounded)).minimumScaleFactor(0.6).lineLimit(1)
-                .monospacedDigit()
-                .contentTransition(.numericText(value: value))
-                .animation(.snappy(duration: 0.22), value: value)
-                .frame(maxWidth: .infinity, alignment: .trailing)
-            if let frac {
-                Text(frac.isEmpty ? ".5" : frac)
-                    .font(.system(size: 17, weight: .heavy, design: .rounded)).monospacedDigit()
-                    .opacity(frac.isEmpty ? 0 : 1)
-                    .animation(.snappy(duration: 0.18), value: frac)
-                    .padding(.leading, -2)
+    // 每一列：整數靠右、小數固定一格（整數時留白），滾動時數字不會左右晃
+    private func weightRow(_ v: Double) -> some View {
+        let whole = v.rounded(.down)
+        let half = v - whole > 0
+        return HStack(spacing: 0) {
+            if v == 0 && item.bw {
+                Text("自體").font(.system(size: 20, weight: .heavy)).frame(maxWidth: .infinity)
+            } else {
+                Text(String(Int(whole))).frame(maxWidth: .infinity, alignment: .trailing)
+                Text(".5").font(.system(size: 16, weight: .heavy, design: .rounded)).opacity(half ? 1 : 0)
+                Spacer().frame(width: 10)
             }
-            Text(title).font(.caption2).foregroundStyle(.secondary)
-                .lineLimit(1).fixedSize()
         }
-        .padding(.horizontal, 8)
-        .frame(maxWidth: .infinity, minHeight: 44)
-        .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.08)))
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(focus == field ? Color.brandRed : .clear, lineWidth: 2))
-        .focusable(true)
-        .focused($focus, equals: field)
-        .onTapGesture { focus = field }
+        .font(.system(size: 24, weight: .heavy, design: .rounded))
+        .monospacedDigit()
     }
 }
 
