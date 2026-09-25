@@ -150,11 +150,12 @@ struct SetView: View {
                     .font(.caption2).foregroundStyle(.secondary)
 
                 HStack(spacing: 6) {
+                    // detent：只在整格（0.5 kg／1 次）時更新，轉的途中不會出現 62.3 這種中間值
                     valueBox(title: "kg", text: weightText, field: .w)
-                        .digitalCrownRotation($crownW, from: 0, through: 500, by: 0.5,
+                        .digitalCrownRotation(detent: $crownW, from: 0, through: 500, by: 0.5,
                                               sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
                     valueBox(title: "次", text: cur.r.map(String.init) ?? "–", field: .r)
-                        .digitalCrownRotation($crownR, from: 0, through: 100, by: 1,
+                        .digitalCrownRotation(detent: $crownR, from: 0, through: 100, by: 1,
                                               sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
                 }
 
@@ -196,11 +197,11 @@ struct SetView: View {
 
     @ViewBuilder
     private func valueBox(title: String, text: String, field: Field) -> some View {
-        VStack(spacing: 0) {
+        HStack(alignment: .firstTextBaseline, spacing: 3) {
             Text(text).font(.system(size: 26, weight: .heavy, design: .rounded)).minimumScaleFactor(0.6).lineLimit(1)
             Text(title).font(.caption2).foregroundStyle(.secondary)
         }
-        .frame(maxWidth: .infinity, minHeight: 52)
+        .frame(maxWidth: .infinity, minHeight: 44)
         .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.08)))
         .overlay(RoundedRectangle(cornerRadius: 10).stroke(focus == field ? Color.brandRed : .clear, lineWidth: 2))
         .focusable(true)
