@@ -158,10 +158,10 @@ struct SetView: View {
 
                 HStack(spacing: 6) {
                     // detent：只在整格（0.5 kg／1 次）時更新，轉的途中不會出現 62.3 這種中間值
-                    valueBox(title: "kg", text: weightText, field: .w)
+                    valueBox(title: "kg", text: weightText, value: cur.w ?? 0, field: .w)
                         .digitalCrownRotation(detent: $crownW, from: 0, through: 500, by: 0.5,
                                               sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
-                    valueBox(title: "次", text: cur.r.map(String.init) ?? "–", field: .r)
+                    valueBox(title: "次", text: cur.r.map(String.init) ?? "–", value: Double(cur.r ?? 0), field: .r)
                         .digitalCrownRotation(detent: $crownR, from: 0, through: 100, by: 1,
                                               sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
                 }
@@ -214,9 +214,13 @@ struct SetView: View {
     }
 
     @ViewBuilder
-    private func valueBox(title: String, text: String, field: Field) -> some View {
+    private func valueBox(title: String, text: String, value: Double, field: Field) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 3) {
+            // 數字變化時每一位像計分板一樣滾動，不是硬跳
             Text(text).font(.system(size: 26, weight: .heavy, design: .rounded)).minimumScaleFactor(0.6).lineLimit(1)
+                .monospacedDigit()
+                .contentTransition(.numericText(value: value))
+                .animation(.snappy(duration: 0.22), value: value)
             Text(title).font(.caption2).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, minHeight: 44)
