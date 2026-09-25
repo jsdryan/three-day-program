@@ -254,10 +254,10 @@ struct SetView: View {
 
                 HStack(spacing: 6) {
                     // detent：只在整格（0.5 kg／1 次）時更新，轉的途中不會出現 62.3 這種中間值
-                    valueBox(title: "kg", text: weightText, value: cur.w ?? 0, field: .w)
+                    valueBox(title: "kg", text: weightInt, frac: weightFrac, value: cur.w ?? 0, field: .w)
                         .digitalCrownRotation(detent: $crownW, from: 0, through: 500, by: 0.5,
                                               sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
-                    valueBox(title: "次", text: cur.r.map(String.init) ?? "–", value: Double(cur.r ?? 0), field: .r)
+                    valueBox(title: "次", text: cur.r.map(String.init) ?? "–", frac: nil, value: Double(cur.r ?? 0), field: .r)
                         .digitalCrownRotation(detent: $crownR, from: 0, through: 100, by: 1,
                                               sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
                 }
@@ -304,13 +304,20 @@ struct SetView: View {
         }
     }
 
-    private var weightText: String {
-        if let w = cur.w, w > 0 { return fmtW(w) }
+    // 重量拆成整數和小數：小數那格永遠留位置，53 和 53.5 的「53」停在同一個地方
+    private var weightInt: String {
+        if let w = cur.w, w > 0 { return String(Int(w.rounded(.down))) }
         return item.bw ? "自體" : "–"
+    }
+    private var weightFrac: String? {
+        guard let w = cur.w, w > 0 else { return nil }
+        let f = w - w.rounded(.down)
+        return f == 0 ? "" : "." + String(Int((f * 10).rounded()))
     }
 
     @ViewBuilder
-    private func valueBox(title: String, text: String, value: Double, field: Field) -> some View {
+    // frac：nil＝沒有小數格；""＝有小數格但這次是整數（留白佔位）
+    private func valueBox(title: String, text: String, frac: String?, value: Double, field: Field) -> some View {
         // 單位固定在右邊、數字靠右：57 變 57.5 時只有數字往左長，「kg」不會跟著跑
         HStack(alignment: .firstTextBaseline, spacing: 3) {
             // 數字變化時每一位像計分板一樣滾動，不是硬跳
@@ -319,6 +326,13 @@ struct SetView: View {
                 .contentTransition(.numericText(value: value))
                 .animation(.snappy(duration: 0.22), value: value)
                 .frame(maxWidth: .infinity, alignment: .trailing)
+            if let frac {
+                Text(frac.isEmpty ? ".5" : frac)
+                    .font(.system(size: 17, weight: .heavy, design: .rounded)).monospacedDigit()
+                    .opacity(frac.isEmpty ? 0 : 1)
+                    .animation(.snappy(duration: 0.18), value: frac)
+                    .padding(.leading, -2)
+            }
             Text(title).font(.caption2).foregroundStyle(.secondary)
                 .lineLimit(1).fixedSize()
         }
