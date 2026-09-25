@@ -43,9 +43,6 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .brand{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .brand h1{margin:0;font-size:26px;font-weight:800;letter-spacing:-.01em}
 .hbtn{height:36px;padding:0 14px;border-radius:999px;border:0;background:var(--card2);color:var(--ink);font-weight:600;font-size:14px;white-space:nowrap}
-.prog{display:flex;gap:8px;margin-top:14px}
-.prog button{flex:1;height:40px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--muted);font-weight:600;font-size:15px}
-.prog button[aria-checked="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .sub{margin:10px 2px 0;font-size:13px;color:var(--muted)}
 .auth{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px;padding:10px 12px;border-radius:var(--r-s);background:var(--card);font-size:13px;color:var(--muted)}
 .auth .who{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -253,7 +250,7 @@ html{color-scheme:light}
 .super .ex:first-of-type{border-top:0}
 .super .tag{margin-bottom:4px}
 .tab{background:var(--card)}.wrow input{background:#fff}
-.prog button{border-radius:10px}.hbtn,.hbar button,.hbar label,.swapbtn,.alts .close{background:var(--card2);border-radius:10px}
+.hbtn,.hbar button,.hbar label,.swapbtn,.alts .close{background:var(--card2);border-radius:10px}
 .finish{border-radius:12px;box-shadow:none}.timer{border-radius:14px;box-shadow:0 12px 32px rgba(34,29,23,.25)}.alts{background:#fff}
 </style>
 </head>
@@ -261,10 +258,6 @@ html{color-scheme:light}
 <div class="wrap">
   <header class="top">
     <div class="brand"><h1>健身課表</h1><button type="button" class="hbtn" id="hbtn">歷史紀錄</button></div>
-    <div class="prog" role="radiogroup" aria-label="課表" id="seg">
-      <button type="button" role="radio" data-p="full">全身</button>
-      <button type="button" role="radio" data-p="ppl">推拉腿（PPL）</button>
-    </div>
     <p class="sub" id="sub"></p>
     <div class="auth" id="auth" hidden></div>
     <div class="install" id="install" hidden>
@@ -534,9 +527,9 @@ const ALTS={
 
 
 let prog='full';
-try{prog=localStorage.getItem('w3-prog')||'full'}catch(e){}
+// 只有一份課表：沿用這台裝置原本選的那套當底（沒選過就用推拉腿），之後都由使用者自己編輯
+try{prog=localStorage.getItem('w3-prog')||'ppl'}catch(e){}
 if(!PROGRAMS[prog])prog='full';
-const PNAME={full:'全身',ppl:'推拉腿'};
 const NAME_ALIAS={'下胸推或 Dip（雙槓撐體）':'下胸推或雙槓撐體','Cable（滑輪）三頭下壓':'滑輪三頭下壓'};
 function canon(n){return NAME_ALIAS[n]||n}
 // 自體重量的動作：kg 可以不填，紀錄顯示「自體」。課表裡勾過的以勾選為準，沒設定過的看預設名單
@@ -623,7 +616,7 @@ function effective(it,wk){
   return {n:it.n,rm:it.rm,note:'',orig:null,mus:a?a.m:(it.mus||''),bw:isBw(it)};
 }
 
-const seg=document.getElementById('seg'),tabs=document.getElementById('tabs'),daysEl=document.getElementById('days');
+const tabs=document.getElementById('tabs'),daysEl=document.getElementById('days');
 const trainEl=document.getElementById('train'),histEl=document.getElementById('hist'),hbtn=document.getElementById('hbtn');
 const fmsg=document.getElementById('fmsg'),hmsg=document.getElementById('hmsg');
 
@@ -631,26 +624,16 @@ let view='train';
 hbtn.onclick=()=>{view=view==='train'?'hist':'train';renderView()};
 function renderView(){
   trainEl.hidden=view!=='train';histEl.hidden=view!=='hist';
-  seg.hidden=view!=='train';document.getElementById('sub').hidden=view!=='train';
+  document.getElementById('sub').hidden=view!=='train';
   hbtn.textContent=view==='train'?'歷史紀錄'+(history.length?' '+history.length:''):'回課表';
   if(view==='hist')renderHistory();
   window.scrollTo(0,0);
 }
 
-seg.querySelectorAll('button').forEach(b=>{
-  b.onclick=()=>{
-    if(b.dataset.p===prog)return;
-    prog=b.dataset.p;
-    try{localStorage.setItem('w3-prog',prog)}catch(e){}
-    stopTimer();fmsg.textContent='';build();pushPrefs();
-  };
-});
-
 function build(){
   load();
-  seg.querySelectorAll('button').forEach(b=>b.setAttribute('aria-checked',b.dataset.p===prog));
-  document.getElementById('sub').textContent=DAYS.length!==PROGRAMS[prog].days.length?`自訂課表：一週練 ${DAYS.length} 天。`:PROGRAMS[prog].sub;
-  document.getElementById('tip').textContent=PROGRAMS[prog].tip;
+  document.getElementById('sub').textContent=`一週練 ${DAYS.length} 天。要改動作或天數，按「編輯課表」。`;
+  document.getElementById('tip').textContent=custom[prog]?'':PROGRAMS[prog].tip;
   tabs.innerHTML='';daysEl.innerHTML='';
 
   DAYS.forEach((d,di)=>{
@@ -921,7 +904,7 @@ function renderHistory(){
     const el=document.createElement('div');el.className='hrec';
     const editing=hEditId===r.id;
     const rows=(r.items||[]).map(it=>`<div class="hrow"><span>${it.n}${it.orig?`<small style="color:var(--muted)">（代替${it.orig}）</small>`:''}</span><span>${fmtLog(it)}</span></div>`).join('');
-    el.innerHTML=`<button class="hhead" type="button"><div><div class="d num">${fdate(r.t)}</div><div class="w">${PNAME[r.prog]||r.prog}，第 ${r.day+1} 天 ${r.name}</div></div><span class="hc num">${r.done}<small> / ${r.total} 組</small></span></button>`
+    el.innerHTML=`<button class="hhead" type="button"><div><div class="d num">${fdate(r.t)}</div><div class="w">第 ${r.day+1} 天 ${r.name}</div></div><span class="hc num">${r.done}<small> / ${r.total} 組</small></span></button>`
       +`<div class="hbody" ${hOpen.has(r.id)?'':'hidden'}>${editing?'<div class="hedit"></div>':rows}<label class="hdate">改日期<input type="date" value="${dateStrOf(r.t)}" max="${todayStr()}"></label>`
       +(editing
         ?`<div class="msg herr"></div><div class="hacts"><button class="hedbtn cancel" type="button">取消</button><button class="hedbtn save" type="button">儲存修改</button></div>`
@@ -1094,6 +1077,8 @@ function allPrefs(){
 }
 function applyPrefs(remote){
   if(!remote)return;
+  // 課表只剩一份，所有裝置跟雲端用同一套
+  if(remote.prog&&PROGRAMS[remote.prog]&&remote.prog!==prog){prog=remote.prog;try{localStorage.setItem('w3-prog',prog)}catch(e){}}
   for(const p in PROGRAMS){
     const k=PROGRAMS[p].key;const r=remote[p]||{};
     let lg={},sw={};
