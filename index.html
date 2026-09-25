@@ -1356,7 +1356,7 @@ function renderHistory(){
     const el=document.createElement('div');el.className='hrec';
     const editing=hEditId===r.id;
     const rows=(r.items||[]).map(it=>`<div class="hrow"><span>${it.n}${it.orig?`<small style="color:var(--muted)">（代替${it.orig}）</small>`:''}</span><span>${fmtLog(it)}</span></div>`).join('');
-    el.innerHTML=`<button class="hhead" type="button"><div><div class="d num">${fdate(r.t)}</div><div class="w">${profiles.list.length>1&&(pname(r.prog)||r.pname)?(pname(r.prog)||r.pname)+' · ':''}${dayLabel(r)}</div></div><span class="hc num">${r.done}<small> / ${r.total} 組</small></span></button>`
+    el.innerHTML=`<button class="hhead" type="button"><div><div class="d num">${fdate(r.t)}</div><div class="w">${profiles.list.length>1&&(pname(r.prog)||r.pname)?(pname(r.prog)||r.pname)+' · ':''}${dayLabel(r)}${r.dur?` · 練了 ${Math.round(r.dur/60)} 分鐘`:''}${r.src==='watch'?' · 手錶':''}</div></div><span class="hc num">${r.done}<small> / ${r.total} 組</small></span></button>`
       +`<div class="hbody" ${hOpen.has(r.id)?'':'hidden'}>${editing?'<div class="hedit"></div>':rows}<label class="hdate">改日期<input type="date" value="${dateStrOf(r.t)}" max="${todayStr()}"></label>`
       +(editing
         ?`<div class="msg herr"></div><div class="hacts"><button class="hedbtn cancel" type="button">取消</button><button class="hedbtn save" type="button">儲存修改</button></div>`

@@ -250,7 +250,8 @@ final class Store: ObservableObject {
         fmt.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         var rec: [String: Any] = ["id": Int(Date().timeIntervalSince1970 * 1000), "t": fmt.string(from: Date()),
                                   "prog": w.prog, "day": w.day, "did": w.did, "name": w.dayName,
-                                  "done": done, "total": w.totalSets, "items": items, "src": "watch"]
+                                  "done": done, "total": w.totalSets, "items": items, "src": "watch",
+                                  "dur": Int(Date().timeIntervalSince(w.started))]
         if let p = w.pname { rec["pname"] = p }
         let data = (try? JSONSerialization.data(withJSONObject: rec)) ?? Data()
         workout = nil

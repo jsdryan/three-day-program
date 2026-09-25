@@ -146,6 +146,7 @@ struct SetView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 6) {
+                ElapsedLine()
                 if let mc = item.mc {
                     Text(mc).font(.caption2.weight(.semibold)).foregroundStyle(Color.brandRed).lineLimit(1)
                 }
@@ -227,6 +228,7 @@ struct RestView: View {
             let left = max(0, Int(ceil((store.restEnd ?? ctx.date).timeIntervalSince(ctx.date))))
             VStack(spacing: 6) {
                 Text("組間休息").font(.caption2).foregroundStyle(.white.opacity(0.8))
+                ElapsedLine(onRed: true)
                 Text(String(format: "%d:%02d", left / 60, left % 60))
                     .font(.system(size: 48, weight: .heavy, design: .rounded)).monospacedDigit()
                 if let w = store.workout {
@@ -252,6 +254,24 @@ struct RestView: View {
                 .background(Capsule().fill(.white))
         }
         .buttonStyle(.plain)
+    }
+}
+
+// 訓練累積時間（從按「開始訓練」起算）＋完成組數
+struct ElapsedLine: View {
+    @EnvironmentObject var store: Store
+    var onRed = false
+
+    var body: some View {
+        if let w = store.workout {
+            HStack(spacing: 4) {
+                Image(systemName: "stopwatch")
+                Text(w.started, style: .timer).monospacedDigit()
+                Text("· \(w.doneSets)/\(w.totalSets) 組")
+            }
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(onRed ? Color.white.opacity(0.85) : Color.secondary)
+        }
     }
 }
 
