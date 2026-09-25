@@ -203,7 +203,7 @@ struct WorkoutView: View {
                         FinishView()
                     } else {
                         SetView(item: w.items[w.current], index: w.current)
-                            .id("\(w.current)-\(w.items[w.current].nextSet ?? -1)")
+                            .id(w.current)
                     }
                 }
             }
@@ -233,71 +233,62 @@ struct SetView: View {
 
     enum Field { case w, r }
     @FocusState private var focus: Field?
-    // 錶冠用 detent（一格一格）讀值，不會像原生滾輪那樣自己停錯格改掉重量
-    @State private var crownW: Double
-    @State private var crownR: Double
+    @State private var crownW = 0.0
+    @State private var crownR = 0.0
     @State private var lastTurn = Date.distantPast
     @State private var skipNext = false
-
-    init(item: WItem, index: Int) {
-        self.item = item
-        self.index = index
-        let s = item.sets[item.nextSet ?? max(0, item.sets.count - 1)]
-        // 重量 0–200 kg、次數 0–30 下就夠用
-        _crownW = State(initialValue: min(200, ((s.w ?? 0) * 2).rounded() / 2))
-        _crownR = State(initialValue: Double(min(30, max(0, s.r ?? 0))))
-    }
+    // 畫面剛打開時錶冠會自己送出幾下轉動（實測把 62.5 改成 65），0.8 秒內一律忽略
+    @State private var ready = false
 
     private var si: Int { item.nextSet ?? max(0, item.sets.count - 1) }
     private var cur: WSet { item.sets[si] }
-    // 這一組上次的數字，例如「上次 62.5×9」
-    private var lastThisSet: String? {
-        guard !item.last.isEmpty else { return nil }
-        let l = item.last[min(si, item.last.count - 1)]
-        return "上次 \(l.w.map(fmtW) ?? "自體")×\(l.r.map(String.init) ?? "–")"
-    }
 
     var body: some View {
-        // 不能包在 ScrollView 裡：錶冠會被拿去捲畫面
-        VStack(spacing: 4) {
-            ElapsedLine()
-            if let mc = item.mc {
-                Text(mc).font(.caption2.weight(.semibold)).foregroundStyle(Color.brandRed).lineLimit(1)
-            }
-            Text(item.n).font(.headline).multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.7)
-            Text("第 \(si + 1)/\(item.sets.count) 組 · \(lastThisSet ?? item.rm + " RM")")
-                .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
-
-            HStack(spacing: 6) {
-                wheelBox(field: .w, unit: "kg") {
-                    Wheel(value: crownW, step: 0.5) { v in weightRow(v) }
+        ScrollView {
+            VStack(spacing: 6) {
+                ElapsedLine()
+                if let mc = item.mc {
+                    Text(mc).font(.caption2.weight(.semibold)).foregroundStyle(Color.brandRed).lineLimit(1)
                 }
-                .digitalCrownRotation(detent: $crownW, from: 0, through: 200, by: 0.5,
-                                      sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
-                wheelBox(field: .r, unit: "次") {
-                    Wheel(value: crownR, step: 1) { v in
-                        Text(String(Int(v))).frame(maxWidth: .infinity)
-                    }
-                }
-                .digitalCrownRotation(detent: $crownR, from: 0, through: 30, by: 1,
-                                      sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
-                .frame(width: 80)
-            }
+                Text(item.n).font(.headline).multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.7)
+                Text("第 \(si + 1)/\(item.sets.count) 組 · \(item.rm) RM\(item.groupSize > 1 ? " · 超級組" : "")")
+                    .font(.caption2).foregroundStyle(.secondary)
 
-            Button {
-                store.completeSet()
-            } label: {
-                Label("完成", systemImage: "checkmark").font(.headline).frame(maxWidth: .infinity)
+                HStack(spacing: 6) {
+                    // detent：只在整格（0.5 kg／1 次）時更新，轉的途中不會出現 62.3 這種中間值
+                    valueBox(title: "kg", text: weightInt, frac: weightFrac, value: cur.w ?? 0, field: .w)
+                        .digitalCrownRotation(detent: $crownW, from: 0, through: 100, by: 0.5,
+                                              sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
+                    valueBox(title: "次", text: cur.r.map(String.init) ?? "–", frac: nil, value: Double(cur.r ?? 0), field: .r)
+                        .digitalCrownRotation(detent: $crownR, from: 0, through: 30, by: 1,
+                                              sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
+                }
+
+                Button {
+                    store.completeSet()
+                } label: {
+                    Label("完成", systemImage: "checkmark").font(.headline).frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                // 雙指互點＝完成這一組；休息中／休息結束畫面時停用，避免誤按或跟「開始下一組」搶
+                .handGestureShortcut(.primaryAction, isEnabled: store.restEnd == nil && !store.alarming)
+
+                if !item.last.isEmpty {
+                    Text("上次 " + item.last.map { "\($0.w.map(fmtW) ?? "自體")×\($0.r.map(String.init) ?? "–")" }.joined(separator: "、"))
+                        .font(.caption2).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                }
             }
-            .buttonStyle(.borderedProminent)
-            // 雙指互點＝完成這一組；休息中／休息結束畫面時停用，避免誤按或跟「開始下一組」搶
-            .handGestureShortcut(.primaryAction, isEnabled: store.restEnd == nil && !store.alarming)
         }
         .onAppear {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { focus = .w }
+            // 重量 0–100 kg、次數 0–30
+            crownW = min(100, cur.w ?? 0)
+            crownR = Double(min(30, cur.r ?? 0))
+            focus = .w
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { resync() }
         }
         .onChange(of: crownW) { old, new in
             if skipNext { skipNext = false; return }
+            guard ready else { return }
             // 快轉（兩格間隔不到 0.1 秒）直接跳到下一個 2.5 kg；慢轉維持 0.5 kg 微調
             let now = Date()
             let fast = now.timeIntervalSince(lastTurn) < 0.1
@@ -305,74 +296,75 @@ struct SetView: View {
             var v = new
             if fast && new != old {
                 let up = new > old
-                v = min(200, max(0, (up ? (old / 2.5).rounded(.down) + 1 : (old / 2.5).rounded(.up) - 1) * 2.5))
+                v = min(100, max(0, (up ? (old / 2.5).rounded(.down) + 1 : (old / 2.5).rounded(.up) - 1) * 2.5))
                 if v != new { skipNext = true; crownW = v }
             }
             let nv: Double? = (item.bw && v == 0) ? nil : v
             if nv != cur.w { store.setWeight(nv) }
         }
         .onChange(of: crownR) { _, v in
+            guard ready else { return }
             if Int(v) != cur.r { store.setReps(Int(v)) }
+        }
+        .onChange(of: si) { _, _ in
+            ready = false
+            skipNext = true
+            crownW = min(100, cur.w ?? 0)
+            crownR = Double(min(30, cur.r ?? 0))
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { resync() }
         }
     }
 
-    // 跟設定鬧鐘一樣：上面小標題，下面一個框只放一個大數字；選中的框變粗亮框
-    private func wheelBox<C: View>(field: Field, unit: String, @ViewBuilder content: () -> C) -> some View {
-        VStack(spacing: 2) {
-            Text(unit).font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
-            content()
-                .frame(maxWidth: .infinity)
-                .frame(height: 50)
-                .overlay(RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(focus == field ? Color.brandRed : Color.white.opacity(0.55),
-                                  lineWidth: focus == field ? 3 : 1.5))
+    // 0.8 秒後把錶冠的值對回「現在這筆訓練」裡真正的數字（從 store 即時讀，不用畫面剛開時記下的舊值）
+    private func resync() {
+        guard let w = store.workout, w.items.indices.contains(w.current) else { ready = true; return }
+        let it = w.items[w.current]
+        let s = it.sets[it.nextSet ?? max(0, it.sets.count - 1)]
+        let w0 = min(100, s.w ?? 0), r0 = Double(min(30, s.r ?? 0))
+        if crownW != w0 { skipNext = true; crownW = w0 }
+        if crownR != r0 { crownR = r0 }
+        DispatchQueue.main.async { ready = true }
+    }
+
+    // 重量拆成整數和小數：小數那格永遠留位置，53 和 53.5 的「53」停在同一個地方
+    private var weightInt: String {
+        if let w = cur.w, w > 0 { return String(Int(w.rounded(.down))) }
+        return item.bw ? "自體" : "–"
+    }
+    private var weightFrac: String? {
+        guard let w = cur.w, w > 0 else { return nil }
+        let f = w - w.rounded(.down)
+        return f == 0 ? "" : "." + String(Int((f * 10).rounded()))
+    }
+
+    @ViewBuilder
+    // frac：nil＝沒有小數格；""＝有小數格但這次是整數（留白佔位）
+    private func valueBox(title: String, text: String, frac: String?, value: Double, field: Field) -> some View {
+        // 單位固定在右邊、數字靠右：57 變 57.5 時只有數字往左長，「kg」不會跟著跑
+        HStack(alignment: .firstTextBaseline, spacing: 3) {
+            // 數字變化時每一位像計分板一樣滾動，不是硬跳
+            Text(text).font(.system(size: 26, weight: .heavy, design: .rounded)).minimumScaleFactor(0.6).lineLimit(1)
+                .monospacedDigit()
+                .contentTransition(.numericText(value: value))
+                .animation(.snappy(duration: 0.22), value: value)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+            if let frac {
+                Text(frac.isEmpty ? ".5" : frac)
+                    .font(.system(size: 17, weight: .heavy, design: .rounded)).monospacedDigit()
+                    .opacity(frac.isEmpty ? 0 : 1)
+                    .animation(.snappy(duration: 0.18), value: frac)
+                    .padding(.leading, -2)
+            }
+            Text(title).font(.caption2).foregroundStyle(.secondary)
+                .lineLimit(1).fixedSize()
         }
+        .padding(.horizontal, 8)
+        .frame(maxWidth: .infinity, minHeight: 44)
+        .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.08)))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(focus == field ? Color.brandRed : .clear, lineWidth: 2))
         .focusable(true)
         .focused($focus, equals: field)
         .onTapGesture { focus = field }
-    }
-
-    // 整數靠右、小數固定一格（整數時留白），滑動時數字不會左右晃
-    private func weightRow(_ v: Double) -> some View {
-        let whole = v.rounded(.down)
-        let half = v - whole > 0
-        return HStack(spacing: 0) {
-            if v == 0 && item.bw {
-                Text("自體")
-            } else {
-                // 整數和「.5」格子寬度固定，整組置中，數字不會左右晃
-                Text(String(Int(whole))).frame(width: 58, alignment: .trailing)
-                Text(".5").font(.system(size: 18, weight: .heavy, design: .rounded)).opacity(half ? 1 : 0)
-                    .frame(width: 22, alignment: .leading)
-            }
-        }
-        .frame(maxWidth: .infinity)
-    }
-}
-
-// 只顯示目前的值；值一變，舊的往上／下滑出、新的滑進來（上下不露出其他數字）
-struct Wheel<Row: View>: View {
-    let value: Double
-    let step: Double
-    @ViewBuilder let row: (Double) -> Row
-    private let rowH: CGFloat = 30
-
-    var body: some View {
-        let vals = (-1...1).map { value + Double($0) * step }.filter { $0 >= 0 }
-        ZStack {
-            ForEach(vals, id: \.self) { v in
-                let d = CGFloat((v - value) / step)
-                row(v)
-                    .font(.system(size: 30, weight: .semibold, design: .rounded))
-                    .monospacedDigit()
-                    .opacity(d == 0 ? 1 : 0)
-                    .offset(y: d * rowH)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: 50)
-        .clipped()
-        .animation(.snappy(duration: 0.2), value: value)
     }
 }
 
