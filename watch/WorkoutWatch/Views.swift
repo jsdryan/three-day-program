@@ -268,6 +268,8 @@ struct SetView: View {
                     Label("完成", systemImage: "checkmark").font(.headline).frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
+                // 雙指互點＝完成這一組；休息中／休息結束畫面時停用，避免誤按或跟「開始下一組」搶
+                .handGestureShortcut(.primaryAction, isEnabled: store.restEnd == nil && !store.alarming)
 
                 if !item.last.isEmpty {
                     Text("上次 " + item.last.map { "\($0.w.map(fmtW) ?? "自體")×\($0.r.map(String.init) ?? "–")" }.joined(separator: "、"))
