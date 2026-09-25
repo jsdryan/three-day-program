@@ -89,7 +89,7 @@ struct DaysView: View {
                     Button(role: .destructive) { store.logout() } label: { Text("登出") }
                 }
             }
-            .navigationTitle("今天練哪天")
+            .navigationTitle("開始訓練")
         }
         .task { await store.refresh() }
     }
