@@ -215,14 +215,18 @@ struct SetView: View {
 
     @ViewBuilder
     private func valueBox(title: String, text: String, value: Double, field: Field) -> some View {
+        // 單位固定在右邊、數字靠右：57 變 57.5 時只有數字往左長，「kg」不會跟著跑
         HStack(alignment: .firstTextBaseline, spacing: 3) {
             // 數字變化時每一位像計分板一樣滾動，不是硬跳
             Text(text).font(.system(size: 26, weight: .heavy, design: .rounded)).minimumScaleFactor(0.6).lineLimit(1)
                 .monospacedDigit()
                 .contentTransition(.numericText(value: value))
                 .animation(.snappy(duration: 0.22), value: value)
+                .frame(maxWidth: .infinity, alignment: .trailing)
             Text(title).font(.caption2).foregroundStyle(.secondary)
+                .lineLimit(1).fixedSize()
         }
+        .padding(.horizontal, 8)
         .frame(maxWidth: .infinity, minHeight: 44)
         .background(RoundedRectangle(cornerRadius: 10).fill(Color.white.opacity(0.08)))
         .overlay(RoundedRectangle(cornerRadius: 10).stroke(focus == field ? Color.brandRed : .clear, lineWidth: 2))
