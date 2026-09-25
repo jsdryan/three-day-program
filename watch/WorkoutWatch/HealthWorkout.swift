@@ -8,7 +8,7 @@ final class HealthWorkout: NSObject, HKWorkoutSessionDelegate, HKLiveWorkoutBuil
     private var session: HKWorkoutSession?
     private var builder: HKLiveWorkoutBuilder?
 
-    var isRunning: Bool { session?.state == .running }
+    var isRunning: Bool { session != nil }
 
     func requestAuthorization() async -> Bool {
         guard HKHealthStore.isHealthDataAvailable() else { return false }
@@ -40,6 +40,28 @@ final class HealthWorkout: NSObject, HKWorkoutSessionDelegate, HKLiveWorkoutBuil
         }
     }
 
+    // App 被系統關掉後重開：先把還在進行的那筆體能訓練接回來，沒有才開新的（避免被切成兩筆）
+    func resumeOrStart(allowNew: Bool = true) async {
+        if session != nil { return }
+        if let s = try? await recover() {
+            let b = s.associatedWorkoutBuilder()
+            s.delegate = self
+            b.delegate = self
+            session = s
+            builder = b
+            return
+        }
+        if allowNew { await start() }
+    }
+
+    private func recover() async throws -> HKWorkoutSession? {
+        try await withCheckedThrowingContinuation { c in
+            store.recoverActiveWorkoutSession { s, e in
+                if let e { c.resume(throwing: e) } else { c.resume(returning: s) }
+            }
+        }
+    }
+
     // save：練完存檔就存進「體能訓練」；放棄就丟掉
     func end(save: Bool) async {
         guard let s = session, let b = builder else { return }
@@ -53,7 +75,9 @@ final class HealthWorkout: NSObject, HKWorkoutSessionDelegate, HKLiveWorkoutBuil
     }
 
     func workoutSession(_ workoutSession: HKWorkoutSession, didChangeTo toState: HKWorkoutSessionState,
-                        from fromState: HKWorkoutSessionState, date: Date) {}
+                        from fromState: HKWorkoutSessionState, date: Date) {
+        if toState == .ended && workoutSession === session { session = nil; builder = nil }
+    }
     func workoutSession(_ workoutSession: HKWorkoutSession, didFailWithError error: Error) {}
     func workoutBuilder(_ workoutBuilder: HKLiveWorkoutBuilder, didCollectDataOf collectedTypes: Set<HKSampleType>) {}
     func workoutBuilderDidCollectEvent(_ workoutBuilder: HKLiveWorkoutBuilder) {}

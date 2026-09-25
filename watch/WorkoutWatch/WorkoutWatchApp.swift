@@ -4,6 +4,7 @@ import WatchKit
 
 @main
 struct WorkoutWatchApp: App {
+    @WKApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var store = Store()
     private let notiDelegate = NotiDelegate()
 
@@ -17,6 +18,13 @@ struct WorkoutWatchApp: App {
                 .environmentObject(store)
                 .tint(.brandRed)
         }
+    }
+}
+
+// 訓練中 App 被系統關掉時，watchOS 會重新叫醒 App 來接回體能訓練
+final class AppDelegate: NSObject, WKApplicationDelegate {
+    func handleActiveWorkoutRecovery() {
+        Task { await HealthWorkout.shared.resumeOrStart(allowNew: false) }
     }
 }
 

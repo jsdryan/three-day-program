@@ -139,6 +139,8 @@ struct SetView: View {
     @FocusState private var focus: Field?
     @State private var crownW = 0.0
     @State private var crownR = 0.0
+    @State private var lastTurn = Date.distantPast
+    @State private var skipNext = false
 
     private var si: Int { item.nextSet ?? max(0, item.sets.count - 1) }
     private var cur: WSet { item.sets[si] }
@@ -182,7 +184,18 @@ struct SetView: View {
             crownR = Double(cur.r ?? 0)
             focus = .w
         }
-        .onChange(of: crownW) { _, v in
+        .onChange(of: crownW) { old, new in
+            if skipNext { skipNext = false; return }
+            // 快轉（兩格間隔不到 0.1 秒）直接跳到下一個 2.5 kg；慢轉維持 0.5 kg 微調
+            let now = Date()
+            let fast = now.timeIntervalSince(lastTurn) < 0.1
+            lastTurn = now
+            var v = new
+            if fast && new != old {
+                let up = new > old
+                v = max(0, (up ? (old / 2.5).rounded(.down) + 1 : (old / 2.5).rounded(.up) - 1) * 2.5)
+                if v != new { skipNext = true; crownW = v }
+            }
             let nv: Double? = (item.bw && v == 0) ? nil : v
             if nv != cur.w { store.setWeight(nv) }
         }

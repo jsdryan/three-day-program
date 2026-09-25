@@ -86,7 +86,7 @@ final class Store: ObservableObject {
 
     // App 被系統關掉後重開、訓練還在：把體能訓練接回來，暗屏震動才有效
     func resumeHealthIfNeeded() {
-        if workout != nil && !HealthWorkout.shared.isRunning { Task { await HealthWorkout.shared.start() } }
+        if workout != nil && !HealthWorkout.shared.isRunning { Task { await HealthWorkout.shared.resumeOrStart() } }
     }
 
     func jump(to i: Int) { workout?.current = i }
