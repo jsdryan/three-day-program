@@ -1795,7 +1795,9 @@ async function signOut(){await sb.auth.signOut();user=null;renderAuth()}
 // 兩套課表的重量與替代動作，打包成一份 prefs
 // 給 Apple Watch 讀的課表：已經套好替代動作、器材、上次紀錄，手錶不用重寫網頁的邏輯
 function watchSnap(){
-  return {v:1,prog,pname:pname(prog),updated:Date.now(),days:DAYS.map(d=>({did:d.did,name:d.name,ex:d.ex.map(e=>({
+  // 每一天上次練的時間：手錶的「下一次訓練」小工具靠它決定下一天
+  const lastT=did=>history.filter(r=>r.prog===prog&&(r.did||'d'+r.day)===did).reduce((m,r)=>r.t>m?r.t:m,'')||null;
+  return {v:1,prog,pname:pname(prog),updated:Date.now(),days:DAYS.map(d=>({did:d.did,name:d.name,lastT:lastT(d.did),ex:d.ex.map(e=>({
     sup:!!e.sup,rest:e.rest||90,note:e.note||'',
     items:(e.sup||[e]).map(it=>{
       const ef=effective(it,it.id),last=lastOf(ef.n);

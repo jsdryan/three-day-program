@@ -35,6 +35,7 @@ targets:
       properties:
         com.apple.developer.healthkit: true
         com.apple.developer.healthkit.access: []
+        com.apple.security.application-groups: [group.com.jsdryan.gymplan]
     dependencies:
       - target: StepsWidget
   StepsWidget:
@@ -58,3 +59,4 @@ targets:
       properties:
         com.apple.developer.healthkit: true
         com.apple.developer.healthkit.access: []
+        com.apple.security.application-groups: [group.com.jsdryan.gymplan]
