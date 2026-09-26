@@ -19,11 +19,13 @@ final class HealthWorkout: NSObject, HKWorkoutSessionDelegate, HKLiveWorkoutBuil
 
     // 步數一有新資料就叫錶面小工具重畫，不只靠 Apple 每 15 分鐘排一次
     private var stepObserver: HKObserverQuery?
+    var onStepsChange: (() -> Void)?
     func watchSteps(onChange: @escaping () -> Void) {
         guard stepObserver == nil else { return }
         let type = HKQuantityType(.stepCount)
-        let q = HKObserverQuery(sampleType: type, predicate: nil) { _, done, _ in
+        let q = HKObserverQuery(sampleType: type, predicate: nil) { [weak self] _, done, _ in
             onChange()
+            self?.onStepsChange?()
             done()
         }
         stepObserver = q

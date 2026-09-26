@@ -19,6 +19,8 @@ struct RootView: View {
             store.resumeHealthIfNeeded()
             store.publishNext()
             HealthWorkout.shared.watchSteps { DispatchQueue.main.async { WidgetCenter.shared.reloadTimelines(ofKind: "StepsWidget") } }
+            // 畫面開著時也跟著步數更新
+            HealthWorkout.shared.onStepsChange = { Task { @MainActor in await store.loadSteps() } }
         }
         #if DEBUG
         .onAppear { if UserDefaults.standard.bool(forKey: "reset") { store.discard() } }
@@ -40,6 +42,7 @@ struct RootView: View {
             if p == .active, let e = store.restEnd, e <= Date() { store.restFinished() }
             // 螢幕亮起來、已經在「休息結束」畫面：改由 App 自己震，收掉剩下的通知
             if p == .active && store.alarming { store.clearRestNotifications() }
+            if p == .active { Task { await store.loadSteps() } }
         }
     }
 }
