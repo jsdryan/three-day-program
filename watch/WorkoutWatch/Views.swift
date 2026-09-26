@@ -17,8 +17,6 @@ struct RootView: View {
         }
         .task {
             store.resumeHealthIfNeeded()
-            // 錶面「今天步數」小工具要靠主程式先拿到讀步數的權限
-            _ = await HealthWorkout.shared.requestAuthorization()
             WidgetCenter.shared.reloadAllTimelines()
         }
         #if DEBUG
@@ -114,6 +112,11 @@ struct DaysView: View {
     }
 }
 
+@MainActor final class Once {
+    private var done = false
+    func fire() -> Bool { if done { return false }; done = true; return true }
+}
+
 // 今天步數；讀不到（多半是沒給權限）就給一顆按鈕，親手點才會跳出權限視窗
 struct StepsRow: View {
     @State private var steps: Int?
@@ -124,7 +127,9 @@ struct StepsRow: View {
             if let steps {
                 Label("今天 \(steps.formatted(.number)) 步", systemImage: "figure.walk")
                     .font(.footnote.weight(.semibold))
-            } else if loaded {
+            } else if !loaded {
+                Label("讀取步數中…", systemImage: "figure.walk").font(.footnote).foregroundStyle(.secondary)
+            } else {
                 Button {
                     Task {
                         _ = await HealthWorkout.shared.requestAuthorization()
@@ -138,8 +143,15 @@ struct StepsRow: View {
         .task { await load() }
     }
 
+    // 最多等 3 秒；讀不到（沒權限或卡住）就改顯示「允許讀取步數」按鈕
     private func load() async {
-        steps = await HealthWorkout.shared.todaySteps()
+        loaded = false
+        // 兩邊誰先回來就用誰：讀步數卡住也不會一直等（TaskGroup 會等卡住的那個，所以不用）
+        let once = Once()
+        steps = await withCheckedContinuation { (c: CheckedContinuation<Int?, Never>) in
+            Task { let v = await HealthWorkout.shared.todaySteps(); await MainActor.run { if once.fire() { c.resume(returning: v) } } }
+            Task { try? await Task.sleep(nanoseconds: 3_000_000_000); await MainActor.run { if once.fire() { c.resume(returning: nil) } } }
+        }
         loaded = true
         if steps != nil { WidgetCenter.shared.reloadAllTimelines() }
     }
