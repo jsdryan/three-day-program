@@ -17,6 +17,19 @@ final class HealthWorkout: NSObject, HKWorkoutSessionDelegate, HKLiveWorkoutBuil
         do { try await store.requestAuthorization(toShare: share, read: read); return true } catch { return false }
     }
 
+    // 今天的步數；沒權限或沒資料時回傳 nil
+    func todaySteps() async -> Int? {
+        let start = Calendar.current.startOfDay(for: .now)
+        let pred = HKQuery.predicateForSamples(withStart: start, end: .now)
+        return await withCheckedContinuation { c in
+            let q = HKStatisticsQuery(quantityType: HKQuantityType(.stepCount), quantitySamplePredicate: pred,
+                                      options: .cumulativeSum) { _, r, _ in
+                c.resume(returning: r?.sumQuantity().map { Int($0.doubleValue(for: .count())) })
+            }
+            store.execute(q)
+        }
+    }
+
     func start() async {
         if isRunning { return }
         guard await requestAuthorization() else { return }

@@ -82,6 +82,7 @@ struct DaysView: View {
     var body: some View {
         NavigationStack(path: $path) {
             List {
+                StepsRow()
                 if let m = store.message {
                     Text(m).font(.caption2).foregroundStyle(.secondary)
                 }
@@ -110,6 +111,37 @@ struct DaysView: View {
             .navigationDestination(for: Int.self) { DayPreview(day: $0) }
         }
         .task { await store.refresh() }
+    }
+}
+
+// 今天步數；讀不到（多半是沒給權限）就給一顆按鈕，親手點才會跳出權限視窗
+struct StepsRow: View {
+    @State private var steps: Int?
+    @State private var loaded = false
+
+    var body: some View {
+        Group {
+            if let steps {
+                Label("今天 \(steps.formatted(.number)) 步", systemImage: "figure.walk")
+                    .font(.footnote.weight(.semibold))
+            } else if loaded {
+                Button {
+                    Task {
+                        _ = await HealthWorkout.shared.requestAuthorization()
+                        await load()
+                    }
+                } label: {
+                    Label("允許讀取步數", systemImage: "figure.walk").font(.footnote.weight(.semibold))
+                }
+            }
+        }
+        .task { await load() }
+    }
+
+    private func load() async {
+        steps = await HealthWorkout.shared.todaySteps()
+        loaded = true
+        if steps != nil { WidgetCenter.shared.reloadAllTimelines() }
     }
 }
 
