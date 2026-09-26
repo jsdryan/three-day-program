@@ -8,7 +8,7 @@ import WidgetKit
 @MainActor
 final class Store: ObservableObject {
     @Published var auth: AuthSession? { didSet { save(auth, "auth") } }
-    @Published var snapshot: Snapshot? { didSet { save(snapshot, "snapshot") } }
+    @Published var snapshot: Snapshot? { didSet { save(snapshot, "snapshot"); publishNext() } }
     @Published var workout: Workout? { didSet { save(workout, "workout") } }
     @Published var restEnd: Date? { didSet { save(restEnd, "restEnd") } }
     @Published var alarming = false   // 休息結束、還沒按「開始下一組」
@@ -21,6 +21,8 @@ final class Store: ObservableObject {
 
     // 手錶自己練過的上次紀錄（網頁快照還沒更新前先用這個）
     private var localLast: [String: [SSet]] { didSet { save(localLast, "localLast") } }
+    // 手錶自己練完的時間（網頁快照還沒更新前，「下一次訓練」先用這個）
+    private var localDone: [String: Date] { didSet { save(localDone, "localDone") } }
     // 沒網路時存不上去的紀錄，下次連線再補傳
     private var pending: [Data] { didSet { save(pending, "pending") } }
 
@@ -31,6 +33,42 @@ final class Store: ObservableObject {
         restEnd = Store.load("restEnd")
         localLast = Store.load("localLast") ?? [:]
         pending = Store.load("pending") ?? []
+        localDone = Store.load("localDone") ?? [:]
+    }
+
+    // ---- 「下一次訓練」小工具：最近練的那一天的下一天（沒練過就第 1 天）----
+    private static func parseISO(_ s: String?) -> Date? {
+        guard let s else { return nil }
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let d = f.date(from: s) { return d }
+        f.formatOptions = [.withInternetDateTime]
+        return f.date(from: s)
+    }
+
+    func lastDone(_ d: SDay) -> Date? {
+        let a = Store.parseISO(d.lastT), b = localDone[(snapshot?.prog ?? "") + "|" + d.did]
+        switch (a, b) { case let (x?, y?): return max(x, y); case let (x?, nil): return x; default: return b }
+    }
+
+    var nextDay: Int? {
+        guard let s = snapshot, !s.days.isEmpty else { return nil }
+        let dated = s.days.enumerated().compactMap { i, d in lastDone(d).map { (i, $0) } }
+        guard let latest = dated.max(by: { $0.1 < $1.1 }) else { return 0 }
+        return (latest.0 + 1) % s.days.count
+    }
+
+    func publishNext() {
+        guard let g = UserDefaults(suiteName: "group.com.jsdryan.gymplan") else { return }
+        if let s = snapshot, let i = nextDay {
+            let d = s.days[i]
+            g.set(["day": i, "name": d.name, "pname": s.pname ?? "",
+                   "count": d.ex.reduce(0) { $0 + $1.items.count },
+                   "last": lastDone(d)?.timeIntervalSince1970 ?? 0] as [String: Any], forKey: "next")
+        } else {
+            g.removeObject(forKey: "next")
+        }
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     // ---- 存取 ----
@@ -268,6 +306,8 @@ final class Store: ObservableObject {
                                   "done": done, "total": w.totalSets, "items": items, "src": "watch",
                                   "dur": Int(Date().timeIntervalSince(w.started))]
         if let p = w.pname { rec["pname"] = p }
+        localDone[w.prog + "|" + w.did] = Date()
+        publishNext()
         let data = (try? JSONSerialization.data(withJSONObject: rec)) ?? Data()
         workout = nil
         await HealthWorkout.shared.end(save: saveHealth)

@@ -89,6 +89,13 @@ struct StepsView: View {
 }
 
 @main
+struct GymWidgets: WidgetBundle {
+    var body: some Widget {
+        StepsWidget()
+        NextWorkoutWidget()
+    }
+}
+
 struct StepsWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "StepsWidget", provider: StepsProvider()) { entry in

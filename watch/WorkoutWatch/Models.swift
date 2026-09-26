@@ -11,6 +11,7 @@ struct Snapshot: Codable {
 struct SDay: Codable, Identifiable, Hashable {
     var did: String
     var name: String
+    var lastT: String?      // 這一天上次練的時間（網頁版算好）
     var ex: [SGroup]
     var id: String { did }
 }

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		14CD20409170E334F1FF0949 /* NextWorkoutWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 479022AF1D3F9BB9CDB497E2 /* NextWorkoutWidget.swift */; };
 		3E7BD197F7AD83ADDDA0AA8C /* HealthWorkout.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DCDBD8A0E68EF6A0732D7A /* HealthWorkout.swift */; };
 		50D63530C869FDF727A6F63A /* Supa.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97293078C6FDC1FF156351DC /* Supa.swift */; };
 		597FAC9954AEAE28096D1A11 /* WorkoutWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39DBC0A26013E59AFB35B07B /* WorkoutWatchApp.swift */; };
@@ -48,6 +49,7 @@
 		0F3B39F80BD3CC2EF871778F /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		3432A5BF29E02880190E6027 /* WorkoutWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WorkoutWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		39DBC0A26013E59AFB35B07B /* WorkoutWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutWatchApp.swift; sourceTree = "<group>"; };
+		479022AF1D3F9BB9CDB497E2 /* NextWorkoutWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextWorkoutWidget.swift; sourceTree = "<group>"; };
 		48CF2099D4558355921A8C9D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		59721A5D1CC97AFE5B5EA2B9 /* StepsWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepsWidget.swift; sourceTree = "<group>"; };
 		67DCDBD8A0E68EF6A0732D7A /* HealthWorkout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthWorkout.swift; sourceTree = "<group>"; };
@@ -101,6 +103,7 @@
 			isa = PBXGroup;
 			children = (
 				48CF2099D4558355921A8C9D /* Info.plist */,
+				479022AF1D3F9BB9CDB497E2 /* NextWorkoutWidget.swift */,
 				72A461AE6B5BA9BF62AE6C64 /* StepsWidget.entitlements */,
 				59721A5D1CC97AFE5B5EA2B9 /* StepsWidget.swift */,
 			);
@@ -216,6 +219,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				14CD20409170E334F1FF0949 /* NextWorkoutWidget.swift in Sources */,
 				6D04EA07694DAC73D9BC587B /* StepsWidget.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

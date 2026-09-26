@@ -17,7 +17,7 @@ struct RootView: View {
         }
         .task {
             store.resumeHealthIfNeeded()
-            WidgetCenter.shared.reloadAllTimelines()
+            store.publishNext()
         }
         #if DEBUG
         .onAppear { if UserDefaults.standard.bool(forKey: "reset") { store.discard() } }
@@ -108,6 +108,10 @@ struct DaysView: View {
             }
             .navigationTitle("開始訓練")
             .navigationDestination(for: Int.self) { DayPreview(day: $0) }
+            // 點錶面「下一次訓練」小工具（gymplan://day/1）直接打開那一天的預覽
+            .onOpenURL { url in
+                if url.host == "day", let i = Int(url.lastPathComponent) { path = [i] }
+            }
         }
         .task { await store.refresh() }
     }
