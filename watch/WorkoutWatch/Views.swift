@@ -81,6 +81,7 @@ struct DaysView: View {
         NavigationStack(path: $path) {
             List {
                 StepsRow()
+                    .task { await store.loadSteps() }
                 if let m = store.message {
                     Text(m).font(.caption2).foregroundStyle(.secondary)
                 }
@@ -117,43 +118,33 @@ struct DaysView: View {
     func fire() -> Bool { if done { return false }; done = true; return true }
 }
 
-// 今天步數；讀不到（多半是沒給權限）就給一顆按鈕，親手點才會跳出權限視窗
+// 今天步數：狀態放在 Store，清單重畫時不會一直重讀；讀不到就教使用者去健康 App 打開權限
 struct StepsRow: View {
-    @State private var steps: Int?
-    @State private var loaded = false
+    @EnvironmentObject var store: Store
+    @State private var showHelp = false
 
     var body: some View {
         Group {
-            if let steps {
+            if let steps = store.steps {
                 Label("今天 \(steps.formatted(.number)) 步", systemImage: "figure.walk")
                     .font(.footnote.weight(.semibold))
-            } else if !loaded {
+            } else if !store.stepsLoaded {
                 Label("讀取步數中…", systemImage: "figure.walk").font(.footnote).foregroundStyle(.secondary)
             } else {
-                Button {
-                    Task {
-                        _ = await HealthWorkout.shared.requestAuthorization()
-                        await load()
+                Button { showHelp.toggle() } label: {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Label("讀不到步數", systemImage: "figure.walk").font(.footnote.weight(.semibold))
+                        if showHelp {
+                            // Apple 每種資料只問一次權限，問過就不會再跳視窗，只能手動開
+                            Text("在 iPhone 打開「健康」→ 右上角頭像 → App → 健身課表 → 打開「步數」")
+                                .font(.caption2).foregroundStyle(.secondary)
+                        } else {
+                            Text("點這裡看怎麼打開").font(.caption2).foregroundStyle(.secondary)
+                        }
                     }
-                } label: {
-                    Label("允許讀取步數", systemImage: "figure.walk").font(.footnote.weight(.semibold))
                 }
             }
         }
-        .task { await load() }
-    }
-
-    // 最多等 3 秒；讀不到（沒權限或卡住）就改顯示「允許讀取步數」按鈕
-    private func load() async {
-        loaded = false
-        // 兩邊誰先回來就用誰：讀步數卡住也不會一直等（TaskGroup 會等卡住的那個，所以不用）
-        let once = Once()
-        steps = await withCheckedContinuation { (c: CheckedContinuation<Int?, Never>) in
-            Task { let v = await HealthWorkout.shared.todaySteps(); await MainActor.run { if once.fire() { c.resume(returning: v) } } }
-            Task { try? await Task.sleep(nanoseconds: 3_000_000_000); await MainActor.run { if once.fire() { c.resume(returning: nil) } } }
-        }
-        loaded = true
-        if steps != nil { WidgetCenter.shared.reloadAllTimelines() }
     }
 }
 

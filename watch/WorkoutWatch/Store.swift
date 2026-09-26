@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 import UserNotifications
 import WatchKit
+import WidgetKit
 
 // 整個手錶 App 的狀態：登入、課表快照、進行中的訓練、休息倒數
 @MainActor
@@ -13,6 +14,8 @@ final class Store: ObservableObject {
     @Published var alarming = false   // 休息結束、還沒按「開始下一組」
     private var alarmTask: Task<Void, Never>?
     @Published var showEnd = false    // 「結束訓練」的選項畫面
+    @Published var steps: Int?
+    @Published var stepsLoaded = false
     @Published var loading = false
     @Published var message: String?
 
@@ -71,6 +74,16 @@ final class Store: ObservableObject {
         } catch {
             message = snapshot == nil ? "連不上雲端：\(error.localizedDescription)" : nil
         }
+    }
+
+    // ---- 今天步數（首頁那一行；讀到後順便更新錶面小工具）----
+    private var stepsLoading = false
+    func loadSteps() async {
+        if stepsLoading { return }
+        stepsLoading = true; defer { stepsLoading = false }
+        steps = await HealthWorkout.shared.todaySteps()
+        stepsLoaded = true
+        if steps != nil { WidgetCenter.shared.reloadAllTimelines() }
     }
 
     // ---- 訓練 ----
