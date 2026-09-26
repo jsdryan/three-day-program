@@ -24,7 +24,7 @@ targets:
         INFOPLIST_KEY_WKWatchOnly: YES
         INFOPLIST_KEY_WKApplication: YES
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
-        INFOPLIST_KEY_NSHealthShareUsageDescription: 讀取心率與消耗熱量，顯示在體能訓練紀錄裡。
+        INFOPLIST_KEY_NSHealthShareUsageDescription: 讀取心率、消耗熱量與步數，顯示在體能訓練紀錄和錶面小工具上。
         INFOPLIST_KEY_NSHealthUpdateUsageDescription: 把每次重訓存成 Apple「體能訓練」，並讓 App 在螢幕變暗時也能震動提醒休息結束。
     info:
       path: WorkoutWatch/Info.plist
@@ -32,6 +32,29 @@ targets:
         WKBackgroundModes: [workout-processing]
     entitlements:
       path: WorkoutWatch/WorkoutWatch.entitlements
+      properties:
+        com.apple.developer.healthkit: true
+        com.apple.developer.healthkit.access: []
+    dependencies:
+      - target: StepsWidget
+  StepsWidget:
+    type: app-extension
+    platform: watchOS
+    sources: [StepsWidget]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.jsdryan.gymplan.watch.steps
+        PRODUCT_NAME: StepsWidget
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: 今天步數
+        INFOPLIST_KEY_NSHealthShareUsageDescription: 讀取今天的步數，顯示在錶面小工具上。
+    info:
+      path: StepsWidget/Info.plist
+      properties:
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    entitlements:
+      path: StepsWidget/StepsWidget.entitlements
       properties:
         com.apple.developer.healthkit: true
         com.apple.developer.healthkit.access: []

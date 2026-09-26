@@ -1,4 +1,5 @@
 import SwiftUI
+import WidgetKit
 
 struct RootView: View {
     @EnvironmentObject var store: Store
@@ -14,7 +15,12 @@ struct RootView: View {
                 DaysView()
             }
         }
-        .task { store.resumeHealthIfNeeded() }
+        .task {
+            store.resumeHealthIfNeeded()
+            // 錶面「今天步數」小工具要靠主程式先拿到讀步數的權限
+            _ = await HealthWorkout.shared.requestAuthorization()
+            WidgetCenter.shared.reloadAllTimelines()
+        }
         #if DEBUG
         .onAppear { if UserDefaults.standard.bool(forKey: "reset") { store.discard() } }
         #endif

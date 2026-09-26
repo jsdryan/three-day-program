@@ -11,18 +11,48 @@
 		50D63530C869FDF727A6F63A /* Supa.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97293078C6FDC1FF156351DC /* Supa.swift */; };
 		597FAC9954AEAE28096D1A11 /* WorkoutWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39DBC0A26013E59AFB35B07B /* WorkoutWatchApp.swift */; };
 		69126126D238A11E392EAEBD /* Store.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A339EDA9CC59C0D9889181D /* Store.swift */; };
+		6D04EA07694DAC73D9BC587B /* StepsWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 59721A5D1CC97AFE5B5EA2B9 /* StepsWidget.swift */; };
 		87F9D0D3A8A6355D8B86568C /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = C787D967024E1703E1CA61BE /* Config.swift */; };
 		A3240AD2BDC71888E587543C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = EFD8D10FF47452271401E74B /* Assets.xcassets */; };
+		BE30FAE7AC01B2B4E9E4BD16 /* StepsWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 8AB902C15D6DADFC01FAA39C /* StepsWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		CED6AA29D751C380D048577D /* Views.swift in Sources */ = {isa = PBXBuildFile; fileRef = DA2105FBBB02C110A6299617 /* Views.swift */; };
 		FE28CE690E302BD1145B68D9 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F3B39F80BD3CC2EF871778F /* Models.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		CC4357CE6AB689B3D626C717 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = C35B3ECA8C077A04DF9D2E94 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 32380A2BE3F3F5EEFF4A2541;
+			remoteInfo = StepsWidget;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B2D9E5A57039D36EDD658117 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				BE30FAE7AC01B2B4E9E4BD16 /* StepsWidget.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		0A339EDA9CC59C0D9889181D /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
 		0F3B39F80BD3CC2EF871778F /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
 		3432A5BF29E02880190E6027 /* WorkoutWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WorkoutWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		39DBC0A26013E59AFB35B07B /* WorkoutWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutWatchApp.swift; sourceTree = "<group>"; };
+		48CF2099D4558355921A8C9D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		59721A5D1CC97AFE5B5EA2B9 /* StepsWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StepsWidget.swift; sourceTree = "<group>"; };
 		67DCDBD8A0E68EF6A0732D7A /* HealthWorkout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthWorkout.swift; sourceTree = "<group>"; };
+		72A461AE6B5BA9BF62AE6C64 /* StepsWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = StepsWidget.entitlements; sourceTree = "<group>"; };
+		8AB902C15D6DADFC01FAA39C /* StepsWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = StepsWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		97293078C6FDC1FF156351DC /* Supa.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Supa.swift; sourceTree = "<group>"; };
 		B049D71FDAFC4906E8E81928 /* WorkoutWatch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = WorkoutWatch.entitlements; sourceTree = "<group>"; };
 		B9FAF62D3827685C96D3BAAE /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -35,6 +65,7 @@
 		35BF50F9D18C3B9F44345CC4 /* Products */ = {
 			isa = PBXGroup;
 			children = (
+				8AB902C15D6DADFC01FAA39C /* StepsWidget.appex */,
 				3432A5BF29E02880190E6027 /* WorkoutWatch.app */,
 			);
 			name = Products;
@@ -60,24 +91,54 @@
 		A66E70FE138FEF6D908FE56D = {
 			isa = PBXGroup;
 			children = (
+				CD939BC3F9C641CCAF425169 /* StepsWidget */,
 				810E67AD20F6A2F997A769DF /* WorkoutWatch */,
 				35BF50F9D18C3B9F44345CC4 /* Products */,
 			);
 			sourceTree = "<group>";
 		};
+		CD939BC3F9C641CCAF425169 /* StepsWidget */ = {
+			isa = PBXGroup;
+			children = (
+				48CF2099D4558355921A8C9D /* Info.plist */,
+				72A461AE6B5BA9BF62AE6C64 /* StepsWidget.entitlements */,
+				59721A5D1CC97AFE5B5EA2B9 /* StepsWidget.swift */,
+			);
+			path = StepsWidget;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		32380A2BE3F3F5EEFF4A2541 /* StepsWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0F29CFCD49064824FC752FB2 /* Build configuration list for PBXNativeTarget "StepsWidget" */;
+			buildPhases = (
+				7FA1F468D9A9DCE7A8F1C727 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = StepsWidget;
+			packageProductDependencies = (
+			);
+			productName = StepsWidget;
+			productReference = 8AB902C15D6DADFC01FAA39C /* StepsWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		3C6B48CCB180C8B89AF15198 /* WorkoutWatch */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 986716013DE3D98D48F00FDC /* Build configuration list for PBXNativeTarget "WorkoutWatch" */;
 			buildPhases = (
 				4E14E08A84E29D1EEA761356 /* Sources */,
 				2D63EB532AF7045D767292F5 /* Resources */,
+				B2D9E5A57039D36EDD658117 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				BC3068E54D3474EE549F505C /* PBXTargetDependency */,
 			);
 			name = WorkoutWatch;
 			packageProductDependencies = (
@@ -95,6 +156,10 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					32380A2BE3F3F5EEFF4A2541 = {
+						DevelopmentTeam = Y2PBXKV39D;
+						ProvisioningStyle = Automatic;
+					};
 					3C6B48CCB180C8B89AF15198 = {
 						DevelopmentTeam = Y2PBXKV39D;
 						ProvisioningStyle = Automatic;
@@ -116,6 +181,7 @@
 			projectRoot = "";
 			targets = (
 				3C6B48CCB180C8B89AF15198 /* WorkoutWatch */,
+				32380A2BE3F3F5EEFF4A2541 /* StepsWidget */,
 			);
 		};
 /* End PBXProject section */
@@ -146,7 +212,23 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		7FA1F468D9A9DCE7A8F1C727 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6D04EA07694DAC73D9BC587B /* StepsWidget.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		BC3068E54D3474EE549F505C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 32380A2BE3F3F5EEFF4A2541 /* StepsWidget */;
+			targetProxy = CC4357CE6AB689B3D626C717 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		04CE71214398ED4D3459C115 /* Release */ = {
@@ -157,7 +239,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = WorkoutWatch/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "健身課表";
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "讀取心率與消耗熱量，顯示在體能訓練紀錄裡。";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "讀取心率、消耗熱量與步數，顯示在體能訓練紀錄和錶面小工具上。";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "把每次重訓存成 Apple「體能訓練」，並讓 App 在螢幕變暗時也能震動提醒休息結束。";
 				INFOPLIST_KEY_WKApplication = YES;
 				INFOPLIST_KEY_WKWatchOnly = YES;
@@ -168,6 +250,27 @@
 				TARGETED_DEVICE_FAMILY = 4;
 			};
 			name = Release;
+		};
+		0DF568D0B63F1192A21F65DB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = StepsWidget/StepsWidget.entitlements;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = StepsWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "今天步數";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "讀取今天的步數，顯示在錶面小工具上。";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.jsdryan.gymplan.watch.steps;
+				PRODUCT_NAME = StepsWidget;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+			};
+			name = Debug;
 		};
 		3BC5BE6C52CC6C0C84FA4910 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -244,7 +347,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = WorkoutWatch/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "健身課表";
-				INFOPLIST_KEY_NSHealthShareUsageDescription = "讀取心率與消耗熱量，顯示在體能訓練紀錄裡。";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "讀取心率、消耗熱量與步數，顯示在體能訓練紀錄和錶面小工具上。";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "把每次重訓存成 Apple「體能訓練」，並讓 App 在螢幕變暗時也能震動提醒休息結束。";
 				INFOPLIST_KEY_WKApplication = YES;
 				INFOPLIST_KEY_WKWatchOnly = YES;
@@ -255,6 +358,27 @@
 				TARGETED_DEVICE_FAMILY = 4;
 			};
 			name = Debug;
+		};
+		5B07A0626D91AD7073DEFB1D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = StepsWidget/StepsWidget.entitlements;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = StepsWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "今天步數";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "讀取今天的步數，顯示在錶面小工具上。";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.jsdryan.gymplan.watch.steps;
+				PRODUCT_NAME = StepsWidget;
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				TARGETED_DEVICE_FAMILY = 4;
+			};
+			name = Release;
 		};
 		8DBA1979D9FBB84A32CE2896 /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -319,6 +443,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		0F29CFCD49064824FC752FB2 /* Build configuration list for PBXNativeTarget "StepsWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0DF568D0B63F1192A21F65DB /* Debug */,
+				5B07A0626D91AD7073DEFB1D /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		6920E5D17FF3FBC3B53E03F6 /* Build configuration list for PBXProject "WorkoutWatch" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

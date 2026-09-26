@@ -13,7 +13,7 @@ final class HealthWorkout: NSObject, HKWorkoutSessionDelegate, HKLiveWorkoutBuil
     func requestAuthorization() async -> Bool {
         guard HKHealthStore.isHealthDataAvailable() else { return false }
         let share: Set<HKSampleType> = [HKObjectType.workoutType(), HKQuantityType(.activeEnergyBurned)]
-        let read: Set<HKObjectType> = [HKQuantityType(.heartRate), HKQuantityType(.activeEnergyBurned), HKObjectType.workoutType()]
+        let read: Set<HKObjectType> = [HKQuantityType(.heartRate), HKQuantityType(.activeEnergyBurned), HKObjectType.workoutType(), HKQuantityType(.stepCount)]
         do { try await store.requestAuthorization(toShare: share, read: read); return true } catch { return false }
     }
 
