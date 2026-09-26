@@ -1,6 +1,7 @@
 import SwiftUI
 import UserNotifications
 import WatchKit
+import WidgetKit
 
 @main
 struct WorkoutWatchApp: App {
@@ -23,6 +24,13 @@ struct WorkoutWatchApp: App {
 
 // 訓練中 App 被系統關掉時，watchOS 會重新叫醒 App 來接回體能訓練
 final class AppDelegate: NSObject, WKApplicationDelegate {
+    // 系統在背景叫醒 App（步數有新資料）時不會開畫面，所以在這裡就要註冊
+    func applicationDidFinishLaunching() {
+        HealthWorkout.shared.watchSteps {
+            DispatchQueue.main.async { WidgetCenter.shared.reloadTimelines(ofKind: "StepsWidget") }
+        }
+    }
+
     func handleActiveWorkoutRecovery() {
         Task { await HealthWorkout.shared.resumeOrStart(allowNew: false) }
     }

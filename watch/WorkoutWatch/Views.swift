@@ -18,6 +18,7 @@ struct RootView: View {
         .task {
             store.resumeHealthIfNeeded()
             store.publishNext()
+            HealthWorkout.shared.watchSteps { DispatchQueue.main.async { WidgetCenter.shared.reloadTimelines(ofKind: "StepsWidget") } }
         }
         #if DEBUG
         .onAppear { if UserDefaults.standard.bool(forKey: "reset") { store.discard() } }
@@ -122,11 +123,23 @@ struct StepsRow: View {
     @EnvironmentObject var store: Store
     @State private var showHelp = false
 
+    // 錶面小工具最後一次讀步數的時間與結果（小工具寫在 App Group）
+    private var widgetStatus: String? {
+        let g = UserDefaults(suiteName: "group.com.jsdryan.gymplan")
+        guard let at = g?.object(forKey: "stepsAt") as? Double, at > 0 else { return "錶面小工具還沒更新過" }
+        let f = DateFormatter(); f.dateFormat = "HH:mm"
+        let ok = g?.bool(forKey: "stepsOK") ?? false
+        return "錶面小工具 \(f.string(from: Date(timeIntervalSince1970: at))) 更新\(ok ? "" : "（讀取失敗）")"
+    }
+
     var body: some View {
         Group {
             if let steps = store.steps {
-                Label("今天 \(steps.formatted(.number)) 步", systemImage: "figure.walk")
-                    .font(.footnote.weight(.semibold))
+                VStack(alignment: .leading, spacing: 1) {
+                    Label("今天 \(steps.formatted(.number)) 步", systemImage: "figure.walk")
+                        .font(.footnote.weight(.semibold))
+                    if let t = widgetStatus { Text(t).font(.caption2).foregroundStyle(.secondary) }
+                }
             } else if !store.stepsLoaded {
                 Label("讀取步數中…", systemImage: "figure.walk").font(.footnote).foregroundStyle(.secondary)
             } else {

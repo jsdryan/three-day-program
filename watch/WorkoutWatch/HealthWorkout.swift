@@ -17,6 +17,20 @@ final class HealthWorkout: NSObject, HKWorkoutSessionDelegate, HKLiveWorkoutBuil
         do { try await store.requestAuthorization(toShare: share, read: read); return true } catch { return false }
     }
 
+    // 步數一有新資料就叫錶面小工具重畫，不只靠 Apple 每 15 分鐘排一次
+    private var stepObserver: HKObserverQuery?
+    func watchSteps(onChange: @escaping () -> Void) {
+        guard stepObserver == nil else { return }
+        let type = HKQuantityType(.stepCount)
+        let q = HKObserverQuery(sampleType: type, predicate: nil) { _, done, _ in
+            onChange()
+            done()
+        }
+        stepObserver = q
+        store.execute(q)
+        store.enableBackgroundDelivery(for: type, frequency: .immediate) { _, _ in }
+    }
+
     // 今天的步數；沒權限或沒資料時回傳 nil
     func todaySteps() async -> Int? {
         let start = Calendar.current.startOfDay(for: .now)

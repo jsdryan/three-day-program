@@ -36,12 +36,17 @@ struct StepsProvider: TimelineProvider {
         let pred = HKQuery.predicateForSamples(withStart: today, end: .now)
         let q = HKStatisticsQuery(quantityType: HKQuantityType(.stepCount), quantitySamplePredicate: pred,
                                   options: .cumulativeSum) { _, result, _ in
+            // 記下小工具最後一次讀取的時間和結果，App 首頁會顯示，方便看它有沒有在更新
+            let g = UserDefaults(suiteName: "group.com.jsdryan.gymplan")
+            g?.set(Date().timeIntervalSince1970, forKey: "stepsAt")
             if let v = result?.sumQuantity()?.doubleValue(for: .count()) {
                 let n = Int(v)
                 d.set(n, forKey: "steps")
                 d.set(today, forKey: "day")
+                g?.set(true, forKey: "stepsOK")
                 done(n)
             } else {
+                g?.set(false, forKey: "stepsOK")
                 done(cached)
             }
         }
