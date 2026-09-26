@@ -64,9 +64,14 @@ struct StepsView: View {
     var body: some View {
         switch family {
         case .accessoryCircular:
-            VStack(spacing: 0) {
-                Image(systemName: "figure.walk").font(.system(size: 14, weight: .semibold))
-                Text(short).font(.system(size: 17, weight: .bold, design: .rounded)).minimumScaleFactor(0.6)
+            // 跟錶面其他圓形格子一樣有深灰圓底
+            ZStack {
+                AccessoryWidgetBackground()
+                VStack(spacing: 0) {
+                    Image(systemName: "figure.walk").font(.system(size: 14, weight: .semibold))
+                    Text(short).font(.system(size: 17, weight: .bold, design: .rounded)).minimumScaleFactor(0.6)
+                }
+                .padding(4)
             }
         case .accessoryRectangular:
             VStack(alignment: .leading, spacing: 0) {

@@ -113,11 +113,6 @@ struct DaysView: View {
     }
 }
 
-@MainActor final class Once {
-    private var done = false
-    func fire() -> Bool { if done { return false }; done = true; return true }
-}
-
 // 今天步數：狀態放在 Store，清單重畫時不會一直重讀；讀不到就教使用者去健康 App 打開權限
 struct StepsRow: View {
     @EnvironmentObject var store: Store
