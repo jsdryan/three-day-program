@@ -8,11 +8,13 @@ struct NextEntry: TimelineEntry {
     let name: String
     let count: Int
     let last: Date?
+    let preview: String
 }
 
 struct NextProvider: TimelineProvider {
     func placeholder(in context: Context) -> NextEntry {
-        NextEntry(date: .now, day: 1, name: "拉：背、二頭、肩後", count: 7, last: .now.addingTimeInterval(-3 * 86400))
+        NextEntry(date: .now, day: 1, name: "拉：背、二頭、肩後", count: 7, last: .now.addingTimeInterval(-3 * 86400),
+                  preview: "大剪刀下拉・窄握划船・滑輪下拉")
     }
     func getSnapshot(in context: Context, completion: @escaping (NextEntry) -> Void) {
         completion(context.isPreview ? placeholder(in: context) : read())
@@ -25,7 +27,7 @@ struct NextProvider: TimelineProvider {
         let o = UserDefaults(suiteName: "group.com.jsdryan.gymplan")?.dictionary(forKey: "next")
         let last = (o?["last"] as? Double).flatMap { $0 > 0 ? Date(timeIntervalSince1970: $0) : nil }
         return NextEntry(date: .now, day: o?["day"] as? Int, name: o?["name"] as? String ?? "",
-                         count: o?["count"] as? Int ?? 0, last: last)
+                         count: o?["count"] as? Int ?? 0, last: last, preview: o?["preview"] as? String ?? "")
     }
 }
 
@@ -37,7 +39,7 @@ struct NextView: View {
         guard let l = entry.last else { return "還沒練過" }
         let days = Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: l),
                                                    to: Calendar.current.startOfDay(for: entry.date)).day ?? 0
-        return days == 0 ? "今天練過" : days == 1 ? "上次昨天" : "上次 \(days) 天前"
+        return days == 0 ? "今天練過" : days == 1 ? "昨天" : "\(days) 天前"
     }
 
     var body: some View {
@@ -46,12 +48,21 @@ struct NextView: View {
             case .accessoryInline:
                 Label("下一次：\(entry.name)", systemImage: "dumbbell.fill")
             default:
-                VStack(alignment: .leading, spacing: 1) {
-                    Label("下一次 · 第 \(day + 1) 天", systemImage: "dumbbell.fill")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(Color(red: 0.89, green: 0.09, blue: 0.04))
-                    Text(entry.name).font(.headline).lineLimit(1).minimumScaleFactor(0.7)
-                    Text("\(lastText) · \(entry.count) 個動作").font(.caption2).foregroundStyle(.secondary)
+                // 最重要的「練哪天」最大；上面一行放標題和幾天前，下面一行放前幾個動作
+                VStack(alignment: .leading, spacing: 0) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "dumbbell.fill").widgetAccentable()
+                        Text("下一次 · 第 \(day + 1) 天")
+                        Spacer(minLength: 4)
+                        Text(lastText).foregroundStyle(.secondary)
+                    }
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color(red: 0.95, green: 0.25, blue: 0.2))
+                    Text(entry.name)
+                        .font(.system(size: 26, weight: .heavy, design: .rounded))
+                        .lineLimit(1).minimumScaleFactor(0.55)
+                    Text(entry.preview.isEmpty ? "\(entry.count) 個動作" : entry.preview)
+                        .font(.system(size: 13)).foregroundStyle(.secondary).lineLimit(1)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
             }

@@ -64,6 +64,7 @@ final class Store: ObservableObject {
             let d = s.days[i]
             g.set(["day": i, "name": d.name, "pname": s.pname ?? "",
                    "count": d.ex.reduce(0) { $0 + $1.items.count },
+                   "preview": d.ex.flatMap { $0.items.map(\.n) }.prefix(4).joined(separator: "・"),
                    "last": lastDone(d)?.timeIntervalSince1970 ?? 0] as [String: Any], forKey: "next")
         } else {
             g.removeObject(forKey: "next")
