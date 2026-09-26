@@ -1854,6 +1854,8 @@ async function pushSession(rec){
   if(!sb||!user)return;
   setSync('busy');
   const {error}=await sb.from('sessions').upsert({id:rec.id,user_id:user.id,t:rec.t,data:rec});
+  // 記住這筆上傳過：之後雲端沒有它，就知道是在別台被刪的
+  if(!error){rec.synced=true;saveHistory()}
   setSync(error?'err':'ok');
 }
 async function deleteSessionRemote(id){
@@ -1870,15 +1872,22 @@ async function pullAll(){
     sb.from('prefs').select('data').eq('user_id',user.id).maybeSingle(),
   ]);
   if(e1||e2){setSync('err');return}
-  // 歷史：以 id 聯集，兩邊都保留
+  // 歷史：雲端有的補進本機；本機有、雲端沒有的分兩種——
+  // 上傳過（synced）或手錶來的 → 代表在別台被刪了，本機跟著刪；從沒上傳成功的 → 補傳
   const localIds=new Set(history.map(x=>x.id));
   const remoteIds=new Set();
-  (rows||[]).forEach(r=>{remoteIds.add(Number(r.id));if(!localIds.has(Number(r.id))&&r.data)history.push(r.data)});
-  saveHistory();
+  (rows||[]).forEach(r=>{const id=Number(r.id);remoteIds.add(id);
+    if(!localIds.has(id)&&r.data)history.push(Object.assign({},r.data,{synced:true}));
+    else{const h=history.find(x=>x.id===id);if(h)h.synced=true}});
   const missing=history.filter(x=>!remoteIds.has(x.id));
-  if(missing.length){
-    await sb.from('sessions').upsert(missing.map(rec=>({id:rec.id,user_id:user.id,t:rec.t,data:rec})));
+  const gone=new Set(missing.filter(x=>x.synced||x.src==='watch').map(x=>x.id));
+  if(gone.size)history=history.filter(x=>!gone.has(x.id));
+  const upload=missing.filter(x=>!gone.has(x.id));
+  if(upload.length){
+    const {error}=await sb.from('sessions').upsert(upload.map(rec=>({id:rec.id,user_id:user.id,t:rec.t,data:rec})));
+    if(!error)upload.forEach(x=>x.synced=true);
   }
+  saveHistory();
   applyPrefs(pref&&pref.data);
   build();if(view==="hist")renderHist();
   await sb.from('prefs').upsert({user_id:user.id,data:allPrefs(),updated_at:new Date().toISOString()});
