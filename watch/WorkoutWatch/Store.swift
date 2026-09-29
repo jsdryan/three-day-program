@@ -171,6 +171,7 @@ final class Store: ObservableObject {
         it.rm = target.rm
         it.bw = target.bw ?? false
         it.mc = target.mc
+        it.mus = target.mus ?? it.mus
         it.orig = alt == nil ? nil : base.n
         let last = localLast[target.n] ?? target.last ?? []
         it.last = last
@@ -350,6 +351,7 @@ final class Store: ObservableObject {
             if let orig = it.orig { o["orig"] = orig }
             if it.bw { o["bw"] = true }
             if it.uni { o["uni"] = true }
+            if let m = it.mus, !m.isEmpty { o["mus"] = m }
             if let mc = it.mc { o["mc"] = mc }
             items.append(o)
             localLast[it.n] = log.map { SSet(w: $0.w, r: $0.r) }

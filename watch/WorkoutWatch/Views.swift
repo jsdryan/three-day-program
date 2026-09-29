@@ -188,8 +188,9 @@ struct DayPreview: View {
                         VStack(alignment: .leading, spacing: 2) {
                             if g.sup { Text("超級組").font(.caption2).foregroundStyle(.orange) }
                             ForEach(Array(g.items.enumerated()), id: \.offset) { _, it in
-                                Text(shortName(it.n)).font(.footnote.weight(.semibold)).lineLimit(2)
-                                Text("\(it.rm) RM\(it.mc.map { " · " + $0 } ?? "")")
+                                Text((it.mus?.isEmpty == false ? it.mus : nil) ?? shortName(it.n)).font(.footnote.weight(.semibold)).lineLimit(1)
+                                Text(it.mc ?? shortName(it.n)).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                                Text("\(it.rm) RM")
                                     .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
                             }
                         }
@@ -304,12 +305,15 @@ struct SetView: View {
         ScrollView {
             VStack(spacing: 6) {
                 ElapsedLine()
+                // 大字是肌群；上面一行是器材＋型號（沒綁器材就寫動作名稱），換過動作則標「代替」
                 if let o = item.orig {
-                    Text("代替 \(o)").font(.caption2.weight(.semibold)).foregroundStyle(.orange).lineLimit(1)
+                    Text("\(shortName(item.n))・代替 \(o)").font(.caption2.weight(.semibold)).foregroundStyle(.orange).lineLimit(1)
                 } else if let mc = item.mc {
                     Text(mc).font(.caption2.weight(.semibold)).foregroundStyle(Color.brandRed).lineLimit(1)
+                } else if item.mus?.isEmpty == false {
+                    Text(shortName(item.n)).font(.caption2.weight(.semibold)).foregroundStyle(.secondary).lineLimit(1)
                 }
-                Text(shortName(item.n)).font(.headline).multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.7)
+                Text(item.title).font(.headline).multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.7)
                 Text("第 \(si + 1)/\(item.sets.count) 組\(item.uni ? " · 單邊" : "") · \(item.rm) RM\(item.groupSize > 1 ? " · 超級組" : "")")
                     .font(.caption2).foregroundStyle(.secondary)
 
@@ -537,7 +541,8 @@ struct ExerciseList: View {
                             } label: {
                                 HStack {
                                     VStack(alignment: .leading) {
-                                        Text(shortName(it.n)).font(.footnote.weight(i == w.current ? .heavy : .regular)).lineLimit(2)
+                                        Text(it.title).font(.footnote.weight(i == w.current ? .heavy : .regular)).lineLimit(1)
+                                        Text(it.mc ?? shortName(it.n)).font(.caption2).foregroundStyle(.secondary).lineLimit(1)
                                         if it.groupSize > 1 { Text("超級組").font(.caption2).foregroundStyle(.orange) }
                                     }
                                     Spacer()
