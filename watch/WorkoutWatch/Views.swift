@@ -188,7 +188,7 @@ struct DayPreview: View {
                         VStack(alignment: .leading, spacing: 2) {
                             if g.sup { Text("超級組").font(.caption2).foregroundStyle(.orange) }
                             ForEach(Array(g.items.enumerated()), id: \.offset) { _, it in
-                                Text(it.n).font(.footnote.weight(.semibold)).lineLimit(2)
+                                Text(shortName(it.n)).font(.footnote.weight(.semibold)).lineLimit(2)
                                 Text("\(it.rm) RM\(it.mc.map { " · " + $0 } ?? "")")
                                     .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
                             }
@@ -537,7 +537,7 @@ struct ExerciseList: View {
                             } label: {
                                 HStack {
                                     VStack(alignment: .leading) {
-                                        Text(it.n).font(.footnote.weight(i == w.current ? .heavy : .regular)).lineLimit(2)
+                                        Text(shortName(it.n)).font(.footnote.weight(i == w.current ? .heavy : .regular)).lineLimit(2)
                                         if it.groupSize > 1 { Text("超級組").font(.caption2).foregroundStyle(.orange) }
                                     }
                                     Spacer()
