@@ -140,6 +140,7 @@ final class Store: ObservableObject {
     // App 被系統關掉後重開、訓練還在：把體能訓練接回來，暗屏震動才有效
     func resumeHealthIfNeeded() {
         if workout != nil && !HealthWorkout.shared.isRunning { Task { await HealthWorkout.shared.resumeOrStart() } }
+        if restEnd != nil { armRestTimer() }
     }
 
     func jump(to i: Int) { workout?.current = i }
@@ -205,10 +206,24 @@ final class Store: ObservableObject {
     // ---- 休息倒數 ----
     private static let restIDs = (0..<30).map { "rest-\($0)" }
 
+    // 倒數到點由這個計時觸發，不靠畫面；手放下、螢幕暗著時畫面不會更新，但體能訓練讓 App 繼續跑
+    private var restTask: Task<Void, Never>?
+    private func armRestTimer() {
+        restTask?.cancel()
+        guard let end = restEnd else { return }
+        restTask = Task { @MainActor in
+            let wait = end.timeIntervalSinceNow
+            if wait > 0 { try? await Task.sleep(nanoseconds: UInt64(wait * 1_000_000_000)) }
+            guard !Task.isCancelled, self.restEnd == end else { return }
+            self.restFinished()
+        }
+    }
+
     func startRest(_ sec: Int) {
         dismissAlarm()
         let end = Date().addingTimeInterval(TimeInterval(sec))
         restEnd = end
+        armRestTimer()
         scheduleRestNotification(at: end)
     }
 
@@ -216,10 +231,12 @@ final class Store: ObservableObject {
         guard let e = restEnd else { return }
         let end = e.addingTimeInterval(TimeInterval(sec))
         restEnd = end
+        armRestTimer()
         scheduleRestNotification(at: end)
     }
 
     func skipRest() {
+        restTask?.cancel()
         restEnd = nil
         clearRestNotifications()
     }
@@ -264,7 +281,9 @@ final class Store: ObservableObject {
     private func scheduleRestNotification(at date: Date) {
         let c = UNUserNotificationCenter.current()
         clearRestNotifications()
-        // 備援：萬一體能訓練沒開成（例如沒給健康權限），才靠通知震
+        // 體能訓練進行中：App 暗屏也在跑，由 restTimer 自己震，不跳系統通知（使用者不想看到上方橫幅）
+        // 只有體能訓練沒開成（例如沒給健康權限）才靠通知當備援
+        if HealthWorkout.shared.isRunning { return }
         let body = workout.map { "下一個：" + $0.items[$0.current].n } ?? "開始下一組"
         for (i, id) in Store.restIDs.enumerated() {
             let content = UNMutableNotificationContent()

@@ -115,6 +115,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .swapbtn{height:32px;padding:0 12px;border-radius:999px;border:0;background:var(--card2);color:var(--ink2);font-size:12px;font-weight:600;white-space:nowrap}
 .demo{height:32px;padding:0 12px;border-radius:999px;background:var(--card2);color:var(--accent);font-size:12px;font-weight:600;white-space:nowrap;display:inline-flex;align-items:center;text-decoration:none}
 .swapbtn[aria-expanded="true"]{background:var(--accent-soft);color:var(--accent)}
+.unibtn[aria-pressed="true"]{background:var(--accent);color:#fff}
 .st{margin-top:10px}
 .sth,.str{display:grid;grid-template-columns:26px 1fr 1fr 50px 26px;gap:8px;align-items:center}
 .sth{font-size:11px;color:var(--muted);padding:0 0 4px;text-align:center}
@@ -1026,7 +1027,7 @@ function demoUrl(name){
 }
 // 60×12、50×12 這種格式
 function fmtLog(it){
-  if(it.log&&it.log.length)return it.log.map(x=>(x.w!=null?x.w:'自體')+'×'+(x.r!=null?x.r:'–')).join('、');
+  if(it.log&&it.log.length)return it.log.map(x=>(x.w!=null?x.w:'自體')+'×'+(x.r!=null?x.r:'–')).join('、')+(it.uni?'（每邊）':'');
   return (it.w!=null?it.w+' kg × ':'')+it.sets+' 組';
 }
 // 目前這一格實際要做的動作（原動作或替代動作）
@@ -1111,8 +1112,8 @@ function renderEx(it,e,wk,di,rests=true){
     (ef.mc?`<div class="mc"><span class="brand">${ef.mc.brand}</span>${ef.mc.name}${ef.mc.model?`<small>${ef.mc.model}</small>`:''}</div>`:'')+
     (note?`<div class="note">${note}</div>`:'')+
     (ef.orig?`<div class="swapped">代替「${ef.orig}」<button type="button" class="unswap">換回原動作</button></div>`:'')+
-    lastHtml+`<div class="wrow">${last?'':'<span class="nolast">還沒有紀錄</span>'}<a class="demo" href="${demoUrl(ef.n)}" target="_blank" rel="noopener">示範影片</a>`+(ALTS[it.n]?`<button type="button" class="swapbtn" aria-expanded="false">器材被佔？</button>`:'')+`</div>`+
-    `<div class="st"><div class="sth"><span>組</span><span>${ef.bw?'kg（選填）':'kg'}</span><span>次數</span><span>完成</span><span></span></div><div class="strs"></div>`+
+    lastHtml+`<div class="wrow">${last?'':'<span class="nolast">還沒有紀錄</span>'}<button type="button" class="swapbtn unibtn" aria-pressed="${!!it.uni}">單邊</button><a class="demo" href="${demoUrl(ef.n)}" target="_blank" rel="noopener">示範影片</a>`+(ALTS[it.n]?`<button type="button" class="swapbtn" aria-expanded="false">器材被佔？</button>`:'')+`</div>`+
+    `<div class="st"><div class="sth"><span>組</span><span>${ef.bw?'kg（選填）':'kg'}${it.uni?'／邊':''}</span><span>次數${it.uni?'／邊':''}</span><span>完成</span><span></span></div><div class="strs"></div>`+
     `<button type="button" class="addset">＋ 加一組</button></div>`+
     (rests?`<div class="rest"><span>${e.sup?'兩個都做完再休息 ':'休息 '}${fmt(e.rest)}</span><button type="button">手動計時</button></div>`:'');
   const list=art.querySelector('.strs');
@@ -1148,7 +1149,13 @@ function renderEx(it,e,wk,di,rests=true){
   const rb=art.querySelector('.rest button');if(rb)rb.onclick=()=>startTimer(e.rest);
   const un=art.querySelector('.unswap');
   if(un)un.onclick=()=>{delete swaps[wk];saveS();rerender()};
-  const sb=art.querySelector('.swapbtn');
+  // 單邊（左右各做一次）：重量、次數都記一邊的；開關記在課表上，下次也是單邊
+  art.querySelector('.unibtn').onclick=()=>{
+    const c=ensureCustom(prog);
+    c.days.forEach(d=>d.ex.forEach(x=>(x.sup||[x]).forEach(y=>{if(y.id===it.id){if(y.uni)delete y.uni;else y.uni=true}})));
+    saveCustom(prog);build();
+  };
+  const sb=art.querySelector('.swapbtn:not(.unibtn)');
   if(sb)sb.onclick=()=>{
     const open=art.querySelector('.alts');
     if(open){open.remove();sb.setAttribute('aria-expanded','false');return}
@@ -1205,7 +1212,7 @@ function renderEditor(di){
     const items=e.sup||[e];
     const row=document.createElement('div');row.className='edrow';
     const subs=items.map(x=>{const ef=effective(x,x.id);return ef.orig?`${x.n} → 目前用「${ef.n}」`:null}).filter(Boolean);
-    row.innerHTML=`<div class="edmain"><b>${items.map(x=>x.n).join(' ＋ ')}</b><span>${items.map(x=>x.rm).join(' / ')} RM，休息 ${restLabel(e.rest)}${items.some(isBw)?'，自體重量':''}${e.sup?'，超級組':''}${e.note?'，'+e.note:''}</span>${subs.length?`<span class="edsub">${subs.join('；')}</span>`:''}</div>`
+    row.innerHTML=`<div class="edmain"><b>${items.map(x=>x.n).join(' ＋ ')}</b><span>${items.map(x=>x.rm).join(' / ')} RM，休息 ${restLabel(e.rest)}${items.some(isBw)?'，自體重量':''}${items.some(x=>x.uni)?'，單邊':''}${e.sup?'，超級組':''}${e.note?'，'+e.note:''}</span>${subs.length?`<span class="edsub">${subs.join('；')}</span>`:''}</div>`
       +`<div class="edact"><button type="button" class="up" ${ei===0?'disabled':''} aria-label="上移">↑</button><button type="button" class="dn2" ${ei===d.ex.length-1?'disabled':''} aria-label="下移">↓</button><button type="button" class="ed">編輯</button><button type="button" class="del">刪除</button></div>`;
     row.querySelector('.up').onclick=()=>{[d.ex[ei-1],d.ex[ei]]=[d.ex[ei],d.ex[ei-1]];saveCustom(prog);build()};
     row.querySelector('.dn2').onclick=()=>{[d.ex[ei+1],d.ex[ei]]=[d.ex[ei],d.ex[ei+1]];saveCustom(prog);build()};
@@ -1288,7 +1295,7 @@ function openExForm(di,ei){
     ev.preventDefault();
     const n1=f.n1.value.trim();if(!n1)return;
     // mc：auto＝依名稱自動對應（不存），空字串＝不指定器材
-    const mk=(n,rm,mus,bw,mc,old)=>Object.assign({id:old&&old.id||newId(),n,rm:rm.trim()||'10–12',mus:mus.trim(),bw},mc==='auto'?{}:{mc});
+    const mk=(n,rm,mus,bw,mc,old)=>Object.assign({id:old&&old.id||newId(),n,rm:rm.trim()||'10–12',mus:mus.trim(),bw},mc==='auto'?{}:{mc},old&&old.uni?{uni:true}:{});
     const a=mk(n1,f.rm1.value,f.mus1.value,f.bw1.checked,f.mc1.value,items[0]);
     let ne;
     if(f.sup.checked&&f.n2.value.trim()){
@@ -1318,7 +1325,7 @@ document.getElementById('finish').onclick=()=>{
     const ef=effective(it,wk);const rs=rows(wk);
     const dn=[];rs.forEach((r,i)=>{if(r.done)dn.push({w:eff(rs,i,'w'),r:eff(rs,i,'r')})});
     total+=rs.length;done+=dn.length;
-    if(dn.length)items.push(Object.assign({n:ef.n,orig:ef.orig,rm:ef.rm,sets:dn.length,w:dn[0].w,log:dn},ef.bw?{bw:true}:{},ef.mc?{mc:mcLabel(ef.mc)}:{}));
+    if(dn.length)items.push(Object.assign({n:ef.n,orig:ef.orig,rm:ef.rm,sets:dn.length,w:dn[0].w,log:dn},it.uni?{uni:true}:{},ef.bw?{bw:true}:{},ef.mc?{mc:mcLabel(ef.mc)}:{}));
   });
   if(done===0){fmsg.textContent='今天還沒打勾，先做完再存。';return}
   const when=isoFromDateStr(fdateEl.value);
@@ -1439,10 +1446,11 @@ function exSessions(name){
     let top=null,vol=0,maxR=null,e1=null,sets=0;const log=[];
     its.forEach(it=>{
       const L=it.log&&it.log.length?it.log:Array.from({length:it.sets||0},()=>({w:it.w,r:null}));
+      const sides=it.uni?2:1;   // 單邊：訓練量左右兩邊都算
       L.forEach(x=>{sets++;log.push(x);
         if(x.w!=null&&(top==null||x.w>top))top=x.w;
         if(x.r!=null&&(maxR==null||x.r>maxR))maxR=x.r;
-        if(x.w!=null&&x.r!=null){vol+=x.w*x.r;const e=x.w*(1+x.r/30);if(e1==null||e>e1)e1=e}});
+        if(x.w!=null&&x.r!=null){vol+=x.w*x.r*sides;const e=x.w*(1+x.r/30);if(e1==null||e>e1)e1=e}});
     });
     out.push({t:new Date(r.t),top,vol,maxR,e1,sets,log});
   });
@@ -1794,6 +1802,7 @@ async function signOut(){await sb.auth.signOut();user=null;renderAuth()}
 
 // 兩套課表的重量與替代動作，打包成一份 prefs
 // 給 Apple Watch 讀的課表：已經套好替代動作、器材、上次紀錄，手錶不用重寫網頁的邏輯
+function lastLog(n){const l=lastOf(n);return l?(l.log&&l.log.length?l.log.map(x=>({w:x.w,r:x.r})):Array.from({length:l.sets||0},()=>({w:l.w,r:null}))):[]}
 function watchSnap(){
   // 每一天上次練的時間：手錶的「下一次訓練」小工具靠它決定下一天
   const lastT=did=>history.filter(r=>r.prog===prog&&(r.did||'d'+r.day)===did).reduce((m,r)=>r.t>m?r.t:m,'')||null;
@@ -1801,8 +1810,13 @@ function watchSnap(){
     sup:!!e.sup,rest:e.rest||90,note:e.note||'',
     items:(e.sup||[e]).map(it=>{
       const ef=effective(it,it.id),last=lastOf(ef.n);
-      return {id:it.id,n:ef.n,orig:ef.orig||null,rm:ef.rm||'',bw:!!ef.bw,mc:ef.mc?mcLabel(ef.mc):null,
-        last:last?(last.log&&last.log.length?last.log.map(x=>({w:x.w,r:x.r})):Array.from({length:last.sets||0},()=>({w:last.w,r:null}))):[],lastT:last?last.t:null};
+      // 手錶「器材被佔？」用：原動作（base）和替代動作清單，各自帶上次紀錄
+      const opt=(n,rm,bw)=>({n,rm:rm||it.rm||'',bw:!!bw,mc:mcAuto(n)?mcLabel(mcAuto(n)):null,last:lastLog(n)});
+      const a=ALTS[it.n];
+      return {id:it.id,n:ef.n,orig:ef.orig||null,rm:ef.rm||'',bw:!!ef.bw,mc:ef.mc?mcLabel(ef.mc):null,uni:!!it.uni,
+        last:lastLog(ef.n),lastT:last?last.t:null,
+        base:a?Object.assign(opt(it.n,it.rm,isBw(it)),{mc:mcOf(it)?mcLabel(mcOf(it)):null}):null,
+        alts:a?a.alts.map(x=>opt(x.n,x.rm,x.bw)):[]};
     })}))}))};
 }
 function allPrefs(){
