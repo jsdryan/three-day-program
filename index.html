@@ -301,6 +301,9 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .hname{display:flex;gap:6px;align-items:center;margin-bottom:4px}
 .hname input{flex:1;min-width:0;height:38px;border:1px solid var(--line);border-radius:8px;background:var(--input);color:var(--ink);font:inherit;font-weight:700;font-size:16px;padding:0 10px}
 .hname button{flex:none;height:38px;padding:0 10px;border-radius:8px;border:0;background:var(--card2);color:var(--ink2);font-weight:600;font-size:13px}
+.hname .hmv{display:flex;flex-direction:column;gap:2px;flex:none}
+.hname .hmv button{height:18px;width:30px;padding:0;font-size:12px;line-height:1;border-radius:5px}
+.hname .hmv button[disabled]{opacity:.25}
 .hname .huni[aria-pressed="true"]{background:var(--accent);color:#fff}
 .hname .hrm{background:none;color:var(--danger)}
 .horig{display:block;font-size:12px;color:var(--muted);margin:0 0 4px}
@@ -1356,12 +1359,17 @@ function fillHEdit(box){
   box.innerHTML='';
   hDraft.forEach(it=>{
     const w=document.createElement('div');w.className='hitem';
-    w.innerHTML=`<div class="hname"><input type="text" maxlength="40" placeholder="動作名稱" aria-label="動作名稱"><button type="button" class="hpick">換動作</button><button type="button" class="huni" aria-pressed="${!!it.uni}">單邊</button><button type="button" class="hrm" aria-label="移除這個動作">移除</button></div>`
+    const idx=hDraft.indexOf(it);
+    w.innerHTML=`<div class="hname"><span class="hmv"><button type="button" class="hup" aria-label="往上移" ${idx===0?'disabled':''}>↑</button><button type="button" class="hdn" aria-label="往下移" ${idx===hDraft.length-1?'disabled':''}>↓</button></span><input type="text" maxlength="40" placeholder="動作名稱" aria-label="動作名稱"><button type="button" class="hpick">換動作</button><button type="button" class="huni" aria-pressed="${!!it.uni}">單邊</button><button type="button" class="hrm" aria-label="移除這個動作">移除</button></div>`
       +(it.orig?`<small class="horig">代替「${it.orig}」</small>`:'')
       +`<div class="hes hd"><span></span><span>kg${it.uni?'／邊':''}</span><span>次數${it.uni?'／邊':''}</span><span></span></div>`;
     const ni=w.querySelector('.hname input');ni.value=it.n;
     ni.oninput=()=>{it.n=ni.value};
     w.querySelector('.hpick').onclick=()=>openLib(x=>{it.n=x.n;it.bw=x.bw;if(x.mc)it.mc=mcLabel(mcById(x.mc));else delete it.mc;fillHEdit(box)});
+    // 調整順序：跟上一個／下一個動作交換
+    const mv=d=>{const j=idx+d;if(j<0||j>=hDraft.length)return;[hDraft[idx],hDraft[j]]=[hDraft[j],hDraft[idx]];fillHEdit(box)};
+    w.querySelector('.hup').onclick=()=>mv(-1);
+    w.querySelector('.hdn').onclick=()=>mv(1);
     // 單邊：左右各做一次，重量次數記一邊
     w.querySelector('.huni').onclick=()=>{if(it.uni)delete it.uni;else it.uni=true;fillHEdit(box)};
     const rm=w.querySelector('.hrm');let armed=false;
