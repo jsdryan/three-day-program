@@ -162,6 +162,34 @@ final class Store: ObservableObject {
         workout = w
     }
 
+    // 器材被佔：換成替代動作（alt 為 nil＝換回原動作）；還沒做的組改用新動作的上次重量次數
+    func swapCurrent(to alt: SAlt?) {
+        guard var w = workout, let base = w.items[w.current].base else { return }
+        let target = alt ?? base
+        var it = w.items[w.current]
+        it.n = target.n
+        it.rm = target.rm
+        it.bw = target.bw ?? false
+        it.mc = target.mc
+        it.orig = alt == nil ? nil : base.n
+        let last = localLast[target.n] ?? target.last ?? []
+        it.last = last
+        let fallbackR = Workout.firstNumber(target.rm)
+        for j in it.sets.indices where !it.sets[j].done {
+            let src = last.isEmpty ? nil : last[min(j, last.count - 1)]
+            it.sets[j].w = src?.w
+            it.sets[j].r = src?.r ?? fallbackR
+        }
+        w.items[w.current] = it
+        workout = w
+    }
+
+    func toggleUni() {
+        guard var w = workout else { return }
+        w.items[w.current].uni.toggle()
+        workout = w
+    }
+
     func addSet() {
         guard var w = workout else { return }
         let last = w.items[w.current].sets.last
@@ -314,6 +342,7 @@ final class Store: ObservableObject {
                                     "w": log[0].w as Any? ?? NSNull()]
             if let orig = it.orig { o["orig"] = orig }
             if it.bw { o["bw"] = true }
+            if it.uni { o["uni"] = true }
             if let mc = it.mc { o["mc"] = mc }
             items.append(o)
             localLast[it.n] = log.map { SSet(w: $0.w, r: $0.r) }

@@ -32,6 +32,17 @@ struct SItem: Codable, Hashable {
     var mc: String?
     var last: [SSet]?
     var lastT: String?
+    var uni: Bool?          // 單邊：重量、次數記一邊
+    var base: SAlt?         // 原動作（器材被佔時可換回）
+    var alts: [SAlt]?       // 替代動作
+}
+
+struct SAlt: Codable, Hashable {
+    var n: String
+    var rm: String
+    var bw: Bool?
+    var mc: String?
+    var last: [SSet]?
 }
 
 struct SSet: Codable, Hashable {
@@ -59,6 +70,9 @@ struct WItem: Codable, Identifiable, Hashable {
     var pos: Int         // 在群組裡的位置
     var groupSize: Int
     var rest: Int
+    var uni: Bool = false
+    var base: SAlt?
+    var alts: [SAlt] = []
 
     var doneCount: Int { sets.filter(\.done).count }
     var isDone: Bool { !sets.isEmpty && sets.allSatisfy(\.done) }
@@ -95,7 +109,8 @@ struct Workout: Codable {
                     return WSet(w: src?.w, r: src?.r ?? fallbackR)
                 }
                 out.append(WItem(id: it.id, n: it.n, orig: it.orig, rm: it.rm, bw: it.bw ?? false, mc: it.mc,
-                                 last: last, sets: sets, group: gi, pos: pi, groupSize: g.items.count, rest: g.rest))
+                                 last: last, sets: sets, group: gi, pos: pi, groupSize: g.items.count, rest: g.rest,
+                                 uni: it.uni ?? false, base: it.base, alts: it.alts ?? []))
             }
         }
         items = out

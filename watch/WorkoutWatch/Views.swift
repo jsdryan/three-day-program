@@ -33,6 +33,7 @@ struct RootView: View {
                 store.start(day: day, askNotify: false)
                 for _ in 0..<a.integer(forKey: "autocomplete") { store.completeSet(); store.skipRest() }
                 if a.bool(forKey: "showend") { store.showEnd = true }
+                if a.bool(forKey: "swap"), let w = store.workout, let alt = w.items[w.current].alts.first { store.swapCurrent(to: alt) }
                 if a.bool(forKey: "autorest") { store.startRest(a.integer(forKey: "restsec") > 0 ? a.integer(forKey: "restsec") : 65) }
             }
         }
@@ -303,11 +304,13 @@ struct SetView: View {
         ScrollView {
             VStack(spacing: 6) {
                 ElapsedLine()
-                if let mc = item.mc {
+                if let o = item.orig {
+                    Text("代替 \(o)").font(.caption2.weight(.semibold)).foregroundStyle(.orange).lineLimit(1)
+                } else if let mc = item.mc {
                     Text(mc).font(.caption2.weight(.semibold)).foregroundStyle(Color.brandRed).lineLimit(1)
                 }
-                Text(item.n).font(.headline).multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.7)
-                Text("第 \(si + 1)/\(item.sets.count) 組 · \(item.rm) RM\(item.groupSize > 1 ? " · 超級組" : "")")
+                Text(shortName(item.n)).font(.headline).multilineTextAlignment(.center).lineLimit(2).minimumScaleFactor(0.7)
+                Text("第 \(si + 1)/\(item.sets.count) 組\(item.uni ? " · 單邊" : "") · \(item.rm) RM\(item.groupSize > 1 ? " · 超級組" : "")")
                     .font(.caption2).foregroundStyle(.secondary)
 
                 HStack(spacing: 6) {
@@ -422,6 +425,12 @@ struct SetView: View {
         .focused($focus, equals: field)
         .onTapGesture { focus = field }
     }
+}
+
+// 手錶螢幕小：「輔助引體向上機（Assisted Pull-Up Machine）」只顯示中文，紀錄仍存完整名稱
+func shortName(_ n: String) -> String {
+    let s = n.components(separatedBy: "（").first ?? n
+    return s.isEmpty ? n : s
 }
 
 func fmtW(_ w: Double) -> String {
@@ -540,6 +549,18 @@ struct ExerciseList: View {
                         }
                     }
                     Section("目前動作") {
+                        let cur = w.items[w.current]
+                        if cur.base != nil && !cur.alts.isEmpty {
+                            NavigationLink { AltPicker(showList: $showList) } label: {
+                                Label("器材被佔？換動作", systemImage: "arrow.triangle.2.circlepath")
+                            }
+                        }
+                        Toggle(isOn: Binding(get: { cur.uni }, set: { _ in store.toggleUni() })) {
+                            VStack(alignment: .leading) {
+                                Text("單邊")
+                                Text("重量、次數記一邊").font(.caption2).foregroundStyle(.secondary)
+                            }
+                        }
                         Button { store.addSet() } label: { Label("加一組", systemImage: "plus") }
                         Button { store.removeSet() } label: { Label("少一組", systemImage: "minus") }
                     }
@@ -555,6 +576,39 @@ struct ExerciseList: View {
             .navigationTitle("動作")
         }
 
+    }
+}
+
+// 器材被佔：選替代動作（第一個是原動作，可換回）
+struct AltPicker: View {
+    @EnvironmentObject var store: Store
+    @Binding var showList: Bool
+
+    var body: some View {
+        List {
+            if let w = store.workout {
+                let it = w.items[w.current]
+                if let base = it.base {
+                    row(base, note: "原動作", selected: it.orig == nil) { store.swapCurrent(to: nil) }
+                }
+                ForEach(Array(it.alts.enumerated()), id: \.offset) { _, a in
+                    row(a, note: nil, selected: it.orig != nil && it.n == a.n) { store.swapCurrent(to: a) }
+                }
+            }
+        }
+        .navigationTitle("換動作")
+    }
+
+    private func row(_ a: SAlt, note: String?, selected: Bool, action: @escaping () -> Void) -> some View {
+        Button {
+            action(); showList = false
+        } label: {
+            VStack(alignment: .leading, spacing: 2) {
+                if let note { Text(note).font(.caption2).foregroundStyle(Color.brandRed) }
+                Text(shortName(a.n)).font(.footnote.weight(selected ? .heavy : .regular)).lineLimit(2)
+                Text("\(a.rm) RM\(a.mc.map { " · " + $0 } ?? "")").font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+            }
+        }
     }
 }
 
