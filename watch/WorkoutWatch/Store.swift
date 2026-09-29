@@ -211,6 +211,7 @@ final class Store: ObservableObject {
         let c = w.current
         guard let si = w.items[c].nextSet else { return }
         w.items[c].sets[si].done = true
+        w.items[c].sets[si].at = Date()
         let it = w.items[c]
         WKInterfaceDevice.current().play(.success)
 
@@ -333,7 +334,13 @@ final class Store: ObservableObject {
         skipRest(); dismissAlarm()
         var items: [[String: Any]] = []
         var done = 0
-        for it in w.items {
+        // 照實際做的順序存：哪個動作先完成第一組就排前面（跳著做、器材被佔換順序都會反映在紀錄上）
+        let firstAt: (WItem) -> Date = { $0.sets.compactMap(\.at).min() ?? .distantFuture }
+        let ordered = w.items.enumerated().sorted { a, b in
+            let x = firstAt(a.element), y = firstAt(b.element)
+            return x != y ? x < y : a.offset < b.offset
+        }.map(\.element)
+        for it in ordered {
             let log = it.sets.filter(\.done)
             guard !log.isEmpty else { continue }
             done += log.count

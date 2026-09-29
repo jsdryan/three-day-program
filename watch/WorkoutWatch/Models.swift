@@ -55,6 +55,7 @@ struct WSet: Codable, Hashable {
     var w: Double?
     var r: Int?
     var done: Bool = false
+    var at: Date?           // 完成的時間：存檔時照實際做的順序排動作
 }
 
 struct WItem: Codable, Identifiable, Hashable {
