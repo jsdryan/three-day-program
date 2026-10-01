@@ -196,14 +196,13 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .edact button{height:34px;min-width:34px;padding:0 8px;border-radius:8px;border:0;background:var(--card2);color:var(--ink2);font-size:13px;font-weight:600}
 .edact button[disabled]{opacity:.3}
 .edact .del{color:var(--danger)}
-.addex{margin-top:10px;width:100%;height:42px;border-radius:10px;border:1px dashed var(--line);background:none;color:var(--ink2);font-weight:600;font-size:14px}
+.addex{margin-top:12px;width:100%;height:50px;border-radius:12px;border:1.5px solid var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:800;font-size:15px}
 .edfoot{display:flex;gap:8px;margin-top:12px}
 .edfoot button{flex:1;height:44px;border-radius:12px;border:0;font-weight:700;font-size:14px}
 .edfoot .restore{background:var(--card2);color:var(--ink2)}
 .edfoot .done{background:var(--accent);color:#fff}
-.dayact{display:flex;gap:8px;margin-top:8px}
-.dayact button{flex:1;height:40px;border-radius:10px;border:1px dashed var(--line);background:none;color:var(--ink2);font-weight:600;font-size:13px}
-.dayact .delday{color:var(--danger)}
+.dayact{text-align:center;margin-top:18px}
+.dayact .delday{border:0;background:none;color:var(--danger);font-size:13px;font-weight:600;text-decoration:underline;text-underline-offset:3px;padding:6px 10px}
 .sheetbox form{display:flex;flex-direction:column;gap:10px}
 #exform .sheetbox{max-height:92vh;overflow:auto}
 .sheetbox .libpick{height:44px;background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent)}
@@ -1244,8 +1243,10 @@ function renderEditor(di){
   const box=document.createElement('div');box.className='edit';
   box.innerHTML=`<label class="edname">這一天的名稱<input type="text" value="${d.name}" maxlength="20"></label><div class="edlist"></div>`
     +`<button type="button" class="addex">＋ 新增動作</button>`
-    +`<div class="dayact"><button type="button" class="addday">＋ 新增一天</button>${c.days.length>1?'<button type="button" class="delday">刪除這一天</button>':''}</div>`
-    +`<div class="edfoot">${di<defDays(prog).length?'<button type="button" class="restore">還原這一天為預設</button>':''}<button type="button" class="done">完成編輯</button></div>`;
+
+    +`<div class="edfoot">${di<defDays(prog).length?'<button type="button" class="restore">還原這一天為預設</button>':''}<button type="button" class="done">完成編輯</button></div>`
+    // 刪除這一天放最下面、做成小字，離其他按鈕遠一點免得誤按（新增一天用分頁列最右邊的＋）
+    +(c.days.length>1?`<div class="dayact"><button type="button" class="delday">刪除這一天</button></div>`:'');
   const nameIn=box.querySelector('.edname input');
   nameIn.onchange=()=>{d.name=nameIn.value.trim()||d.name;saveCustom(prog)};
   const list=box.querySelector('.edlist');
@@ -1263,7 +1264,7 @@ function renderEditor(di){
     list.appendChild(row);
   });
   box.querySelector('.addex').onclick=()=>openExForm(di,null);
-  box.querySelector('.addday').onclick=addDay;
+
   const dd=box.querySelector('.delday');let ddArmed=false;
   if(dd)dd.onclick=()=>{
     if(!ddArmed){ddArmed=true;dd.textContent='再按一次確認刪除';return}
