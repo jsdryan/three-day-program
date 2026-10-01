@@ -4,3 +4,5 @@
 單一 `index.html`，部署在 GitHub Pages：https://jsdryan.github.io/three-day-program/
 
 跨裝置同步與 Google / Apple 登入的設定方式見 [SETUP.md](SETUP.md)。
+
+肌肉圖的人體輪廓取自 [react-body-highlighter](https://github.com/GV79/react-body-highlighter)（MIT License, Copyright (c) 2020 GV79）。
