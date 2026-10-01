@@ -215,6 +215,11 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .sheetbox .libeq button{width:auto;flex:none;height:34px;padding:0 14px;border-radius:999px;background:var(--card2);color:var(--ink2);font-size:13px;font-weight:600}
 .sheetbox .libeq button[aria-pressed="true"]{background:var(--accent);color:#fff}
 #liblist{flex:1;overflow:auto;margin:0 -4px 10px;padding:0 4px}
+.musgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding-top:6px}
+.sheetbox .musbtn{height:auto;min-height:64px;padding:10px 6px;border-radius:12px;background:var(--card2);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.musbtn b{font-size:17px;font-weight:900}
+.musbtn span{font-size:11px;color:var(--muted);font-weight:500}
+.sheetbox .musback{width:auto;height:34px;padding:0 12px;margin-top:6px;border-radius:999px;background:var(--card2);color:var(--ink2);font-size:13px;font-weight:700}
 #liblist h4{margin:14px 0 2px;font-size:13px;color:var(--accent);letter-spacing:.04em}
 .sheetbox .libit{width:100%;height:auto;display:block;text-align:left;padding:10px 0;border-radius:0;background:none;color:var(--ink);border-top:1px solid var(--line)}
 .libit b{display:block;font-size:15px}
@@ -836,7 +841,7 @@ const MACHINES=[
  ["mp-A7082", "MaxPump", "側平舉機", "ISO Lateral Raise", "A7082", "肩", "12–15", "三角肌中束", "", 0],
  ["mp-A7115", "MaxPump", "肩內外旋機", "Shoulder Internal/External Rotation", "A7115", "肩", "12–15", "旋轉肌群", "", 0],
  ["mp-A7035", "MaxPump", "雙軌下拉機", "Seated Super Dual Pulldown", "A7035", "背", "8–12", "闊背肌、大圓肌、肱二頭肌", "", 0],
- ["mp-A7032", "MaxPump", "背部二合一", "Multi Double Back Superset", "A7032", "背", "8–12", "", "", 0],
+ ["mp-A7032", "MaxPump", "背部二合一", "Multi Double Back Superset", "A7032", "背", "8–12", "闊背肌、中背", "", 0],
  ["mp-A7008", "MaxPump", "高／低位划船二合一", "High Row & Low Row Superset", "A7008", "背", "8–12", "闊背肌、中背、後三角肌", "", 0],
  ["mp-A7100", "MaxPump", "單邊坐姿划船機", "Ultra ISO Seated Row", "A7100", "背", "8–12", "闊背肌、中背、後三角肌", "", 0],
  ["mp-A7096", "MaxPump", "坐姿滑輪划船機", "Classic Seated Cable Row", "A7096", "背", "8–12", "闊背肌、中背、後三角肌", "", 0],
@@ -1615,24 +1620,49 @@ let libTarget='1',libEqSel='全部';
   const b=document.createElement('button');b.type='button';b.textContent=k;
   b.onclick=()=>{libEqSel=k;renderLib()};libEq.appendChild(b);
 });
+// 像 MuscleWiki：先選肌群、再看能練的動作。肌群用每個動作的「主要肌群」（第一個）歸類
+const MUS_GROUPS=['胸','背闊','上背','下背','肩前','肩側','肩後','二頭','三頭','股四頭','腿後','臀','外展','內收','小腿','核心','其他'];
+const MUS_RULES=[[/胸/,'胸'],[/闊背/,'背闊'],[/豎脊|下背/,'下背'],[/中背|菱形|斜方|上背/,'上背'],[/後三角|旋轉肌/,'肩後'],[/中束/,'肩側'],[/三角肌/,'肩前'],
+  [/二頭|肱肌|肱橈/,'二頭'],[/三頭/,'三頭'],[/股四頭/,'股四頭'],[/腿後/,'腿後'],[/臀中|臀小/,'外展'],[/臀/,'臀'],[/內收/,'內收'],[/小腿|腓腸|比目魚/,'小腿'],[/腹|核心/,'核心']];
+function musGroup(x){const p=primaryMus(x.mus);for(const [re,g] of MUS_RULES)if(re.test(p))return g;return '其他'}
+let libMus=null;
+function libItemBtn(x){
+  const b=document.createElement('button');b.type='button';b.className='libit';
+  b.innerHTML=`<b>${x.mc?(x.gym?'<i class="gymtag">新莊有</i>':'<i class="gymtag no">未確認新莊有</i>'):''}${x.n}${(x.mc?mcById(x.mc).model:x.kw)?`<small style="font-weight:400;color:var(--muted)">（${x.mc?mcById(x.mc).model:x.kw}）</small>`:''}</b><span><i class="eq">${x.eq}</i>${x.rm} RM · ${x.mus}</span>`;
+  b.onclick=()=>pickLib(x);return b;
+}
 function renderLib(){
   libEq.querySelectorAll('button').forEach(b=>b.setAttribute('aria-pressed',b.textContent===libEqSel));
   const q=libQ.value.trim();
-  const PARTS=['胸','背','肩','手臂','腿臀','核心'];
-  const hit=LIB.filter(x=>(libEqSel==='全部'?(!x.mc||x.gym):x.eq===libEqSel)&&(!q||[x.n,x.kw,x.mus,x.part].some(v=>v.includes(q)))).sort((a,b)=>PARTS.indexOf(a.part)-PARTS.indexOf(b.part)||(b.gym?1:0)-(a.gym?1:0));
+  const pool=LIB.filter(x=>libEqSel==='全部'?(!x.mc||x.gym):x.eq===libEqSel);
   libList.innerHTML='';
-  if(!hit.length){libList.innerHTML='<p>找不到。關掉這個視窗，直接在「動作名稱」打字也可以。</p>';return}
-  let part='';
-  hit.forEach(x=>{
-    if(x.part!==part){part=x.part;const h=document.createElement('h4');h.textContent=part;libList.appendChild(h)}
-    const b=document.createElement('button');b.type='button';b.className='libit';
-    b.innerHTML=`<b>${x.mc?(x.gym?'<i class="gymtag">新莊有</i>':'<i class="gymtag no">未確認新莊有</i>'):''}${x.n}${x.kw?`<small style="font-weight:400;color:var(--muted)">（${x.kw}）</small>`:''}</b><span><i class="eq">${x.eq}</i>${x.rm} RM · ${x.mus}</span>`;
-    b.onclick=()=>pickLib(x);libList.appendChild(b);
-  });
+  // 第 1 步：肌群格子（有打字搜尋就跳過，直接搜全部）
+  if(!q&&!libMus){
+    const cnt={};pool.forEach(x=>{const g=musGroup(x);cnt[g]=(cnt[g]||0)+1});
+    const grid=document.createElement('div');grid.className='musgrid';
+    MUS_GROUPS.filter(g=>cnt[g]).forEach(g=>{
+      const b=document.createElement('button');b.type='button';b.className='musbtn';
+      b.innerHTML=`<b>${g}</b><span>${cnt[g]} 個動作</span>`;
+      b.onclick=()=>{libMus=g;renderLib();libList.scrollTop=0};grid.appendChild(b);
+    });
+    libList.appendChild(grid);
+    return;
+  }
+  // 第 2 步：這個肌群能練的動作，新莊有的器材排最前面
+  const hit=pool.filter(x=>q?[x.n,x.kw,x.mus,x.part].some(v=>v.includes(q)):musGroup(x)===libMus)
+    .sort((a,b)=>(b.gym?1:0)-(a.gym?1:0));
+  if(!q){
+    const back=document.createElement('button');back.type='button';back.className='musback';
+    back.textContent='← 選肌群';back.onclick=()=>{libMus=null;renderLib()};
+    libList.appendChild(back);
+    const h=document.createElement('h4');h.textContent=libMus;libList.appendChild(h);
+  }
+  if(!hit.length){libList.insertAdjacentHTML('beforeend','<p>找不到。換個器材篩選，或關掉這個視窗直接在「動作名稱」打字。</p>');return}
+  hit.forEach(x=>libList.appendChild(libItemBtn(x)));
 }
 // 動作庫也給歷史紀錄用：有 libCb 就交給它，沒有就填進新增動作表單
 let libCb=null;
-function openLib(cb){libCb=cb;libQ.value='';renderLib();libSheet.hidden=false;libList.scrollTop=0}
+function openLib(cb){libCb=cb;libQ.value='';libMus=null;renderLib();libSheet.hidden=false;libList.scrollTop=0}
 function pickLib(x){
   if(libCb){const cb=libCb;libCb=null;libSheet.hidden=true;cb(x);return}
   const f=exForm.querySelector('form'),t=libTarget;
