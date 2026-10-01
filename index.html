@@ -215,6 +215,15 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .sheetbox .libeq button{width:auto;flex:none;height:34px;padding:0 14px;border-radius:999px;background:var(--card2);color:var(--ink2);font-size:13px;font-weight:600}
 .sheetbox .libeq button[aria-pressed="true"]{background:var(--accent);color:#fff}
 #liblist{flex:1;overflow:auto;margin:0 -4px 10px;padding:0 4px}
+.bodymap{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding-top:6px}
+.bodyfig{margin:0;text-align:center}
+.bodyfig svg{width:100%;height:auto;display:block;max-height:46vh}
+.bodyfig figcaption{font-size:12px;color:var(--muted);margin-top:2px}
+.bodymap .mbase>*{fill:var(--card2);stroke:var(--line);stroke-width:1}
+.bodymap .mshape{fill:#5a5c66;stroke:var(--bg);stroke-width:1.5;cursor:pointer;transition:fill .12s}
+.bodymap .mshape.hot,.bodymap .mshape:active{fill:var(--accent)}
+.bodymap .mshape.off{fill:var(--card2);opacity:.45;cursor:default}
+.bodytip{grid-column:1/-1;margin:2px 0 8px;font-size:12px;color:var(--muted);text-align:center}
 .musgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding-top:6px}
 .sheetbox .musbtn{height:auto;min-height:64px;padding:10px 6px;border-radius:12px;background:var(--card2);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 .musbtn b{font-size:17px;font-weight:900}
@@ -1626,6 +1635,39 @@ const MUS_RULES=[[/胸/,'胸'],[/闊背/,'背闊'],[/豎脊|下背/,'下背'],[/
   [/二頭|肱肌|肱橈/,'二頭'],[/三頭/,'三頭'],[/股四頭/,'股四頭'],[/腿後/,'腿後'],[/臀中|臀小/,'外展'],[/臀/,'臀'],[/內收/,'內收'],[/小腿|腓腸|比目魚/,'小腿'],[/腹|核心/,'核心']];
 function musGroup(x){const p=primaryMus(x.mus);for(const [re,g] of MUS_RULES)if(re.test(p))return g;return '其他'}
 let libMus=null;
+// 肌肉圖：正面、背面兩個人形，點肌肉直接選肌群。形狀 [肌群, 'e'(橢圓 cx cy rx ry) 或 'p'(路徑), 參數, 是否左右對稱]
+const BODY={
+  front:[
+    ['肩側','e',[52,84,7,14],1],['肩前','e',[64,77,12,12],1],
+    ['胸','p','M70 70 Q85 64 98 68 L98 104 Q84 110 70 102 Q64 88 70 70Z',1],
+    ['二頭','e',[54,118,9,19],1],
+    ['核心','p','M86 110 L114 110 L116 176 Q100 182 84 176Z',0],['核心','p','M74 112 L84 112 L83 170 L74 160Z',1],
+    ['股四頭','e',[81,236,13,42],1],['內收','e',[95,214,5,20],1],
+    ['小腿','e',[81,318,9,26],1]],
+  back:[
+    ['上背','p','M100 56 L122 70 L112 118 L100 124 L88 118 L78 70Z',0],
+    ['肩後','e',[64,80,12,12],1],['肩側','e',[52,86,7,13],1],
+    ['背闊','p','M76 88 L88 100 L96 146 L84 150 L72 120 Q70 100 76 88Z',1],
+    ['下背','p','M88 150 L112 150 L114 174 L86 174Z',0],
+    ['三頭','e',[54,118,9,19],1],
+    ['外展','e',[80,182,11,8],1],['臀','e',[89,203,12,15],1],
+    ['腿後','e',[82,252,12,36],1],['小腿','e',[81,318,10,26],1]]
+};
+// 人形底圖（頭、軀幹、手腳的輪廓），不能點
+const BODY_BASE=`<ellipse cx="100" cy="30" rx="15" ry="19"/><rect x="92" y="46" width="16" height="14" rx="4"/>
+<path d="M62 66 Q100 52 138 66 L140 120 Q138 160 128 184 L72 184 Q62 160 60 120Z"/>
+<path d="M50 74 Q44 110 46 140 L40 196 L50 198 L60 142 Q64 110 64 80Z"/><path d="M150 74 Q156 110 154 140 L160 196 L150 198 L140 142 Q136 110 136 80Z"/>
+<path d="M72 180 L98 186 L96 290 L92 360 L74 360 L70 290 Q66 230 72 180Z"/><path d="M128 180 L102 186 L104 290 L108 360 L126 360 L130 290 Q134 230 128 180Z"/>`;
+function bodySvg(side,cnt){
+  let h='';
+  for(const [g,t,a,sym] of BODY[side]){
+    const on=!!cnt[g],cls=`mshape${on?'':' off'}`;
+    const one=x=>t==='e'?`<ellipse class="${cls}" data-g="${g}" cx="${x?200-a[0]:a[0]}" cy="${a[1]}" rx="${a[2]}" ry="${a[3]}"><title>${g}</title></ellipse>`
+      :`<path class="${cls}" data-g="${g}" d="${a}" ${x?'transform="translate(200 0) scale(-1 1)"':''}><title>${g}</title></path>`;
+    h+=one(false)+(sym?one(true):'');
+  }
+  return `<figure class="bodyfig"><svg viewBox="30 4 140 362" role="img" aria-label="${side==='front'?'正面':'背面'}肌肉圖"><g class="mbase">${BODY_BASE}</g>${h}</svg><figcaption>${side==='front'?'正面':'背面'}</figcaption></figure>`;
+}
 function libItemBtn(x){
   const b=document.createElement('button');b.type='button';b.className='libit';
   b.innerHTML=`<b>${x.mc?(x.gym?'<i class="gymtag">新莊有</i>':'<i class="gymtag no">未確認新莊有</i>'):''}${x.n}${(x.mc?mcById(x.mc).model:x.kw)?`<small style="font-weight:400;color:var(--muted)">（${x.mc?mcById(x.mc).model:x.kw}）</small>`:''}</b><span><i class="eq">${x.eq}</i>${x.rm} RM · ${x.mus}</span>`;
@@ -1639,6 +1681,15 @@ function renderLib(){
   // 第 1 步：肌群格子（有打字搜尋就跳過，直接搜全部）
   if(!q&&!libMus){
     const cnt={};pool.forEach(x=>{const g=musGroup(x);cnt[g]=(cnt[g]||0)+1});
+    // 肌肉圖：點肌肉就進第 2 步
+    const map=document.createElement('div');map.className='bodymap';
+    map.innerHTML=bodySvg('front',cnt)+bodySvg('back',cnt)+'<p class="bodytip">點肌肉選擇，或用下面的按鈕</p>';
+    map.querySelectorAll('.mshape:not(.off)').forEach(el=>{
+      el.addEventListener('click',()=>{libMus=el.dataset.g;renderLib();libList.scrollTop=0});
+      el.addEventListener('pointerenter',()=>map.querySelectorAll(`[data-g="${el.dataset.g}"]`).forEach(x=>x.classList.add('hot')));
+      el.addEventListener('pointerleave',()=>map.querySelectorAll('.hot').forEach(x=>x.classList.remove('hot')));
+    });
+    libList.appendChild(map);
     const grid=document.createElement('div');grid.className='musgrid';
     MUS_GROUPS.filter(g=>cnt[g]).forEach(g=>{
       const b=document.createElement('button');b.type='button';b.className='musbtn';
